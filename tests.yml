@@ -1,0 +1,8 @@
+---
+tests:
+  - name: Sanity check
+    setups:
+      - go install -v .
+    tests:
+
+
