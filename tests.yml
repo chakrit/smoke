@@ -1,27 +1,18 @@
 ---
+config:
+  interpreter: /bin/sh
+  timeout: 5s
 checks:
   - stdout
   - stderr
   - exitcode
-config:
-  interpreter: /bin/sh
-  timeout: 5s
 tests:
-  - name: CLI
-    tests:
-      - name: Formatted
-        commands:
-          - goimports -l *.go
-      - name: Build
-        commands:
-          - go build -o ./bin/smoke -v .
-      - name: Run
-        commands:
-          - ./bin/smoke
-  - name: Tests
+  - name: Basics
     commands:
       - go build -o ./bin/smoke -v .
-    tests:
-      - name: Listing
-        commands:
-          - ./bin/smoke --list tests.yml
+      - goimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go
+      - ./bin/smoke
+  - name: Self Tests
+    commands:
+      - go build -o ./bin/smoke -v .
+      - ./bin/smoke --list tests.yml

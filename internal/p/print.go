@@ -8,8 +8,10 @@ import (
 	"github.com/chakrit/smoke/engine"
 )
 
+var trim = strings.TrimSpace
+
 func UsageHint(s string) {
-	fmt.Println(s)
+	fmt.Fprintln(os.Stderr, s)
 }
 
 func Bye() {
@@ -33,16 +35,15 @@ func BeforeTest(filename string, t *engine.Test) {
 
 func AfterTest(filename string, t *engine.Test, result engine.TestResult) {
 	for _, cmd := range result.Commands {
-		fmt.Printf("\t%s:\n", strings.TrimSpace(string(cmd.Command)))
+		cmdstr := trim(string(cmd.Command))
+		if cmd.Err != nil {
+			fmt.Printf("\t%s: %s\n", cmdstr, cmd.Err)
+			continue
+		}
+
+		fmt.Printf("\t%s:\n", cmdstr)
 		for _, chk := range cmd.Checks {
-			fmt.Printf("\t\t%s:\n\t\t---\n", chk.Name)
-
-			lines := strings.Split(string(chk.Data), "\n")
-			for _, line := range lines {
-				fmt.Printf("\t\t\t%s\n", line)
-			}
-
-			fmt.Printf("\t\t---\n")
+			fmt.Printf("\t\t%s:\t%s\n", chk.Name, trim(string(chk.Data)))
 		}
 	}
 }

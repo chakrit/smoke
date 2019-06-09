@@ -1,6 +1,8 @@
 package specs
 
 import (
+	"strings"
+
 	"github.com/chakrit/smoke/checks"
 	"github.com/chakrit/smoke/engine"
 	"github.com/pkg/errors"
@@ -44,6 +46,7 @@ func (t *Test) Tests() (tests []*engine.Test, err error) {
 	if len(t.Commands) > 0 {
 		var commands []engine.Command
 		for _, cmdstr := range t.Commands {
+			cmdstr = strings.TrimSpace(cmdstr)
 			commands = append(commands, engine.Command(cmdstr))
 		}
 

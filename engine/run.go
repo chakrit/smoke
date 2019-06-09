@@ -2,6 +2,7 @@ package engine
 
 import (
 	"bytes"
+	"fmt"
 	"os/exec"
 	"time"
 
@@ -52,8 +53,7 @@ func RunCommand(config *Config, c Command, chks []checks.Interface) (CommandResu
 		}
 	}()
 
-	inbuf.WriteString(string(c))
-	inbuf.WriteByte(0x0D) // carriage-return
+	fmt.Fprintln(inbuf, string(c))
 	cmd.Stdin = inbuf
 
 	if err := checks.PrepareAll(cmd, chks); err != nil {
@@ -73,8 +73,10 @@ func RunCommand(config *Config, c Command, chks []checks.Interface) (CommandResu
 		}, nil
 
 	case err := <-errc: // Wait() returned
-		if _, ok := err.(*exec.ExitError); ok {
-			// expected, nothing to do
+		if err == nil {
+			// success case
+		} else if _, ok := err.(*exec.ExitError); ok {
+			// success case, with diff exit code
 		} else {
 			return CommandResult{}, errors.Wrap(err, "wait")
 		}
