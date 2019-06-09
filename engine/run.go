@@ -6,23 +6,26 @@ import (
 	"time"
 
 	"github.com/chakrit/smoke/checks"
-
 	"github.com/pkg/errors"
 )
 
-func RunTests(tests []*Test) ([]TestResult, error) {
-	var results []TestResult
-	for _, test := range tests {
-		if result, err := test.Run(); err != nil {
-			return nil, err
+func RunTest(t *Test) (TestResult, error) {
+	var results []CommandResult
+	for _, cmd := range t.Commands {
+		if result, err := RunCommand(t.RunConfig, cmd, t.Checks); err != nil {
+			return TestResult{}, err
 		} else {
 			results = append(results, result)
 		}
 	}
-	return results, nil
+
+	return TestResult{
+		Test:     t,
+		Commands: results,
+	}, nil
 }
 
-func RunCommand(config *Config, c Command, chks []checks.Interface) ([]checks.Output, error) {
+func RunCommand(config *Config, c Command, chks []checks.Interface) (CommandResult, error) {
 	if config == nil {
 		config = DefaultConfig
 	}
@@ -54,29 +57,35 @@ func RunCommand(config *Config, c Command, chks []checks.Interface) ([]checks.Ou
 	cmd.Stdin = inbuf
 
 	if err := checks.PrepareAll(cmd, chks); err != nil {
-		return nil, errors.Wrap(err, "checks")
+		return CommandResult{}, errors.Wrap(err, "checks")
 	}
 	if err := cmd.Start(); err != nil {
-		return nil, errors.Wrap(err, "start")
+		return CommandResult{}, errors.Wrap(err, "start")
 	}
 
 	go func() { errc <- cmd.Wait() }()
 
 	select {
 	case <-time.After(config.Timeout):
-		return nil, errors.New("timeout")
+		return CommandResult{
+			Command: c,
+			Err:     errors.New("timeout"),
+		}, nil
 
 	case err := <-errc: // Wait() returned
 		if _, ok := err.(*exec.ExitError); ok {
 			// expected, nothing to do
 		} else {
-			return nil, errors.Wrap(err, "wait")
+			return CommandResult{}, errors.Wrap(err, "wait")
 		}
 	}
 
 	if outputs, err := checks.CollectAll(cmd, chks); err != nil {
-		return nil, errors.Wrap(err, "checks")
+		return CommandResult{}, errors.Wrap(err, "checks")
 	} else {
-		return outputs, nil
+		return CommandResult{
+			Command: c,
+			Checks:  outputs,
+		}, nil
 	}
 }

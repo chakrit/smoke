@@ -14,11 +14,20 @@ type (
 
 	CommandResult struct {
 		Command Command
+		Err     error
 		Checks  []checks.Output
 	}
 
+	Test struct {
+		Name      string             `yaml:"name"`
+		RunConfig *Config            `yaml:"run"`
+		Commands  []Command          `yaml:"commands"`
+		Checks    []checks.Interface `yaml:"checks"`
+	}
+
 	TestResult struct {
-		Test           *Test
-		CommandResults []CommandResult
+		Test     *Test
+		Err      error
+		Commands []CommandResult
 	}
 )

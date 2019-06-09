@@ -4,8 +4,7 @@ import (
 	"os"
 
 	"github.com/chakrit/smoke/engine"
-
-	p "github.com/chakrit/smoke/print"
+	"github.com/chakrit/smoke/internal/p"
 	"github.com/chakrit/smoke/specs"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
@@ -39,31 +38,37 @@ func main() {
 
 	defer p.Bye()
 	for _, filename := range filenames {
-		file, err := specs.Load(filename)
-		if err != nil {
-			p.Error(errors.Wrap(err, filename))
-			continue
-		}
+		processFile(filename)
+	}
+}
 
-		tests, err := file.Tests()
-		if err != nil {
-			p.Error(errors.Wrap(err, filename))
-			continue
-		}
+func processFile(filename string) {
+	file, err := specs.Load(filename)
+	if err != nil {
+		p.Error(errors.Wrap(err, filename))
+		return
+	}
 
-		if shouldList {
-			for _, test := range tests {
-				p.TestDesc(filename, test)
-			}
-			continue
-		}
+	tests, err := file.Tests()
+	if err != nil {
+		p.Error(errors.Wrap(err, filename))
+		return
+	}
 
-		results, err := engine.RunTests(tests)
-		if err != nil {
-			p.Error(errors.Wrap(err, filename))
+	if shouldList {
+		for _, test := range tests {
+			p.TestDesc(filename, test)
 		}
+		return
+	}
 
-		// TODO: Report/print result
-		_ = results
+	for _, test := range tests {
+		p.BeforeTest(filename, test)
+		if result, err := engine.RunTest(test); err != nil {
+			p.Error(err)
+		} else {
+			// TODO: Report/print result
+			p.AfterTest(filename, test, result)
+		}
 	}
 }

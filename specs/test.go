@@ -2,7 +2,7 @@ package specs
 
 import (
 	"github.com/chakrit/smoke/checks"
-	lib "github.com/chakrit/smoke/engine"
+	"github.com/chakrit/smoke/engine"
 	"github.com/pkg/errors"
 )
 
@@ -40,17 +40,17 @@ func (t *Test) resolve(parent *Test) {
 	}
 }
 
-func (t *Test) Tests() (tests []*lib.Test, err error) {
+func (t *Test) Tests() (tests []*engine.Test, err error) {
 	if len(t.Commands) > 0 {
-		var commands []lib.Command
+		var commands []engine.Command
 		for _, cmdstr := range t.Commands {
-			commands = append(commands, lib.Command(cmdstr))
+			commands = append(commands, engine.Command(cmdstr))
 		}
 
 		var allchecks []checks.Interface
 		for _, name := range t.Checks {
 			if check := checks.Parse(name); check == nil {
-				return nil, errors.WithMessage(lib.ErrSpec,
+				return nil, errors.WithMessage(engine.ErrSpec,
 					"unknown check `"+name+"`")
 			} else {
 				allchecks = append(allchecks, check)
@@ -62,7 +62,7 @@ func (t *Test) Tests() (tests []*lib.Test, err error) {
 			return nil, err
 		}
 
-		tests = append(tests, &lib.Test{
+		tests = append(tests, &engine.Test{
 			Name:      t.Name,
 			RunConfig: runcfg,
 			Commands:  commands,
