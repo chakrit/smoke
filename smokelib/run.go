@@ -1,4 +1,4 @@
-package main
+package smokelib
 
 import (
 	"bytes"
@@ -8,27 +8,27 @@ import (
 	"github.com/pkg/errors"
 )
 
-type RunConfig struct {
-	Env         []string      `yaml:"env"`
-	Interpreter string        `yaml:"interpreter"`
-	Timeout     time.Duration `yaml:"timeout"`
+func RunTests(tests []*Test) ([]*TestResult, error) {
+	var results []*TestResult
+	for _, test := range tests {
+		if result, err := test.Run(); err != nil {
+			return nil, err
+		} else {
+			results = append(results, result)
+		}
+	}
+	return results, nil
 }
 
-var defaultRunConfig = &RunConfig{
-	Env:         nil,
-	Interpreter: "/bin/bash",
-	Timeout:     3 * time.Second,
-}
-
-func RunCommand(config *RunConfig, c Command) (*Output, error) {
+func RunCommand(config *Config, c Command) (*Output, error) {
 	if config == nil {
-		config = defaultRunConfig
+		config = DefaultConfig
 	}
 	if config.Interpreter == "" {
-		config.Interpreter = defaultRunConfig.Interpreter
+		config.Interpreter = DefaultConfig.Interpreter
 	}
 	if config.Timeout == 0 {
-		config.Timeout = defaultRunConfig.Timeout
+		config.Timeout = DefaultConfig.Timeout
 	}
 
 	var (

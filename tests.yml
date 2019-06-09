@@ -1,7 +1,20 @@
 ---
+config:
+  interpreter: /bin/sh
+  timeout: 5s
 tests:
-  - name: Sanity check
-    setups:
-      - go install -v .
-    commands:
-      - smoke
+  - name: Software
+    checks:
+      - stdout
+      - stderr
+      - exitcode
+    tests:
+      - name: Formatted
+        commands:
+          - goimports -l *.go
+      - name: Builds
+        commands:
+          - go build -o ./bin/smoke -v .
+      - name: Run
+        commands:
+          - ./bin/smoke

@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	lib "smoke/smokelib"
+	"smoke/specs"
 
 	"github.com/spf13/cobra"
 )
@@ -27,20 +29,23 @@ func runRootCmd(cmd *cobra.Command, args []string) {
 
 	defer log.Println("done.")
 	for _, filename := range args {
-		file, err := Load(filename)
+		file, err := specs.Load(filename)
 		if err != nil {
 			log.Println(err)
 		}
 
-		result, err := file.Run()
+		tests, err := file.Tests()
 		if err != nil {
 			log.Println(err)
 		}
 
-		err = Report(result)
+		results, err := lib.RunTests(tests)
 		if err != nil {
 			log.Println(err)
 		}
+
+		// TODO: Report/print result
+		_ = results
 	}
 }
 
