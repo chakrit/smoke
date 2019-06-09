@@ -1,8 +1,8 @@
 package specs
 
 import (
+	"github.com/chakrit/smoke/checks"
 	lib "github.com/chakrit/smoke/smokelib"
-
 	"github.com/pkg/errors"
 )
 
@@ -41,37 +41,32 @@ func (t *Test) resolve(parent *Test) {
 }
 
 func (t *Test) Tests() (tests []*lib.Test, err error) {
-	var commands []lib.Command
-	for _, cmdstr := range t.Commands {
-		commands = append(commands, lib.Command(cmdstr))
-	}
-
-	var checks []lib.Check
-	for _, checkstr := range t.Checks {
-		switch checkstr {
-		case "stdout":
-			checks = append(checks, lib.StdoutCheck)
-		case "stderr":
-			checks = append(checks, lib.StderrCheck)
-		case "exitcode":
-			checks = append(checks, lib.ExitCodeCheck)
-		default:
-			return nil, errors.WithMessage(lib.ErrCheckSpec,
-				"`"+checkstr+"`")
-		}
-	}
-
-	runcfg, err := t.Config.RunConfig()
-	if err != nil {
-		return nil, err
-	}
-
 	if len(t.Commands) > 0 {
+		var commands []lib.Command
+		for _, cmdstr := range t.Commands {
+			commands = append(commands, lib.Command(cmdstr))
+		}
+
+		var allchecks []checks.Interface
+		for _, name := range t.Checks {
+			if check := checks.ByName(name); check == nil {
+				return nil, errors.WithMessage(lib.ErrSpec,
+					"unknown check `"+name+"`")
+			} else {
+				allchecks = append(allchecks, check)
+			}
+		}
+
+		runcfg, err := t.Config.RunConfig()
+		if err != nil {
+			return nil, err
+		}
+
 		tests = append(tests, &lib.Test{
 			Name:      t.Name,
 			RunConfig: runcfg,
 			Commands:  commands,
-			Checks:    checks,
+			Checks:    allchecks,
 		})
 	}
 

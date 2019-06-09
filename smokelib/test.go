@@ -3,14 +3,16 @@ package smokelib
 import (
 	"log"
 
+	"github.com/chakrit/smoke/checks"
+
 	"github.com/pkg/errors"
 )
 
 type Test struct {
-	Name      string    `yaml:"name"`
-	RunConfig *Config   `yaml:"run"`
-	Commands  []Command `yaml:"commands"`
-	Checks    []Check   `yaml:"checks"`
+	Name      string             `yaml:"name"`
+	RunConfig *Config            `yaml:"run"`
+	Commands  []Command          `yaml:"commands"`
+	Checks    []checks.Interface `yaml:"checks"`
 }
 
 func (t *Test) Run() (*TestResult, error) {

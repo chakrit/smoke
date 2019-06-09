@@ -1,8 +1,6 @@
 package smokelib
 
 import (
-	"os/exec"
-
 	"github.com/pkg/errors"
 )
 
@@ -26,11 +24,5 @@ type (
 		PreviousOutputs []*Output
 		Outputs         []*Output
 		Subresults      []*TestResult
-	}
-
-	Check interface {
-		Name() string
-		Prepare(cmd *exec.Cmd) error
-		Collect(cmd *exec.Cmd) ([]byte, error)
 	}
 )
