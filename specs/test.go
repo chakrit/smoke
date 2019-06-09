@@ -1,7 +1,7 @@
 package specs
 
 import (
-	lib "smoke/smokelib"
+	lib "github.com/chakrit/smoke/smokelib"
 
 	"github.com/pkg/errors"
 )

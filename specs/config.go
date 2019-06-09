@@ -1,8 +1,9 @@
 package specs
 
 import (
-	lib "smoke/smokelib"
 	"time"
+
+	lib "github.com/chakrit/smoke/smokelib"
 )
 
 type Config struct {

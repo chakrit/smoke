@@ -3,7 +3,7 @@ package specs
 import (
 	"os"
 
-	lib "smoke/smokelib"
+	lib "github.com/chakrit/smoke/smokelib"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"

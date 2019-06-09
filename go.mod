@@ -1,4 +1,4 @@
-module smoke
+module github.com/chakrit/smoke
 
 go 1.12
 

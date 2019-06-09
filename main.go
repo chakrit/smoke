@@ -2,9 +2,9 @@ package main
 
 import (
 	"log"
-	lib "smoke/smokelib"
-	"smoke/specs"
 
+	lib "github.com/chakrit/smoke/smokelib"
+	"github.com/chakrit/smoke/specs"
 	"github.com/spf13/cobra"
 )
 
