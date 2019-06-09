@@ -1,4 +1,4 @@
-package smokelib
+package engine
 
 import "time"
 

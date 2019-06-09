@@ -1,56 +1,69 @@
 package main
 
 import (
-	"log"
+	"os"
 
-	lib "github.com/chakrit/smoke/smokelib"
+	"github.com/chakrit/smoke/engine"
+
+	p "github.com/chakrit/smoke/print"
 	"github.com/chakrit/smoke/specs"
-	"github.com/spf13/cobra"
+	"github.com/pkg/errors"
+	"github.com/spf13/pflag"
 )
 
-var RootCmd = &cobra.Command{
-	Use:   "smoke [filename]",
-	Short: "Runs smoke tests defined in the given filename.",
-	Run:   runRootCmd,
-}
+var (
+	shouldShowHelp bool
+	shouldList     bool
+	shouldCommit   bool
+	beVerbose      bool
+)
 
-func runRootCmd(cmd *cobra.Command, args []string) {
-	if len(args) < 1 {
-		log.Fatalln("requires 1 filename")
+func main() {
+	pflag.BoolVarP(&shouldShowHelp, "help", "h", false, "Show help on usages.")
+	pflag.BoolVarP(&shouldList, "list", "l", false, "List all discovered tests and exit.")
+	pflag.BoolVarP(&shouldCommit, "commit", "c", false, "Commit all checked test output.")
+	pflag.BoolVarP(&beVerbose, "verbose", "v", false, "Increase logging output.")
+	pflag.Parse()
+
+	if shouldShowHelp {
+		pflag.Usage()
 		return
 	}
 
-	if args[0] == "help" {
-		if err := cmd.Help(); err != nil {
-			log.Fatalln(err)
-		}
+	filenames := pflag.Args()
+	if len(filenames) < 1 {
+		p.UsageHint("requires a spec filename.")
+		os.Exit(1)
 		return
 	}
 
-	defer log.Println("done.")
-	for _, filename := range args {
+	defer p.Bye()
+	for _, filename := range filenames {
 		file, err := specs.Load(filename)
 		if err != nil {
-			log.Println(err)
+			p.Error(errors.Wrap(err, filename))
+			continue
 		}
 
 		tests, err := file.Tests()
 		if err != nil {
-			log.Println(err)
+			p.Error(errors.Wrap(err, filename))
+			continue
 		}
 
-		results, err := lib.RunTests(tests)
+		if shouldList {
+			for _, test := range tests {
+				p.TestDesc(filename, test)
+			}
+			continue
+		}
+
+		results, err := engine.RunTests(tests)
 		if err != nil {
-			log.Println(err)
+			p.Error(errors.Wrap(err, filename))
 		}
 
 		// TODO: Report/print result
 		_ = results
-	}
-}
-
-func main() {
-	if err := RootCmd.Execute(); err != nil {
-		log.Fatal(err)
 	}
 }

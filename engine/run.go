@@ -1,15 +1,17 @@
-package smokelib
+package engine
 
 import (
 	"bytes"
 	"os/exec"
 	"time"
 
+	"github.com/chakrit/smoke/checks"
+
 	"github.com/pkg/errors"
 )
 
-func RunTests(tests []*Test) ([]*TestResult, error) {
-	var results []*TestResult
+func RunTests(tests []*Test) ([]TestResult, error) {
+	var results []TestResult
 	for _, test := range tests {
 		if result, err := test.Run(); err != nil {
 			return nil, err
@@ -20,7 +22,7 @@ func RunTests(tests []*Test) ([]*TestResult, error) {
 	return results, nil
 }
 
-func RunCommand(config *Config, c Command) (*Output, error) {
+func RunCommand(config *Config, c Command, chks []checks.Interface) ([]checks.Output, error) {
 	if config == nil {
 		config = DefaultConfig
 	}
@@ -35,12 +37,9 @@ func RunCommand(config *Config, c Command) (*Output, error) {
 		// -s causes most shell to read commands from the stdin
 		// we use this approach to avoid having to argv parse by ourselves and get
 		// closest to shell-native expectation in yaml files
-		cmd  = exec.Command(config.Interpreter, "-s")
-		errc = make(chan error)
-
-		inbuf  = &bytes.Buffer{}
-		outbuf = &bytes.Buffer{}
-		errbuf = &bytes.Buffer{}
+		cmd   = exec.Command(config.Interpreter, "-s")
+		errc  = make(chan error)
+		inbuf = &bytes.Buffer{}
 	)
 
 	defer close(errc)
@@ -53,9 +52,10 @@ func RunCommand(config *Config, c Command) (*Output, error) {
 	inbuf.WriteString(string(c))
 	inbuf.WriteByte(0x0D) // carriage-return
 	cmd.Stdin = inbuf
-	cmd.Stdout = outbuf
-	cmd.Stderr = errbuf
 
+	if err := checks.PrepareAll(cmd, chks); err != nil {
+		return nil, errors.Wrap(err, "checks")
+	}
 	if err := cmd.Start(); err != nil {
 		return nil, errors.Wrap(err, "start")
 	}
@@ -74,9 +74,9 @@ func RunCommand(config *Config, c Command) (*Output, error) {
 		}
 	}
 
-	return &Output{
-		ExitCode: cmd.ProcessState.ExitCode(),
-		Stdout:   outbuf.Bytes(),
-		Stderr:   errbuf.Bytes(),
-	}, nil
+	if outputs, err := checks.CollectAll(cmd, chks); err != nil {
+		return nil, errors.Wrap(err, "checks")
+	} else {
+		return outputs, nil
+	}
 }

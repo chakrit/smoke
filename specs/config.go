@@ -3,7 +3,7 @@ package specs
 import (
 	"time"
 
-	lib "github.com/chakrit/smoke/smokelib"
+	lib "github.com/chakrit/smoke/engine"
 )
 
 type Config struct {

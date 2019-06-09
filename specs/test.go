@@ -2,7 +2,7 @@ package specs
 
 import (
 	"github.com/chakrit/smoke/checks"
-	lib "github.com/chakrit/smoke/smokelib"
+	lib "github.com/chakrit/smoke/engine"
 	"github.com/pkg/errors"
 )
 
@@ -49,7 +49,7 @@ func (t *Test) Tests() (tests []*lib.Test, err error) {
 
 		var allchecks []checks.Interface
 		for _, name := range t.Checks {
-			if check := checks.ByName(name); check == nil {
+			if check := checks.Parse(name); check == nil {
 				return nil, errors.WithMessage(lib.ErrSpec,
 					"unknown check `"+name+"`")
 			} else {
