@@ -28,11 +28,16 @@ func Load(filename string) (*File, error) {
 	return outfile, nil
 }
 
-func (f *File) Run() (*Result, error) {
+func (f *File) Run() ([]*TestResult, error) {
+	results := []*TestResult{}
 	for _, test := range f.Tests {
 		// TODO: Multi-error
-		if err := test.Run(); err != nil {
-			return err
+		if result, err := test.Run(); err != nil {
+			return nil, err
+		} else {
+			results = append(results, result)
 		}
 	}
+
+	return results, nil
 }

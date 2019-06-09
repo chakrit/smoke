@@ -18,13 +18,26 @@ func runRootCmd(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	if args[0] == "help" {
+		if err := cmd.Help(); err != nil {
+			log.Fatalln(err)
+		}
+		return
+	}
+
+	defer log.Println("done.")
 	for _, filename := range args {
 		file, err := Load(filename)
 		if err != nil {
 			log.Println(err)
 		}
 
-		err = file.Run()
+		result, err := file.Run()
+		if err != nil {
+			log.Println(err)
+		}
+
+		err = Report(result)
 		if err != nil {
 			log.Println(err)
 		}
