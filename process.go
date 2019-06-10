@@ -91,6 +91,8 @@ func commitResults(filename string, results []engine.TestResult) {
 
 	err = os.Rename(tmpfile.Name(), target)
 	p.ExitError(errors.Wrap(err, "commit"))
+
+	p.Pass("Commit " + target)
 }
 
 func compareResults(filename string, results []engine.TestResult) {
