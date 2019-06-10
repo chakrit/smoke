@@ -1,3 +1,7 @@
+![](https://raw.githubusercontent.com/chakrit/smoke/master/smoke.jpg)
+
+*WARNING:* Smoking is seriously bad for your health. Be [smoke-free][1].
+
 # SMOKE
 
 > Microsoft claims that after code reviews, "smoke testing is the most
@@ -119,3 +123,4 @@ tests:
 MIT
 
 [0]: https://en.wikipedia.org/wiki/Smoke_testing_(software)
+[1]: https://smokefree.gov/
