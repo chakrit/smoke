@@ -18,8 +18,8 @@ type TestSpec struct {
 	Children []*TestSpec `yaml:"tests"`
 }
 
-// resolve() applies parent-child value overriding and extension logic.
-func (t *TestSpec) resolve(parent *TestSpec) {
+// Resolve() applies parent-child value overriding and extension logic.
+func (t *TestSpec) Resolve(parent *TestSpec) {
 	if parent != nil {
 		if parent.Name != "" {
 			t.Name = parent.Name + ` \ ` + t.Name
@@ -28,7 +28,7 @@ func (t *TestSpec) resolve(parent *TestSpec) {
 		if t.Config == nil {
 			t.Config = parent.Config
 		} else {
-			t.Config.resolve(parent.Config)
+			t.Config.Resolve(parent.Config)
 		}
 		t.Commands = append(parent.Commands, t.Commands...)
 		t.Checks = append(parent.Checks, t.Checks...)
@@ -39,12 +39,12 @@ func (t *TestSpec) resolve(parent *TestSpec) {
 		}
 		if t.Config == nil {
 			t.Config = &ConfigSpec{}
-			t.Config.resolve(nil)
+			t.Config.Resolve(nil)
 		}
 	}
 
 	for _, child := range t.Children {
-		child.resolve(t)
+		child.Resolve(t)
 	}
 }
 

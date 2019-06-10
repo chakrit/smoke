@@ -13,7 +13,8 @@ type ConfigSpec struct {
 	Timeout     *time.Duration `yaml:"timeout"`
 }
 
-func (c *ConfigSpec) resolve(parent *ConfigSpec) {
+// Resolve() applies parent-child value overriding and extension logic.
+func (c *ConfigSpec) Resolve(parent *ConfigSpec) {
 	def := lib.DefaultConfig
 
 	if parent != nil {
@@ -29,20 +30,20 @@ func (c *ConfigSpec) resolve(parent *ConfigSpec) {
 	}
 }
 
-func (n *ConfigSpec) RunConfig() (*lib.Config, error) {
-	if n == nil {
+func (c *ConfigSpec) RunConfig() (*lib.Config, error) {
+	if c == nil {
 		return nil, nil
 	}
 
 	runcfg := &lib.Config{
-		WorkDir:     n.WorkDir,
-		Env:         n.Env,
-		Interpreter: n.Interpreter,
+		WorkDir:     c.WorkDir,
+		Env:         c.Env,
+		Interpreter: c.Interpreter,
 	}
-	if n.Timeout == nil {
+	if c.Timeout == nil {
 		runcfg.Timeout = lib.DefaultConfig.Timeout
 	} else {
-		runcfg.Timeout = *n.Timeout
+		runcfg.Timeout = *c.Timeout
 	}
 
 	return runcfg, nil

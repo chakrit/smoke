@@ -12,15 +12,19 @@ import (
 )
 
 func processFile(filename string) {
-	file, err := testspecs.Load(filename)
+	file, err := os.Open(filename)
 	if err != nil {
 		p.Error(errors.Wrap(err, filename))
+		os.Exit(1)
 		return
 	}
 
-	tests, err := file.Tests()
+	defer file.Close()
+
+	tests, err := testspecs.Load(file, filename)
 	if err != nil {
 		p.Error(errors.Wrap(err, filename))
+		os.Exit(1)
 		return
 	}
 

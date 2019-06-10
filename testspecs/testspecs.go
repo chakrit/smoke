@@ -1,28 +1,23 @@
 package testspecs
 
 import (
-	"os"
+	"io"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/chakrit/smoke/engine"
+
 	"gopkg.in/yaml.v3"
 )
 
-func Load(filename string) (*TestSpec, error) {
-	infile, err := os.Open(filename)
-	if err != nil {
-		return nil, errors.Wrap(err, "i/o error")
-	}
-	defer infile.Close()
-
+func Load(reader io.Reader, filename string) ([]*engine.Test, error) {
 	root := &TestSpec{}
-	if err := yaml.NewDecoder(infile).Decode(root); err != nil {
+	if err := yaml.NewDecoder(reader).Decode(root); err != nil {
 		return nil, err
 	}
 
 	root.Filename = filename
-	root.resolve(nil)
-	return root, nil
+	root.Resolve(nil)
+	return root.Tests()
 }
 
 func resolveStrings(strs ...string) string {
