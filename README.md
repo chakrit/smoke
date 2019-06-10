@@ -20,6 +20,16 @@ help you.
 *WARNING:* This is not a replacement for proper testing regiment. Use your own
 judgement and discretion if you are dealing with mission-critical software.
 
+# INSTALL
+
+With GO GET
+
+```go
+go get -v -u github.com/chakrit/smoke
+```
+
+Other repositories will be provided if there is demand.
+
 # WORKFLOW
 
 SMOKE assumes the following **1st-run** workflow:
