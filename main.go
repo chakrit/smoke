@@ -3,10 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/chakrit/smoke/engine"
 	"github.com/chakrit/smoke/internal/p"
-	"github.com/chakrit/smoke/specs"
-	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 )
 
@@ -44,43 +41,4 @@ func main() {
 	for _, filename := range filenames {
 		processFile(filename)
 	}
-}
-
-func processFile(filename string) {
-	file, err := specs.Load(filename)
-	if err != nil {
-		p.Error(errors.Wrap(err, filename))
-		return
-	}
-
-	tests, err := file.Tests()
-	if err != nil {
-		p.Error(errors.Wrap(err, filename))
-		return
-	}
-
-	if shouldList {
-		for _, test := range tests {
-			p.Test(test)
-			for _, cmd := range test.Commands {
-				p.Command(test, cmd)
-			}
-		}
-		return
-	}
-
-	var (
-		run     engine.Runner = engine.DefaultRunner{Hooks: p.Hooks{}}
-		results []engine.TestResult
-	)
-
-	for _, test := range tests {
-		if result, err := run.Test(test); err != nil {
-			p.Error(err)
-		} else {
-			results = append(results, result)
-		}
-	}
-
-	// TODO: Evaluate/commit/print results
 }

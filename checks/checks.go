@@ -26,8 +26,8 @@ type (
 	}
 
 	Output struct {
-		Name string
-		Data []byte
+		Name string `yaml:"name"`
+		Data []byte `yaml:"data,flow"`
 	}
 )
 

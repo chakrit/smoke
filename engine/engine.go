@@ -12,23 +12,11 @@ var (
 type (
 	Command string
 
-	CommandResult struct {
-		Command Command
-		Err     error
-		Checks  []checks.Output
-	}
-
 	Test struct {
-		Name      string  `yaml:"name"`
-		RunConfig *Config `yaml:"config"`
+		Name      string
+		RunConfig *Config
 
-		Commands []Command          `yaml:"commands"`
-		Checks   []checks.Interface `yaml:"checks"`
-	}
-
-	TestResult struct {
-		Test     *Test
-		Err      error
-		Commands []CommandResult
+		Commands []Command
+		Checks   []checks.Interface
 	}
 )

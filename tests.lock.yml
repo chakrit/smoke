@@ -1,0 +1,130 @@
+- test:
+      name: tests.yml \ Basics
+      runconfig:
+          workdir: ""
+          env: []
+          interpreter: /bin/sh
+          timeout: 5s
+      commands:
+        - go build -o ./bin/smoke -v .
+        - goimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go
+        - ./bin/smoke
+      checks:
+        - {}
+        - {}
+        - {}
+  err: null
+  commands:
+    - command: go build -o ./bin/smoke -v .
+      err: null
+      checks:
+        - name: exitcode
+          data: [48]
+        - name: stdout
+          data: []
+        - name: stderr
+          data: []
+    - command: goimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go
+      err: null
+      checks:
+        - name: exitcode
+          data: [48]
+        - name: stdout
+          data: []
+        - name: stderr
+          data: []
+    - command: ./bin/smoke
+      err: null
+      checks:
+        - name: exitcode
+          data: [49]
+        - name: stdout
+          data: []
+        - name: stderr
+          data: [114, 101, 113, 117, 105, 114, 101, 115, 32, 97, 32, 115, 112, 101,
+              99, 32, 102, 105, 108, 101, 110, 97, 109, 101, 46, 10]
+- test:
+      name: tests.yml \ Self Tests
+      runconfig:
+          workdir: ""
+          env: []
+          interpreter: /bin/sh
+          timeout: 5s
+      commands:
+        - go build -o ./bin/smoke -v .
+        - ./bin/smoke --no-color --list tests.yml
+      checks:
+        - {}
+        - {}
+        - {}
+  err: null
+  commands:
+    - command: go build -o ./bin/smoke -v .
+      err: null
+      checks:
+        - name: exitcode
+          data: [48]
+        - name: stdout
+          data: []
+        - name: stderr
+          data: []
+    - command: ./bin/smoke --no-color --list tests.yml
+      err: null
+      checks:
+        - name: exitcode
+          data: [48]
+        - name: stdout
+          data: [61, 61, 62, 32, 116, 101, 115, 116, 115, 46, 121, 109, 108, 32, 92,
+              32, 66, 97, 115, 105, 99, 115, 32, 27, 91, 48, 109, 10, 45, 45, 62,
+              32, 103, 111, 32, 98, 117, 105, 108, 100, 32, 45, 111, 32, 46, 47, 98,
+              105, 110, 47, 115, 109, 111, 107, 101, 32, 45, 118, 32, 46, 32, 27,
+              91, 48, 109, 10, 45, 45, 62, 32, 103, 111, 105, 109, 112, 111, 114,
+              116, 115, 32, 45, 108, 32, 42, 46, 103, 111, 32, 99, 104, 101, 99, 107,
+              115, 47, 42, 46, 103, 111, 32, 101, 110, 103, 105, 110, 101, 47, 42,
+              46, 103, 111, 32, 105, 110, 116, 101, 114, 110, 97, 108, 47, 112, 47,
+              42, 46, 103, 111, 32, 115, 112, 101, 99, 115, 47, 42, 46, 103, 111,
+              32, 27, 91, 48, 109, 10, 45, 45, 62, 32, 46, 47, 98, 105, 110, 47, 115,
+              109, 111, 107, 101, 32, 27, 91, 48, 109, 10, 61, 61, 62, 32, 116, 101,
+              115, 116, 115, 46, 121, 109, 108, 32, 92, 32, 83, 101, 108, 102, 32,
+              84, 101, 115, 116, 115, 32, 27, 91, 48, 109, 10, 45, 45, 62, 32, 103,
+              111, 32, 98, 117, 105, 108, 100, 32, 45, 111, 32, 46, 47, 98, 105, 110,
+              47, 115, 109, 111, 107, 101, 32, 45, 118, 32, 46, 32, 27, 91, 48, 109,
+              10, 45, 45, 62, 32, 46, 47, 98, 105, 110, 47, 115, 109, 111, 107, 101,
+              32, 45, 45, 110, 111, 45, 99, 111, 108, 111, 114, 32, 45, 45, 108, 105,
+              115, 116, 32, 116, 101, 115, 116, 115, 46, 121, 109, 108, 32, 27, 91,
+              48, 109, 10, 61, 61, 62, 32, 116, 101, 115, 116, 115, 46, 121, 109,
+              108, 32, 92, 32, 69, 114, 114, 111, 114, 115, 32, 27, 91, 48, 109, 10,
+              45, 45, 62, 32, 117, 110, 107, 110, 111, 119, 110, 99, 111, 109, 109,
+              97, 110, 100, 95, 97, 115, 100, 102, 113, 119, 101, 114, 122, 99, 120,
+              118, 32, 27, 91, 48, 109, 10, 101, 120, 105, 116, 101, 100, 46, 32,
+              27, 91, 48, 109, 10]
+        - name: stderr
+          data: []
+- test:
+      name: tests.yml \ Errors
+      runconfig:
+          workdir: ""
+          env: []
+          interpreter: /bin/sh
+          timeout: 5s
+      commands:
+        - unknowncommand_asdfqwerzcxv
+      checks:
+        - {}
+        - {}
+        - {}
+  err: null
+  commands:
+    - command: unknowncommand_asdfqwerzcxv
+      err: null
+      checks:
+        - name: exitcode
+          data: [49, 50, 55]
+        - name: stdout
+          data: []
+        - name: stderr
+          data: [47, 98, 105, 110, 47, 115, 104, 58, 32, 108, 105, 110, 101, 32, 49,
+              58, 32, 117, 110, 107, 110, 111, 119, 110, 99, 111, 109, 109, 97, 110,
+              100, 95, 97, 115, 100, 102, 113, 119, 101, 114, 122, 99, 120, 118, 58,
+              32, 99, 111, 109, 109, 97, 110, 100, 32, 110, 111, 116, 32, 102, 111,
+              117, 110, 100, 10]

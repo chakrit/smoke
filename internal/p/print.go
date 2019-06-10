@@ -10,6 +10,7 @@ import (
 )
 
 var ( // stylesheet :p
+	cAction   string
 	cTitle    string
 	cTitleEm  string
 	cSubtitle string
@@ -26,6 +27,7 @@ func DisableColors(disable bool) {
 }
 
 func setColors() {
+	cAction = ansi.ColorCode("cyan+b")
 	cTitle = ansi.Magenta
 	cTitleEm = ansi.ColorCode("magenta+b")
 	cSubtitle = ansi.Blue
@@ -45,6 +47,10 @@ func Bye() {
 
 func Error(err error) {
 	fmt.Fprintln(os.Stderr, cError+err.Error(), cReset)
+}
+
+func Action(s string) {
+	fmt.Println(cAction+"≋≋>", strings.ToUpper(s), cReset)
 }
 
 // testing flow
@@ -76,4 +82,9 @@ func CommandResult(result engine.CommandResult, err error) {
 				chk.Name, line)
 		}
 	}
+}
+
+// lockfile flow
+func WriteFile(filename string) {
+	fmt.Println(cSubtitle+"-->", filename, cReset)
 }
