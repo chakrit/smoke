@@ -9,7 +9,9 @@ import (
 )
 
 type Test struct {
-	Name     string   `yaml:"name"`
+	Name     string `yaml:"name"`
+	Filename string
+
 	Config   *Config  `yaml:"config"`
 	Commands []string `yaml:"commands"`
 	Checks   []string `yaml:"checks"`
@@ -20,8 +22,9 @@ type Test struct {
 func (t *Test) resolve(parent *Test) {
 	if parent != nil {
 		if parent.Name != "" {
-			t.Name = parent.Name + ` \ ` + t.Name
+			t.Name = parent.Name + `\` + t.Name
 		}
+		t.Filename = parent.Filename
 		if t.Config == nil {
 			t.Config = parent.Config
 		} else {
@@ -31,6 +34,7 @@ func (t *Test) resolve(parent *Test) {
 		t.Checks = append(parent.Checks, t.Checks...)
 
 	} else {
+		t.Name = "(" + t.Filename + ") " + t.Name
 		if t.Config == nil {
 			t.Config = &Config{}
 			t.Config.resolve(nil)

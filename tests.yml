@@ -3,9 +3,9 @@ config:
   interpreter: /bin/sh
   timeout: 5s
 checks:
+  - exitcode
   - stdout
   - stderr
-  - exitcode
 tests:
   - name: Basics
     commands:

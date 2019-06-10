@@ -57,19 +57,26 @@ func processFile(filename string) {
 
 	if shouldList {
 		for _, test := range tests {
-			p.TestDesc(filename, test)
+			p.Test(test)
+			for _, cmd := range test.Commands {
+				p.Command(test, cmd)
+			}
 		}
 		return
 	}
 
-	var results []engine.TestResult
+	var (
+		run     engine.Runner = engine.DefaultRunner{Hooks: p.Hooks{}}
+		results []engine.TestResult
+	)
+
 	for _, test := range tests {
-		p.BeforeTest(filename, test)
-		if result, err := engine.RunTest(test); err != nil {
+		if result, err := run.Test(test); err != nil {
 			p.Error(err)
 		} else {
-			p.AfterTest(filename, test, result)
 			results = append(results, result)
 		}
 	}
+
+	// TODO: Evaluate/commit/print results
 }

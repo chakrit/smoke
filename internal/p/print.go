@@ -10,6 +10,7 @@ import (
 
 var trim = strings.TrimSpace
 
+// utility CLI logs
 func UsageHint(s string) {
 	fmt.Fprintln(os.Stderr, s)
 }
@@ -22,28 +23,32 @@ func Error(err error) {
 	fmt.Fprintln(os.Stderr, err)
 }
 
-func TestDesc(filename string, t *engine.Test) {
-	fmt.Printf("%s: %s\n", filename, t.Name)
-	for _, cmd := range t.Commands {
-		fmt.Printf("\t%s\n", cmd)
+// testing flow
+func Test(t *engine.Test) {
+	fmt.Printf("==> %s\n", t.Name)
+}
+
+func Command(_ *engine.Test, cmd engine.Command) {
+	fmt.Printf("--> %s\n", cmd)
+}
+
+func TestResult(result engine.TestResult, err error) {
+	if err != nil {
+		fmt.Println("ERR", err)
+		return
 	}
 }
 
-func BeforeTest(filename string, t *engine.Test) {
-	fmt.Printf("%s: %s\n", filename, t.Name)
-}
+func CommandResult(result engine.CommandResult, err error) {
+	if err != nil {
+		fmt.Println("ERR", err)
+		return
+	}
 
-func AfterTest(filename string, t *engine.Test, result engine.TestResult) {
-	for _, cmd := range result.Commands {
-		cmdstr := trim(string(cmd.Command))
-		if cmd.Err != nil {
-			fmt.Printf("\t%s: %s\n", cmdstr, cmd.Err)
-			continue
-		}
-
-		fmt.Printf("\t%s:\n", cmdstr)
-		for _, chk := range cmd.Checks {
-			fmt.Printf("\t\t%s:\t%s\n", chk.Name, trim(string(chk.Data)))
+	for _, chk := range result.Checks {
+		lines := strings.Split(string(chk.Data), "\n")
+		for _, line := range lines {
+			fmt.Printf("%8s: %s\n", chk.Name, line)
 		}
 	}
 }

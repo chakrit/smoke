@@ -10,10 +10,29 @@ import (
 	"github.com/pkg/errors"
 )
 
-func RunTest(t *Test) (TestResult, error) {
+type Runner interface {
+	Test(t *Test) (TestResult, error)
+	Command(t *Test, cmd Command) (CommandResult, error)
+}
+
+type RunHooks interface {
+	BeforeTest(t *Test)
+	BeforeCommand(t *Test, cmd Command)
+	AfterCommand(t *Test, cmd Command, result CommandResult, err error)
+	AfterTest(t *Test, result TestResult, err error)
+}
+
+type DefaultRunner struct{ Hooks RunHooks }
+
+func (r DefaultRunner) Test(t *Test) (result TestResult, err error) {
+	if r.Hooks != nil {
+		r.Hooks.BeforeTest(t)
+		defer func() { r.Hooks.AfterTest(t, result, err) }()
+	}
+
 	var results []CommandResult
 	for _, cmd := range t.Commands {
-		if result, err := RunCommand(t.RunConfig, cmd, t.Checks); err != nil {
+		if result, err := r.Command(t, cmd); err != nil {
 			return TestResult{}, err
 		} else {
 			results = append(results, result)
@@ -26,7 +45,13 @@ func RunTest(t *Test) (TestResult, error) {
 	}, nil
 }
 
-func RunCommand(config *Config, c Command, chks []checks.Interface) (CommandResult, error) {
+func (r DefaultRunner) Command(t *Test, c Command) (result CommandResult, err error) {
+	if r.Hooks != nil {
+		r.Hooks.BeforeCommand(t, c)
+		defer func() { r.Hooks.AfterCommand(t, c, result, err) }()
+	}
+
+	config := t.RunConfig
 	if config == nil {
 		config = DefaultConfig
 	}
@@ -56,7 +81,7 @@ func RunCommand(config *Config, c Command, chks []checks.Interface) (CommandResu
 	fmt.Fprintln(inbuf, string(c))
 	cmd.Stdin = inbuf
 
-	if err := checks.PrepareAll(cmd, chks); err != nil {
+	if err := checks.PrepareAll(cmd, t.Checks); err != nil {
 		return CommandResult{}, errors.Wrap(err, "checks")
 	}
 	if err := cmd.Start(); err != nil {
@@ -82,7 +107,7 @@ func RunCommand(config *Config, c Command, chks []checks.Interface) (CommandResu
 		}
 	}
 
-	if outputs, err := checks.CollectAll(cmd, chks); err != nil {
+	if outputs, err := checks.CollectAll(cmd, t.Checks); err != nil {
 		return CommandResult{}, errors.Wrap(err, "checks")
 	} else {
 		return CommandResult{

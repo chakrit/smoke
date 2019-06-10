@@ -19,10 +19,11 @@ type (
 	}
 
 	Test struct {
-		Name      string             `yaml:"name"`
-		RunConfig *Config            `yaml:"run"`
-		Commands  []Command          `yaml:"commands"`
-		Checks    []checks.Interface `yaml:"checks"`
+		Name      string  `yaml:"name"`
+		RunConfig *Config `yaml:"config"`
+
+		Commands []Command          `yaml:"commands"`
+		Checks   []checks.Interface `yaml:"checks"`
 	}
 
 	TestResult struct {
