@@ -12,7 +12,10 @@ var (
 	shouldShowHelp bool
 	shouldList     bool
 	shouldCommit   bool
-	noColors       bool
+
+	noColors  bool
+	verbosity int
+	quietness int
 )
 
 func main() {
@@ -21,6 +24,8 @@ func main() {
 	pflag.BoolVarP(&shouldCommit, "commit", "c", false, "Commit all test output.")
 	pflag.StringVarP(&lockFile, "lockfile", "f", "", "Filename to read lock result from (or write to, when committing).")
 	pflag.BoolVar(&noColors, "no-color", false, "Turns off console coloring.")
+	pflag.CountVarP(&verbosity, "verbose", "v", "Increase log output chattiness.")
+	pflag.CountVarP(&quietness, "quiet", "q", "Decrease log output chattiness.")
 	pflag.Parse()
 
 	if shouldShowHelp {
@@ -30,12 +35,12 @@ func main() {
 
 	filenames := pflag.Args()
 	if len(filenames) < 1 {
-		p.UsageHint("requires a spec filename.")
+		p.Usage("requires a spec filename.")
 		os.Exit(1)
 		return
 	}
 
-	p.DisableColors(noColors)
+	p.Configure(!noColors, verbosity, quietness)
 	defer p.Bye()
 
 	for _, filename := range filenames {

@@ -3,9 +3,7 @@ package p
 import (
 	"fmt"
 	"os"
-	"strings"
 
-	"github.com/chakrit/smoke/engine"
 	"github.com/mgutz/ansi"
 )
 
@@ -20,16 +18,16 @@ var ( // stylesheet :p
 	cError  string
 	cPass   string
 	cFail   string
+
+	verbosity int
 )
 
-func init() { setColors(false) }
+func init() { Configure(true, 1, 0) }
 
-func DisableColors(disable bool) {
-	setColors(disable)
-}
+func Configure(colored bool, v int, q int) {
+	verbosity = 1 + v - q
 
-func setColors(disable bool) {
-	if disable {
+	if !colored {
 		cAction = ""
 		cTitle = ""
 		cTitleEm = ""
@@ -52,68 +50,15 @@ func setColors(disable bool) {
 	}
 }
 
-// utility CLI logs
-func UsageHint(s string) {
-	fmt.Fprintln(os.Stderr, s)
-}
-
-func Bye() {
-	fmt.Println(cLowkey+"exited.", cReset)
-}
-
-func ExitError(err error) {
-	if err == nil {
+func output(level int, s string, args ...interface{}) {
+	if level >= verbosity {
 		return
 	}
 
-	fmt.Fprintln(os.Stderr, cError+"ERR", err.Error(), cReset)
-	os.Exit(1)
-}
-
-func Action(s string) {
-	fmt.Println(cAction+"≋≋>", strings.ToUpper(s), cReset)
-}
-
-// testing flow
-func Test(t *engine.Test) {
-	fmt.Println(cTitle+"==>", cTitleEm+t.Name, cReset)
-}
-
-func Command(_ *engine.Test, cmd engine.Command) {
-	fmt.Println(cSubtitle+"-->", cmd, cReset)
-}
-
-func TestResult(_ engine.TestResult, err error) {
-	if err != nil {
-		fmt.Println(ansi.Red, "ERR", err, ansi.Reset)
-		return
+	if len(args) == 0 {
+		_, _ = os.Stdout.WriteString(s)
+	} else {
+		_, _ = os.Stdout.WriteString(fmt.Sprintf(s, args...))
 	}
-}
-
-func CommandResult(result engine.CommandResult, err error) {
-	if err != nil {
-		fmt.Println("ERR", err)
-		return
-	}
-
-	for _, chk := range result.Checks {
-		lines := strings.Split(string(chk.Data), "\n")
-		for _, line := range lines {
-			fmt.Printf(ansi.LightBlack+"%8s:"+ansi.Reset+" %s\n",
-				chk.Name, line)
-		}
-	}
-}
-
-// lockfile flow
-func FileAccess(filename string) {
-	fmt.Println(cSubtitle+"-->", filename, cReset)
-}
-
-func Pass(s string) {
-	fmt.Println(cPass+"  ✔", s, cReset)
-}
-
-func Fail(s string) {
-	fmt.Println(cFail+"  ✘", s, cReset)
+	_, _ = os.Stdout.WriteString("\n")
 }
