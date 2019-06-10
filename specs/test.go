@@ -22,7 +22,7 @@ type Test struct {
 func (t *Test) resolve(parent *Test) {
 	if parent != nil {
 		if parent.Name != "" {
-			t.Name = parent.Name + `\` + t.Name
+			t.Name = parent.Name + ` \ ` + t.Name
 		}
 		t.Filename = parent.Filename
 		if t.Config == nil {
@@ -34,7 +34,9 @@ func (t *Test) resolve(parent *Test) {
 		t.Checks = append(parent.Checks, t.Checks...)
 
 	} else {
-		t.Name = "(" + t.Filename + ") " + t.Name
+		if t.Name == "" {
+			t.Name = t.Filename
+		}
 		if t.Config == nil {
 			t.Config = &Config{}
 			t.Config.resolve(nil)

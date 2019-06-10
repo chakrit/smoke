@@ -6,9 +6,33 @@ import (
 	"strings"
 
 	"github.com/chakrit/smoke/engine"
+	"github.com/mgutz/ansi"
 )
 
-var trim = strings.TrimSpace
+var ( // stylesheet :p
+	cTitle    string
+	cTitleEm  string
+	cSubtitle string
+	cDeEm     string
+	cError    string
+	cReset    string
+)
+
+func init() { setColors() }
+
+func DisableColors(disable bool) {
+	ansi.DisableColors(disable)
+	setColors()
+}
+
+func setColors() {
+	cTitle = ansi.Magenta
+	cTitleEm = ansi.ColorCode("magenta+b")
+	cSubtitle = ansi.Blue
+	cDeEm = ansi.LightBlack
+	cError = ansi.Red
+	cReset = ansi.Reset
+}
 
 // utility CLI logs
 func UsageHint(s string) {
@@ -16,25 +40,25 @@ func UsageHint(s string) {
 }
 
 func Bye() {
-	fmt.Println("exited.")
+	fmt.Println(cDeEm+"exited.", cReset)
 }
 
 func Error(err error) {
-	fmt.Fprintln(os.Stderr, err)
+	fmt.Fprintln(os.Stderr, cError+err.Error(), cReset)
 }
 
 // testing flow
 func Test(t *engine.Test) {
-	fmt.Printf("==> %s\n", t.Name)
+	fmt.Println(cTitle+"==>", cTitleEm+t.Name, cReset)
 }
 
 func Command(_ *engine.Test, cmd engine.Command) {
-	fmt.Printf("--> %s\n", cmd)
+	fmt.Println(cSubtitle+"-->", cmd, cReset)
 }
 
-func TestResult(result engine.TestResult, err error) {
+func TestResult(_ engine.TestResult, err error) {
 	if err != nil {
-		fmt.Println("ERR", err)
+		fmt.Println(ansi.Red, "ERR", err, ansi.Reset)
 		return
 	}
 }
@@ -48,7 +72,8 @@ func CommandResult(result engine.CommandResult, err error) {
 	for _, chk := range result.Checks {
 		lines := strings.Split(string(chk.Data), "\n")
 		for _, line := range lines {
-			fmt.Printf("%8s: %s\n", chk.Name, line)
+			fmt.Printf(ansi.LightBlack+"%8s:"+ansi.Reset+" %s\n",
+				chk.Name, line)
 		}
 	}
 }
