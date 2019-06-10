@@ -18,6 +18,10 @@ func (c *ConfigSpec) Resolve(parent *ConfigSpec) {
 	def := lib.DefaultConfig
 
 	if parent != nil {
+		// TODO: This should instead be relative, not just a first non-empty.
+		//   i.e. when parent has workdir = "somefolder" and child has
+		//   workdir = "..", this should result in the current folder being
+		//   workdir
 		c.WorkDir = resolveStrings(c.WorkDir, parent.WorkDir)
 		c.Env = append(parent.Env, c.Env...)
 		c.Interpreter = resolveStrings(c.Interpreter, parent.Interpreter)
