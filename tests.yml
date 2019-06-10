@@ -19,3 +19,16 @@ tests:
   - name: Errors
     commands:
       - unknowncommand_asdfqwerzcxv # should error
+  - name: Run Configs
+    tests:
+      - name: WorkDir
+        config:
+          workdir: ./internal/p
+        commands:
+          - ls # should list the files in internal/p
+      - name: Env
+        config:
+          env:
+            - "YEAS_ITS=Working"
+        commands:
+          - echo $YEAS_ITS

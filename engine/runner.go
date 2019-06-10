@@ -80,6 +80,12 @@ func (r DefaultRunner) Command(t *Test, c Command) (result CommandResult, err er
 
 	fmt.Fprintln(inbuf, string(c))
 	cmd.Stdin = inbuf
+	if config.WorkDir != "" {
+		cmd.Dir = config.WorkDir
+	}
+	if len(config.Env) > 0 {
+		cmd.Env = config.Env
+	}
 
 	if err := checks.PrepareAll(cmd, t.Checks); err != nil {
 		return CommandResult{}, errors.Wrap(err, "checks")

@@ -70,3 +70,31 @@
         - name: stderr
           data:
             - '/bin/sh: line 1: unknowncommand_asdfqwerzcxv: command not found'
+- name: tests.yml \ Run Configs \ WorkDir
+  commands:
+    - command: ls
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - funcs.go
+            - hooks.go
+            - print.go
+        - name: stderr
+          data:
+            - ""
+- name: tests.yml \ Run Configs \ Env
+  commands:
+    - command: echo $YEAS_ITS
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - Working
+        - name: stderr
+          data:
+            - ""
