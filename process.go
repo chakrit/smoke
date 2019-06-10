@@ -1,8 +1,10 @@
 package main
 
 import (
+	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/chakrit/smoke/engine"
@@ -13,20 +15,12 @@ import (
 
 func processFile(filename string) {
 	file, err := os.Open(filename)
-	if err != nil {
-		p.Error(errors.Wrap(err, filename))
-		os.Exit(1)
-		return
-	}
+	p.ExitError(errors.Wrap(err, filename))
 
 	defer file.Close()
 
 	tests, err := testspecs.Load(file, filename)
-	if err != nil {
-		p.Error(errors.Wrap(err, filename))
-		os.Exit(1)
-		return
-	}
+	p.ExitError(errors.Wrap(err, filename))
 
 	if shouldList {
 		listTests(tests)
@@ -38,7 +32,10 @@ func processFile(filename string) {
 	if shouldCommit {
 		p.Action("Writing Lock File")
 		commitResults(filename, results)
-	} // else { diffResults(results) }
+	} else {
+		p.Action("Comparing Lock File")
+		compareResults(filename, results)
+	}
 }
 
 func listTests(tests []*engine.Test) {
@@ -78,32 +75,60 @@ func runTests(tests []*engine.Test) []engine.TestResult {
 
 func commitResults(filename string, results []engine.TestResult) {
 	tmpfile, err := ioutil.TempFile("", "smoke-*.yml")
-	if err != nil {
-		p.Error(errors.Wrap(err, "commit"))
-		os.Exit(1)
-		return
-	}
+	p.ExitError(errors.Wrap(err, "commit"))
 
 	defer tmpfile.Close()
 
-	p.WriteFile(tmpfile.Name())
-	if err := engine.SaveAll(tmpfile, results); err != nil {
-		p.Error(errors.Wrap(err, "commit"))
-		os.Exit(1)
-		return
-	}
+	p.FileAccess(tmpfile.Name())
+	p.ExitError(errors.Wrap(err, "commit"))
 
-	// write succesful, move into place
+	// write successful, move into place
 	target := lockFilename(filename)
-	p.WriteFile(target)
+	p.FileAccess(target)
 	tmpfile.Close()
 
-	if err := os.Rename(tmpfile.Name(), target); err != nil {
-		p.Error(errors.Wrap(err, "commit"))
-		os.Exit(1)
-		return
+	err = os.Rename(tmpfile.Name(), target)
+	p.ExitError(errors.Wrap(err, "commit"))
+}
+
+func compareResults(filename string, results []engine.TestResult) {
+	target := lockFilename(filename)
+	_, err := os.Stat(target)
+	if os.IsNotExist(err) {
+		p.ExitError(errors.New("Lock file does not exists, `--commit` the first one?"))
 	}
 
+	tmpfile, err := ioutil.TempFile("", "smoke-*.yml")
+	p.ExitError(errors.Wrap(err, "compare"))
+
+	defer tmpfile.Close()
+
+	// we defer to diff for now :p
+	// TODO: Actual diffing in the CLI
+	p.FileAccess("diff " + target + " " + tmpfile.Name())
+	cmd := exec.Command("diff", target, tmpfile.Name())
+
+	inpipe, err := cmd.StdinPipe()
+	p.ExitError(errors.Wrap(err, "compare"))
+	outfile, err := cmd.StdoutPipe()
+	p.ExitError(errors.Wrap(err, "compare"))
+	errfile, err := cmd.StderrPipe()
+	p.ExitError(errors.Wrap(err, "compare"))
+
+	go func() { _, _ = io.Copy(inpipe, os.Stdin) }()
+	go func() { _, _ = io.Copy(os.Stdout, outfile) }()
+	go func() { _, _ = io.Copy(os.Stderr, errfile) }()
+
+	err = cmd.Run()
+	if _, ok := err.(*exec.ExitError); err != nil && !ok {
+		p.ExitError(errors.Wrap(err, "compare"))
+	} else if code := cmd.ProcessState.ExitCode(); code == 0 {
+		p.Pass("Stable.")
+		os.Exit(0)
+	} else {
+		p.Fail("Changes Detected.")
+		os.Exit(code)
+	}
 }
 
 func lockFilename(filename string) string {

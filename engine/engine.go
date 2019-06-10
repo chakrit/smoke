@@ -19,4 +19,16 @@ type (
 		Commands []Command
 		Checks   []checks.Interface
 	}
+
+	CommandResult struct {
+		Command Command `yaml:"command"`
+		Err     error
+		Checks  []checks.Output
+	}
+
+	TestResult struct {
+		Test     *Test `yaml:"test"`
+		Err      error
+		Commands []CommandResult
+	}
 )

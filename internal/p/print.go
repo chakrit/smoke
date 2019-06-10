@@ -10,30 +10,46 @@ import (
 )
 
 var ( // stylesheet :p
-	cAction   string
 	cTitle    string
 	cTitleEm  string
 	cSubtitle string
-	cDeEm     string
-	cError    string
+	cLowkey   string
 	cReset    string
+
+	cAction string
+	cError  string
+	cPass   string
+	cFail   string
 )
 
-func init() { setColors() }
+func init() { setColors(false) }
 
 func DisableColors(disable bool) {
-	ansi.DisableColors(disable)
-	setColors()
+	setColors(disable)
 }
 
-func setColors() {
-	cAction = ansi.ColorCode("cyan+b")
-	cTitle = ansi.Magenta
-	cTitleEm = ansi.ColorCode("magenta+b")
-	cSubtitle = ansi.Blue
-	cDeEm = ansi.LightBlack
-	cError = ansi.Red
-	cReset = ansi.Reset
+func setColors(disable bool) {
+	if disable {
+		cAction = ""
+		cTitle = ""
+		cTitleEm = ""
+		cSubtitle = ""
+		cLowkey = ""
+		cError = ""
+		cReset = ""
+		cPass = ""
+		cFail = ""
+	} else {
+		cAction = ansi.ColorCode("cyan+b")
+		cTitle = ansi.Magenta
+		cTitleEm = ansi.ColorCode("magenta+b")
+		cSubtitle = ansi.Blue
+		cLowkey = ansi.LightBlack
+		cError = ansi.Red
+		cReset = ansi.Reset
+		cPass = ansi.ColorCode("green+b")
+		cFail = ansi.ColorCode("red+b")
+	}
 }
 
 // utility CLI logs
@@ -42,11 +58,16 @@ func UsageHint(s string) {
 }
 
 func Bye() {
-	fmt.Println(cDeEm+"exited.", cReset)
+	fmt.Println(cLowkey+"exited.", cReset)
 }
 
-func Error(err error) {
-	fmt.Fprintln(os.Stderr, cError+err.Error(), cReset)
+func ExitError(err error) {
+	if err == nil {
+		return
+	}
+
+	fmt.Fprintln(os.Stderr, cError+"ERR", err.Error(), cReset)
+	os.Exit(1)
 }
 
 func Action(s string) {
@@ -85,6 +106,14 @@ func CommandResult(result engine.CommandResult, err error) {
 }
 
 // lockfile flow
-func WriteFile(filename string) {
+func FileAccess(filename string) {
 	fmt.Println(cSubtitle+"-->", filename, cReset)
+}
+
+func Pass(s string) {
+	fmt.Println(cPass+"  ✔", s, cReset)
+}
+
+func Fail(s string) {
+	fmt.Println(cFail+"  ✘", s, cReset)
 }
