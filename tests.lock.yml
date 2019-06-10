@@ -1,0 +1,72 @@
+- name: tests.yml \ Basics
+  commands:
+    - command: go build -o ./bin/smoke -v .
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - ""
+        - name: stderr
+          data:
+            - ""
+    - command: goimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go
+      checks:
+        - name: exitcode
+          data:
+            - "2"
+        - name: stdout
+          data:
+            - ""
+        - name: stderr
+          data:
+            - 'stat specs/*.go: no such file or directory'
+    - command: ./bin/smoke
+      checks:
+        - name: exitcode
+          data:
+            - "1"
+        - name: stdout
+          data:
+            - ""
+        - name: stderr
+          data:
+            - requires a spec filename.
+- name: tests.yml \ Self Tests
+  commands:
+    - command: go build -o ./bin/smoke -v .
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - ""
+        - name: stderr
+          data:
+            - ""
+    - command: ./bin/smoke --no-color --list tests.yml
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - ""
+        - name: stderr
+          data:
+            - ""
+- name: tests.yml \ Errors
+  commands:
+    - command: unknowncommand_asdfqwerzcxv
+      checks:
+        - name: exitcode
+          data:
+            - "127"
+        - name: stdout
+          data:
+            - ""
+        - name: stderr
+          data:
+            - '/bin/sh: line 1: unknowncommand_asdfqwerzcxv: command not found'

@@ -9,6 +9,7 @@ import (
 
 	"github.com/chakrit/smoke/engine"
 	"github.com/chakrit/smoke/internal/p"
+	"github.com/chakrit/smoke/resultspecs"
 	"github.com/chakrit/smoke/testspecs"
 	"github.com/pkg/errors"
 )
@@ -80,6 +81,7 @@ func commitResults(filename string, results []engine.TestResult) {
 	defer tmpfile.Close()
 
 	p.FileAccess(tmpfile.Name())
+	err = resultspecs.Save(tmpfile, results)
 	p.ExitError(errors.Wrap(err, "commit"))
 
 	// write successful, move into place
@@ -100,8 +102,10 @@ func compareResults(filename string, results []engine.TestResult) {
 
 	tmpfile, err := ioutil.TempFile("", "smoke-*.yml")
 	p.ExitError(errors.Wrap(err, "compare"))
-
 	defer tmpfile.Close()
+
+	err = resultspecs.Save(tmpfile, results)
+	p.ExitError(errors.Wrap(err, "compare"))
 
 	// we defer to diff for now :p
 	// TODO: Actual diffing in the CLI
