@@ -7,12 +7,12 @@ import (
 
 	"github.com/chakrit/smoke/engine"
 	"github.com/chakrit/smoke/internal/p"
-	"github.com/chakrit/smoke/specs"
+	"github.com/chakrit/smoke/testspecs"
 	"github.com/pkg/errors"
 )
 
 func processFile(filename string) {
-	file, err := specs.Load(filename)
+	file, err := testspecs.Load(filename)
 	if err != nil {
 		p.Error(errors.Wrap(err, filename))
 		return

@@ -1,4 +1,4 @@
-package specs
+package testspecs
 
 import (
 	"time"
@@ -6,14 +6,14 @@ import (
 	lib "github.com/chakrit/smoke/engine"
 )
 
-type Config struct {
+type ConfigSpec struct {
 	WorkDir     string         `yaml:"workdir"`
 	Env         []string       `yaml:"env"`
 	Interpreter string         `yaml:"interpreter"`
 	Timeout     *time.Duration `yaml:"timeout"`
 }
 
-func (c *Config) resolve(parent *Config) {
+func (c *ConfigSpec) resolve(parent *ConfigSpec) {
 	def := lib.DefaultConfig
 
 	if parent != nil {
@@ -29,7 +29,7 @@ func (c *Config) resolve(parent *Config) {
 	}
 }
 
-func (n *Config) RunConfig() (*lib.Config, error) {
+func (n *ConfigSpec) RunConfig() (*lib.Config, error) {
 	if n == nil {
 		return nil, nil
 	}

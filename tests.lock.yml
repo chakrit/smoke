@@ -28,11 +28,13 @@
       err: null
       checks:
         - name: exitcode
-          data: [48]
+          data: [50]
         - name: stdout
           data: []
         - name: stderr
-          data: []
+          data: [115, 116, 97, 116, 32, 115, 112, 101, 99, 115, 47, 42, 46, 103, 111,
+              58, 32, 110, 111, 32, 115, 117, 99, 104, 32, 102, 105, 108, 101, 32,
+              111, 114, 32, 100, 105, 114, 101, 99, 116, 111, 114, 121, 10]
     - command: ./bin/smoke
       err: null
       checks:

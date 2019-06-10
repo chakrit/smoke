@@ -1,4 +1,4 @@
-package specs
+package testspecs
 
 import (
 	"strings"
@@ -8,18 +8,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Test struct {
+type TestSpec struct {
 	Name     string `yaml:"name"`
 	Filename string
 
-	Config   *Config  `yaml:"config"`
-	Commands []string `yaml:"commands"`
-	Checks   []string `yaml:"checks"`
-	Children []*Test  `yaml:"tests"`
+	Config   *ConfigSpec `yaml:"config"`
+	Commands []string    `yaml:"commands"`
+	Checks   []string    `yaml:"checks"`
+	Children []*TestSpec `yaml:"tests"`
 }
 
 // resolve() applies parent-child value overriding and extension logic.
-func (t *Test) resolve(parent *Test) {
+func (t *TestSpec) resolve(parent *TestSpec) {
 	if parent != nil {
 		if parent.Name != "" {
 			t.Name = parent.Name + ` \ ` + t.Name
@@ -38,7 +38,7 @@ func (t *Test) resolve(parent *Test) {
 			t.Name = t.Filename
 		}
 		if t.Config == nil {
-			t.Config = &Config{}
+			t.Config = &ConfigSpec{}
 			t.Config.resolve(nil)
 		}
 	}
@@ -48,7 +48,7 @@ func (t *Test) resolve(parent *Test) {
 	}
 }
 
-func (t *Test) Tests() (tests []*engine.Test, err error) {
+func (t *TestSpec) Tests() (tests []*engine.Test, err error) {
 	if len(t.Commands) > 0 {
 		var commands []engine.Command
 		for _, cmdstr := range t.Commands {

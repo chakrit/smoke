@@ -1,4 +1,4 @@
-package specs
+package testspecs
 
 import (
 	"os"
@@ -8,14 +8,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Load(filename string) (*Test, error) {
+func Load(filename string) (*TestSpec, error) {
 	infile, err := os.Open(filename)
 	if err != nil {
 		return nil, errors.Wrap(err, "i/o error")
 	}
 	defer infile.Close()
 
-	root := &Test{}
+	root := &TestSpec{}
 	if err := yaml.NewDecoder(infile).Decode(root); err != nil {
 		return nil, err
 	}
