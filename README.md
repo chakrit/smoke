@@ -3,7 +3,7 @@
 > Microsoft claims that after code reviews, "smoke testing is the most
 > cost-effective method for identifying and fixing defects in software"
 >
-> <cite>[Wikipedia](https://en.wikipedia.org/wiki/Smoke_testing_(software\))</cite>
+> <cite>[Wikipedia][0]</cite>
 
 SMOKE is a CLI tool that helps you quickly and easily do smoke testing on your
 software. It works on the simple assumption that **code that produces the same
@@ -117,3 +117,5 @@ tests:
 # LICENSE
 
 MIT
+
+[0]: https://en.wikipedia.org/wiki/Smoke_testing_(software)
