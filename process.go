@@ -133,5 +133,5 @@ func compareResults(filename string, results []engine.TestResult) {
 
 func lockFilename(filename string) string {
 	ext := filepath.Ext(filename)
-	return filename[:len(ext)+1] + ".lock" + ext
+	return filename[:len(filename)-len(ext)] + ".lock" + ext
 }
