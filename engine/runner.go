@@ -74,11 +74,11 @@ func (r DefaultRunner) Command(t *Test, c Command) (result CommandResult, err er
 	defer close(errc)
 	defer func() {
 		if cmd.Process != nil {
-			cmd.Process.Kill()
+			_ = cmd.Process.Kill()
 		}
 	}()
 
-	fmt.Fprintln(inbuf, string(c))
+	_, _ = fmt.Fprintln(inbuf, string(c))
 	cmd.Stdin = inbuf
 	if config.WorkDir != "" {
 		cmd.Dir = config.WorkDir
@@ -98,12 +98,14 @@ func (r DefaultRunner) Command(t *Test, c Command) (result CommandResult, err er
 
 	select {
 	case <-time.After(config.Timeout):
+		_ = cmd.Process.Kill()
+		_ = <-errc // wait() should return by now (prevent send on close)
 		return CommandResult{
 			Command: c,
 			Err:     errors.New("timeout"),
 		}, nil
 
-	case err := <-errc: // Wait() returned
+	case err = <-errc: // Wait() returned
 		if err == nil {
 			// success case
 		} else if _, ok := err.(*exec.ExitError); ok {
