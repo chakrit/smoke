@@ -3,13 +3,9 @@ package checks
 import (
 	"os/exec"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 var (
-	ErrCheck = errors.New("check problem")
-
 	index = map[string]Interface{}
 	all   = []Interface{
 		StdoutCheck,

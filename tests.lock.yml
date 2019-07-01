@@ -80,7 +80,6 @@
         - name: stdout
           data:
             - funcs.go
-            - hooks.go
             - print.go
         - name: stderr
           data:

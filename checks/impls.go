@@ -3,9 +3,19 @@ package checks
 import (
 	"bytes"
 	"os/exec"
-
-	"github.com/pkg/errors"
+	"strconv"
 )
+
+var ExitCodeCheck = &impl{
+	name: "exitcode",
+	prepare: func(cmd *exec.Cmd) error {
+		return nil
+	},
+	collect: func(cmd *exec.Cmd) ([]byte, error) {
+		str := strconv.Itoa(cmd.ProcessState.ExitCode())
+		return []byte(str), nil
+	},
+}
 
 var StdoutCheck = &impl{
 	name: "stdout",
@@ -15,7 +25,7 @@ var StdoutCheck = &impl{
 	},
 	collect: func(cmd *exec.Cmd) ([]byte, error) {
 		if buf, ok := cmd.Stdout.(*bytes.Buffer); !ok {
-			return nil, errors.WithMessage(ErrCheck, "stdout is not a buffer")
+			return nil, NewError("stdout", "not a buffer")
 		} else {
 			return buf.Bytes(), nil
 		}
@@ -30,7 +40,7 @@ var StderrCheck = &impl{
 	},
 	collect: func(cmd *exec.Cmd) ([]byte, error) {
 		if buf, ok := cmd.Stderr.(*bytes.Buffer); !ok {
-			return nil, errors.WithMessage(ErrCheck, "stderr is not a buffer")
+			return nil, NewError("stderr", "not a buffer")
 		} else {
 			return buf.Bytes(), nil
 		}

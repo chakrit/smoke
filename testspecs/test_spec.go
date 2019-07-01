@@ -3,9 +3,10 @@ package testspecs
 import (
 	"strings"
 
+	"golang.org/x/xerrors"
+
 	"github.com/chakrit/smoke/checks"
 	"github.com/chakrit/smoke/engine"
-	"github.com/pkg/errors"
 )
 
 type TestSpec struct {
@@ -59,8 +60,7 @@ func (t *TestSpec) Tests() (tests []*engine.Test, err error) {
 		var allchecks []checks.Interface
 		for _, name := range t.Checks {
 			if check := checks.Parse(name); check == nil {
-				return nil, errors.WithMessage(engine.ErrSpec,
-					"unknown check `"+name+"`")
+				return nil, xerrors.New("unknown check `" + name + "`")
 			} else {
 				allchecks = append(allchecks, check)
 			}

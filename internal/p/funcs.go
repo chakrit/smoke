@@ -15,11 +15,7 @@ func Bye()            { output(1, cLowkey+"exited."+cReset) }
 func Error(err error) { output(-1, cError+"ERR "+err.Error()+cReset) }
 func Action(s string) { output(1, cAction+"≋≋> "+strings.ToUpper(s)+cReset) }
 
-func ExitError(err error) {
-	if err == nil {
-		return
-	}
-
+func Exit(err error) {
 	Error(err)
 	os.Exit(1)
 }

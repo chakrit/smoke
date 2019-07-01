@@ -11,17 +11,21 @@ import (
 	"github.com/chakrit/smoke/internal/p"
 	"github.com/chakrit/smoke/resultspecs"
 	"github.com/chakrit/smoke/testspecs"
-	"github.com/pkg/errors"
+	"golang.org/x/xerrors"
 )
 
 func processFile(filename string) {
 	file, err := os.Open(filename)
-	p.ExitError(errors.Wrap(err, filename))
+	if err != nil {
+		p.Exit(xerrors.Errorf(filename+": %w", err))
+	}
 
 	defer file.Close()
 
 	tests, err := testspecs.Load(file, filename)
-	p.ExitError(errors.Wrap(err, filename))
+	if err != nil {
+		p.Exit(xerrors.Errorf(filename+": %w", err))
+	}
 
 	if shouldList {
 		listTests(tests)
@@ -50,14 +54,20 @@ func listTests(tests []*engine.Test) {
 
 func runTests(tests []*engine.Test) []engine.TestResult {
 	var (
-		run     engine.Runner = engine.DefaultRunner{Hooks: p.Hooks{}}
+		failed = false
+		hooks  = Hooks{
+			WrapErr: func(t *engine.Test, err error) error {
+				return xerrors.Errorf(t.Name+": %w", err)
+			},
+		}
+
+		run     engine.Runner = engine.DefaultRunner{Hooks: hooks}
 		results []engine.TestResult
-		failed  = false
 	)
 
 	for _, test := range tests {
 		if result, err := run.Test(test); err != nil {
-			// error already printed by p.Hooks{}
+			// error already printed by Hooks{}
 			failed = true
 			break
 		} else {
@@ -76,64 +86,85 @@ func runTests(tests []*engine.Test) []engine.TestResult {
 
 func commitResults(filename string, results []engine.TestResult) {
 	tmpfile, err := ioutil.TempFile("", "smoke-*.yml")
-	p.ExitError(errors.Wrap(err, "commit"))
+	if err != nil {
+		p.Exit(xerrors.Errorf("commit: %w", err))
+	}
 
 	defer tmpfile.Close()
 
 	p.FileAccess(tmpfile.Name())
-	err = resultspecs.Save(tmpfile, results)
-	p.ExitError(errors.Wrap(err, "commit"))
+	if err = resultspecs.Save(tmpfile, results); err != nil {
+		p.Exit(xerrors.Errorf("commit "+tmpfile.Name()+": %w", err))
+	}
 
 	// write successful, move into place
 	target := lockFilename(filename)
 	p.FileAccess(target)
 	tmpfile.Close()
 
-	err = os.Rename(tmpfile.Name(), target)
-	p.ExitError(errors.Wrap(err, "commit"))
-
-	p.Pass("Commit " + target)
+	if err = os.Rename(tmpfile.Name(), target); err != nil {
+		p.Exit(xerrors.Errorf("commit "+target+": %w", err))
+	} else {
+		p.Pass("Commit " + target)
+	}
 }
 
 func compareResults(filename string, results []engine.TestResult) {
 	target := lockFilename(filename)
 	_, err := os.Stat(target)
 	if os.IsNotExist(err) {
-		p.ExitError(errors.New("Lock file does not exists, `--commit` the first one?"))
+		p.Exit(xerrors.New("Lock file does not exists, `--commit` the first one?"))
 	}
 
 	tmpfile, err := ioutil.TempFile("", "smoke-*.yml")
-	p.ExitError(errors.Wrap(err, "compare"))
-	defer tmpfile.Close()
+	if tmpfile != nil {
+		defer tmpfile.Close()
+	}
+	if err != nil {
+		p.Exit(xerrors.Errorf("compare: %w", err))
+	}
 
-	err = resultspecs.Save(tmpfile, results)
-	p.ExitError(errors.Wrap(err, "compare"))
+	if err = resultspecs.Save(tmpfile, results); err != nil {
+		p.Exit(xerrors.Errorf("compare "+tmpfile.Name()+": %w", err))
+	}
 
 	// we defer to diff for now :p
 	// TODO: Actual diffing in the CLI
 	p.FileAccess("diff " + target + " " + tmpfile.Name())
-	cmd := exec.Command("diff", target, tmpfile.Name())
+	cmd := exec.Command("/usr/bin/env",
+		"diff",
+		"--context=3",
+		target,
+		tmpfile.Name())
 
-	inpipe, err := cmd.StdinPipe()
-	p.ExitError(errors.Wrap(err, "compare"))
-	outfile, err := cmd.StdoutPipe()
-	p.ExitError(errors.Wrap(err, "compare"))
-	errfile, err := cmd.StderrPipe()
-	p.ExitError(errors.Wrap(err, "compare"))
+	var (
+		infile  io.WriteCloser
+		outfile io.ReadCloser
+		errfile io.ReadCloser
+	)
 
-	go func() { _, _ = io.Copy(inpipe, os.Stdin) }()
+	if infile, err = cmd.StdinPipe(); err != nil {
+		p.Exit(xerrors.Errorf("compare "+target+": %w", err))
+	} else if outfile, err = cmd.StdoutPipe(); err != nil {
+		p.Exit(xerrors.Errorf("compare "+target+": %w", err))
+	} else if errfile, err = cmd.StderrPipe(); err != nil {
+		p.Exit(xerrors.Errorf("compare "+target+": %w", err))
+	}
+
+	go func() { _, _ = io.Copy(infile, os.Stdin) }()
 	go func() { _, _ = io.Copy(os.Stdout, outfile) }()
 	go func() { _, _ = io.Copy(os.Stderr, errfile) }()
 
 	err = cmd.Run()
 	if _, ok := err.(*exec.ExitError); err != nil && !ok {
-		p.ExitError(errors.Wrap(err, "compare"))
+		p.Exit(xerrors.Errorf("compare "+target+": %w", err))
 	} else if code := cmd.ProcessState.ExitCode(); code == 0 {
+		// err == nil || err is exec.ExitIfErr
 		p.Pass("Stable.")
 		os.Exit(0)
 	} else {
 		p.Fail("Changes Detected.")
-		os.Exit(code)
+		os.Exit(code) // mirror /usr/bin/diff's exit code
 	}
 }
 

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/chakrit/smoke/engine"
-
 	"gopkg.in/yaml.v3"
 )
 
@@ -17,7 +16,11 @@ func Load(reader io.Reader, filename string) ([]*engine.Test, error) {
 
 	root.Filename = filename
 	root.Resolve(nil)
-	return root.Tests()
+	if tests, err := root.Tests(); err != nil {
+		return nil, err
+	} else {
+		return tests, nil
+	}
 }
 
 func resolveStrings(strs ...string) string {

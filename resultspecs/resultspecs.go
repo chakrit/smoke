@@ -5,11 +5,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/pkg/errors"
-
-	"gopkg.in/yaml.v3"
-
 	"github.com/chakrit/smoke/engine"
+	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -61,7 +58,7 @@ func Save(w io.Writer, results []engine.TestResult) error {
 	}
 
 	if err := yaml.NewEncoder(w).Encode(specs); err != nil {
-		return errors.Wrap(err, "save")
+		return err
 	}
 
 	return nil
