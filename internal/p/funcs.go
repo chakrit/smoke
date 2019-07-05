@@ -8,7 +8,6 @@ import (
 	"github.com/chakrit/smoke/engine"
 	"github.com/chakrit/smoke/resultspecs"
 	"github.com/mgutz/ansi"
-	dmp "github.com/sergi/go-diff/diffmatchpatch"
 )
 
 // utility CLI logs
@@ -65,17 +64,12 @@ func CommandEdit(edit resultspecs.CommandEdit) {
 
 func CheckEdit(edit resultspecs.CheckEdit) {
 	c, prefix := colorByAction(edit.Action)
-	output(0, c+"    "+prefix+" "+edit.Name+cReset)
+	output(0, c+prefix+"     "+edit.Name+cReset)
 }
 
-func Diffs(diffs []dmp.Diff) {
-	lines := strings.Split(dmp.New().DiffPrettyText(diffs), "\n")
-	for _, line := range lines {
-		output(0, "        "+line)
-	}
-}
-
-func DMPOutput(s string) {
+func LineEdit(edit resultspecs.LineEdit) {
+	c, prefix := colorByAction(edit.Action)
+	output(0, c+prefix+"       "+edit.Line+cReset)
 }
 
 func colorByAction(action resultspecs.Action) (string, string) {

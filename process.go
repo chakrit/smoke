@@ -161,7 +161,9 @@ func compareResults(filename string, results []engine.TestResult) {
 				}
 
 				p.CheckEdit(chkedit)
-				p.Diffs(chkedit.Diffs)
+				for _, lineedit := range chkedit.Lines {
+					p.LineEdit(lineedit)
+				}
 			}
 		}
 	}

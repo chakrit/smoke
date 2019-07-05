@@ -1,10 +1,14 @@
 package resultspecs
 
 import (
-	"strings"
+	"github.com/chakrit/smoke/internal/gendiff"
+)
 
-	dmp "github.com/sergi/go-diff/diffmatchpatch"
-	"golang.org/x/xerrors"
+const (
+	Equal = Action(iota)
+	Added
+	Removed
+	InnerChanges
 )
 
 type (
@@ -15,154 +19,227 @@ type (
 		Action   Action
 		Commands []CommandEdit
 	}
-
 	CommandEdit struct {
 		Name   string
 		Action Action
 		Checks []CheckEdit
 	}
-
 	CheckEdit struct {
 		Name   string
 		Action Action
-		Diffs  []dmp.Diff
+		Lines  []LineEdit
+	}
+	LineEdit struct {
+		Line   string
+		Action Action
+	}
+
+	testDiff struct {
+		oldSpecs []TestResultSpec
+		newSpecs []TestResultSpec
+	}
+	commandDiff struct {
+		oldCmds []CommandResultSpec
+		newCmds []CommandResultSpec
+	}
+	checkDiff struct {
+		oldChks []CheckOutputSpec
+		newChks []CheckOutputSpec
+	}
+	lineDiff struct {
+		oldLines []string
+		newLines []string
 	}
 )
 
-const (
-	Equal = Action(iota)
-	Added
-	Removed
-	InnerChanges
+var (
+	_ gendiff.Interface = testDiff{}
+	_ gendiff.Interface = commandDiff{}
+	_ gendiff.Interface = checkDiff{}
+	_ gendiff.Interface = lineDiff{}
 )
+
+func (d testDiff) LeftLen() int           { return len(d.oldSpecs) }
+func (d testDiff) RightLen() int          { return len(d.newSpecs) }
+func (d testDiff) Equal(l, r int) bool    { return d.oldSpecs[l].Name == d.newSpecs[r].Name }
+func (d commandDiff) LeftLen() int        { return len(d.oldCmds) }
+func (d commandDiff) RightLen() int       { return len(d.newCmds) }
+func (d commandDiff) Equal(l, r int) bool { return d.oldCmds[l].Command == d.newCmds[r].Command }
+func (d checkDiff) LeftLen() int          { return len(d.oldChks) }
+func (d checkDiff) RightLen() int         { return len(d.newChks) }
+func (d checkDiff) Equal(l, r int) bool   { return d.oldChks[l].Name == d.newChks[r].Name }
+func (d lineDiff) LeftLen() int           { return len(d.oldLines) }
+func (d lineDiff) RightLen() int          { return len(d.newLines) }
+func (d lineDiff) Equal(l, r int) bool    { return d.oldLines[l] == d.newLines[r] }
 
 func Compare(oldspecs []TestResultSpec, newspecs []TestResultSpec) (edits []TestEdit, differs bool, err error) {
-	emit := func(edit TestEdit) {
-		differs = differs || edit.Action != Equal
-		edits = append(edits, edit)
-	}
+	diffs := gendiff.Make(testDiff{oldspecs, newspecs})
 
-	oldidx, newidx := 0, 0
-	for oldidx < len(oldspecs) && newidx < len(newspecs) {
-		oldspec, newspec := oldspecs[oldidx], newspecs[newidx]
+	for _, d := range diffs {
+		switch d.Op {
+		case gendiff.Delete:
+			for lidx := d.Lstart; lidx < d.Lend; lidx++ {
+				differs, edits = true, append(edits, TestEdit{
+					Name:   oldspecs[lidx].Name,
+					Action: Removed,
+				})
+			}
 
-		// delete before inserts
-		if oldspec.Name != newspec.Name {
-			emit(TestEdit{oldspec.Name, Removed, nil})
-			oldidx += 1
-			continue
+		case gendiff.Insert:
+			for ridx := d.Rstart; ridx < d.Rend; ridx++ {
+				differs, edits = true, append(edits, TestEdit{
+					Name:   newspecs[ridx].Name,
+					Action: Added,
+				})
+			}
+
+		case gendiff.Match:
+			for lidx, ridx := d.Lstart, d.Rstart; lidx < d.Lend && ridx < d.Rend; lidx, ridx = lidx+1, ridx+1 {
+				oldspec, newspec := oldspecs[lidx], newspecs[ridx]
+				if cmdedits, cmddiffers, err := compareCmds(oldspec.Commands, newspec.Commands); err != nil {
+					return nil, true, err
+				} else if cmddiffers {
+					differs, edits = true, append(edits, TestEdit{
+						Name:     oldspec.Name,
+						Action:   InnerChanges,
+						Commands: cmdedits,
+					})
+				} else {
+					edits = append(edits, TestEdit{
+						Name:   newspec.Name,
+						Action: Equal,
+					})
+				}
+			}
 		}
-
-		if cmdedits, differs_, err := compareCommands(oldspec.Commands, newspec.Commands); err != nil {
-			return nil, true, xerrors.Errorf("compare: %w", err)
-		} else if !differs_ {
-			emit(TestEdit{oldspec.Name, Equal, nil})
-		} else {
-			emit(TestEdit{oldspec.Name, InnerChanges, cmdedits})
-		}
-
-		oldidx += 1
-		newidx += 1
 	}
 
-	// oldspecs or newspecs have EOF, these are either all-deletes or all-inserts
-	// we search for delete before inserts
-	for ; oldidx < len(oldspecs); oldidx++ {
-		emit(TestEdit{oldspecs[oldidx].Name, Removed, nil})
-	}
-	for ; newidx < len(newspecs); newidx++ {
-		emit(TestEdit{newspecs[newidx].Name, Added, nil})
-	}
 	return
 }
 
-func compareCommands(oldcmds []CommandResultSpec, newcmds []CommandResultSpec) (edits []CommandEdit, differs bool, err error) {
-	emit := func(edit CommandEdit) {
-		differs = differs || edit.Action != Equal
-		edits = append(edits, edit)
-	}
+func compareCmds(oldcmds []CommandResultSpec, newcmds []CommandResultSpec) (edits []CommandEdit, differs bool, err error) {
+	diffs := gendiff.Make(commandDiff{oldcmds, newcmds})
 
-	oldidx, newidx := 0, 0
-	for oldidx < len(oldcmds) && newidx < len(newcmds) {
-		oldcmd, newcmd := oldcmds[oldidx], newcmds[newidx]
+	for _, d := range diffs {
+		switch d.Op {
+		case gendiff.Delete:
+			for lidx := d.Lstart; lidx < d.Lend; lidx++ {
+				differs, edits = true, append(edits, CommandEdit{
+					Name:   oldcmds[lidx].Command,
+					Action: Removed,
+				})
+			}
 
-		// delete before inserts
-		if oldcmd.Command != newcmd.Command {
-			emit(CommandEdit{oldcmd.Command, Removed, nil})
-			oldidx += 1
-			continue
+		case gendiff.Insert:
+			for ridx := d.Rstart; ridx < d.Rend; ridx++ {
+				differs, edits = true, append(edits, CommandEdit{
+					Name:   newcmds[ridx].Command,
+					Action: Added,
+				})
+			}
+
+		case gendiff.Match:
+			for lidx, ridx := d.Lstart, d.Rstart; lidx < d.Lend && ridx < d.Rend; lidx, ridx = lidx+1, ridx+1 {
+				oldcmd, newcmd := oldcmds[lidx], newcmds[ridx]
+				if chkedits, chkdiffers, err := compareChecks(oldcmd.Checks, newcmd.Checks); err != nil {
+					return nil, true, err
+				} else if chkdiffers {
+					differs, edits = true, append(edits, CommandEdit{
+						Name:   oldcmd.Command,
+						Action: InnerChanges,
+						Checks: chkedits,
+					})
+				} else {
+					edits = append(edits, CommandEdit{
+						Name:   newcmd.Command,
+						Action: Equal,
+					})
+				}
+			}
+
 		}
-
-		if chkedits, differs_, err := compareChecks(oldcmd.Checks, newcmd.Checks); err != nil {
-			return nil, true, xerrors.Errorf("compare: %w", err)
-		} else if !differs_ {
-			emit(CommandEdit{oldcmd.Command, Equal, nil})
-		} else {
-			emit(CommandEdit{oldcmd.Command, InnerChanges, chkedits})
-		}
-
-		oldidx += 1
-		newidx += 1
 	}
 
-	// delete before inserts
-	for ; oldidx < len(oldcmds); oldidx++ {
-		emit(CommandEdit{oldcmds[oldidx].Command, Removed, nil})
-	}
-	for ; newidx < len(newcmds); newidx++ {
-		emit(CommandEdit{newcmds[newidx].Command, Added, nil})
-	}
 	return
 }
 
 func compareChecks(oldchks []CheckOutputSpec, newchks []CheckOutputSpec) (edits []CheckEdit, differs bool, err error) {
-	emit := func(edit CheckEdit) {
-		differs = differs || edit.Action != Equal
-		edits = append(edits, edit)
-	}
+	diffs := gendiff.Make(checkDiff{oldchks, newchks})
 
-	oldidx, newidx := 0, 0
-	for oldidx < len(oldchks) && newidx < len(newchks) {
-		oldchk, newchk := oldchks[oldidx], newchks[newidx]
+	for _, d := range diffs {
+		switch d.Op {
+		case gendiff.Delete:
+			for lidx := d.Lstart; lidx < d.Lend; lidx++ {
+				differs, edits = true, append(edits, CheckEdit{
+					Name:   oldchks[lidx].Name,
+					Action: Removed,
+				})
+			}
 
-		// delete before inserts
-		if oldchk.Name != newchk.Name {
-			emit(CheckEdit{oldchk.Name, Removed, nil})
-			oldidx += 1
-			continue
-		}
+		case gendiff.Insert:
+			for ridx := d.Rstart; ridx < d.Rend; ridx++ {
+				differs, edits = true, append(edits, CheckEdit{
+					Name:   newchks[ridx].Name,
+					Action: Added,
+				})
+			}
 
-		oldoutput := strings.Join(oldchk.Data, "\n")
-		newoutput := strings.Join(newchk.Data, "\n")
-
-		diffs := dmp.New().DiffMain(oldoutput, newoutput, false)
-		if len(diffs) == 0 {
-			emit(CheckEdit{oldchk.Name, Equal, nil})
-		} else {
-			allequals := true
-			for _, diff := range diffs {
-				if diff.Type != dmp.DiffEqual {
-					allequals = false
-					break
+		case gendiff.Match:
+			for lidx, ridx := d.Lstart, d.Rstart; lidx < d.Lend && ridx < d.Rend; lidx, ridx = lidx+1, ridx+1 {
+				oldchk, newchk := oldchks[lidx], newchks[ridx]
+				if lineedits, linediffers, err := compareLines(oldchk.Data, newchk.Data); err != nil {
+					return nil, true, err
+				} else if linediffers {
+					differs, edits = true, append(edits, CheckEdit{
+						Name:   oldchk.Name,
+						Action: InnerChanges,
+						Lines:  lineedits,
+					})
+				} else {
+					edits = append(edits, CheckEdit{
+						Name:   newchk.Name,
+						Action: Equal,
+					})
 				}
 			}
-			if !allequals {
-				emit(CheckEdit{oldchk.Name, InnerChanges, diffs})
-			} else {
-				emit(CheckEdit{oldchk.Name, Equal, nil})
-			}
+
 		}
-
-		oldidx += 1
-		newidx += 1
 	}
 
-	// delete before inserts
-	for ; oldidx < len(oldchks); oldidx++ {
-		emit(CheckEdit{oldchks[oldidx].Name, Removed, nil})
+	return
+}
+
+func compareLines(oldlines []string, newlines []string) (edits []LineEdit, differs bool, err error) {
+	diffs := gendiff.Make(lineDiff{oldlines, newlines})
+
+	for _, d := range diffs {
+		switch d.Op {
+		case gendiff.Delete:
+			for lidx := d.Lstart; lidx < d.Lend; lidx++ {
+				differs, edits = true, append(edits, LineEdit{
+					Line:   oldlines[lidx],
+					Action: Removed,
+				})
+			}
+
+		case gendiff.Insert:
+			for ridx := d.Rstart; ridx < d.Rend; ridx++ {
+				differs, edits = true, append(edits, LineEdit{
+					Line:   newlines[ridx],
+					Action: Added,
+				})
+			}
+
+		case gendiff.Match:
+			for lidx, ridx := d.Lstart, d.Rstart; lidx < d.Lend && ridx < d.Rend; lidx, ridx = lidx+1, ridx+1 {
+				edits = append(edits, LineEdit{
+					Line:   oldlines[d.Lstart],
+					Action: Equal,
+				})
+			}
+
+		}
 	}
-	for ; newidx < len(newchks); newidx++ {
-		emit(CheckEdit{newchks[newidx].Name, Added, nil})
-	}
+
 	return
 }
