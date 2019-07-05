@@ -40,7 +40,7 @@ func CommandResult(result engine.CommandResult, err error) {
 		lines := strings.Split(string(chk.Data), "\n")
 		for _, line := range lines {
 			output(3, ansi.LightBlack+"%8s:"+ansi.Reset+" %s",
-				chk.Name, line)
+				chk.Check.Name(), line)
 		}
 	}
 }

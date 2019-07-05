@@ -1,9 +1,9 @@
 package resultspecs
 
 import (
-	"bytes"
 	"io"
-	"strings"
+
+	"golang.org/x/xerrors"
 
 	"github.com/chakrit/smoke/engine"
 	"gopkg.in/yaml.v3"
@@ -24,14 +24,19 @@ type (
 	}
 )
 
-func FromTestResult(result engine.TestResult) TestResultSpec {
+func FromTestResult(result engine.TestResult) (TestResultSpec, error) {
 	var commands []CommandResultSpec
 	for _, cmd := range result.Commands {
 		var checks []CheckOutputSpec
 		for _, chk := range cmd.Checks {
+			lines, err := chk.Check.Format(chk.Data)
+			if err != nil {
+				return TestResultSpec{}, xerrors.Errorf("resultspecs: %w", err)
+			}
+
 			checks = append(checks, CheckOutputSpec{
-				Name: chk.Name,
-				Data: formatCheckOutput(chk.Data),
+				Name: chk.Check.Name(),
+				Data: lines,
 			})
 		}
 
@@ -44,7 +49,7 @@ func FromTestResult(result engine.TestResult) TestResultSpec {
 	return TestResultSpec{
 		Name:     result.Test.Name,
 		Commands: commands,
-	}
+	}, nil
 }
 
 func Load(r io.Reader) (specs []TestResultSpec, err error) {
@@ -54,17 +59,16 @@ func Load(r io.Reader) (specs []TestResultSpec, err error) {
 func Save(w io.Writer, results []engine.TestResult) error {
 	var specs []TestResultSpec
 	for _, result := range results {
-		specs = append(specs, FromTestResult(result))
+		if spec, err := FromTestResult(result); err != nil {
+			return err
+		} else {
+			specs = append(specs, spec)
+		}
 	}
 
 	if err := yaml.NewEncoder(w).Encode(specs); err != nil {
 		return err
+	} else {
+		return nil
 	}
-
-	return nil
-}
-
-func formatCheckOutput(data []byte) []string {
-	data = bytes.Trim(data, "\r\n")
-	return strings.Split(string(data), "\n")
 }

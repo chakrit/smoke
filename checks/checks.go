@@ -6,24 +6,31 @@ import (
 )
 
 var (
+	ExitCode Interface = exitCode{}
+	Stdout   Interface = stdout{}
+	Stderr   Interface = stderr{}
+	// TODO: Binary versions
+	// TODO: File-based checks
+
 	index = map[string]Interface{}
 	all   = []Interface{
-		StdoutCheck,
-		StderrCheck,
-		ExitCodeCheck,
+		ExitCode,
+		Stdout,
+		Stderr,
 	}
 )
 
 type (
 	Interface interface {
 		Name() string
-		Prepare(cmd *exec.Cmd) error
-		Collect(cmd *exec.Cmd) ([]byte, error)
+		Prepare(*exec.Cmd) error
+		Collect(*exec.Cmd) ([]byte, error)
+		Format([]byte) ([]string, error)
 	}
 
-	Output struct {
-		Name string `yaml:"name"`
-		Data []byte `yaml:"data,flow"`
+	Result struct {
+		Check Interface
+		Data  []byte
 	}
 )
 
@@ -32,18 +39,6 @@ func init() {
 		index[check.Name()] = check
 	}
 }
-
-type impl struct {
-	name    string
-	prepare func(cmd *exec.Cmd) error
-	collect func(cmd *exec.Cmd) ([]byte, error)
-}
-
-var _ Interface = &impl{}
-
-func (i *impl) Name() string                          { return i.name }
-func (i *impl) Prepare(cmd *exec.Cmd) error           { return i.prepare(cmd) }
-func (i *impl) Collect(cmd *exec.Cmd) ([]byte, error) { return i.collect(cmd) }
 
 func Parse(line string) Interface {
 	// TODO: more complex file system checks
@@ -60,17 +55,17 @@ func PrepareAll(cmd *exec.Cmd, chks []Interface) error {
 	return nil
 }
 
-func CollectAll(cmd *exec.Cmd, chks []Interface) ([]Output, error) {
-	var outputs []Output
+func CollectAll(cmd *exec.Cmd, chks []Interface) ([]Result, error) {
+	var results []Result
 	for _, chk := range chks {
 		if data, err := chk.Collect(cmd); err != nil {
 			return nil, err
 		} else {
-			outputs = append(outputs, Output{
-				Name: chk.Name(),
-				Data: data,
+			results = append(results, Result{
+				Check: chk,
+				Data:  data,
 			})
 		}
 	}
-	return outputs, nil
+	return results, nil
 }

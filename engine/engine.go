@@ -17,7 +17,7 @@ type (
 
 	CommandResult struct {
 		Command Command `yaml:"command"`
-		Checks  []checks.Output
+		Checks  []checks.Result
 	}
 
 	TestResult struct {
