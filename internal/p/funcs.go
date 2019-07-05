@@ -48,8 +48,8 @@ func CommandResult(result engine.CommandResult, err error) {
 
 // lockfile flow
 func FileAccess(f string) { output(2, cSubtitle+"--> "+f+cReset) }
-func Pass(s string)       { output(-1, cPass+"  ✔ "+s+cReset) }
-func Fail(s string)       { output(-1, cFail+"  ✘ "+s+cReset) }
+func Pass(s string)       { output(-1, cPass+"\n  ✔ "+s+"\n"+cReset) }
+func Fail(s string)       { output(-1, cFail+"\n  ✘ "+s+"\n"+cReset) }
 
 // diff flow
 func TestEdit(edit resultspecs.TestEdit) {
