@@ -33,7 +33,44 @@
         - name: stderr
           data:
             - requires a spec filename.
-- name: tests.yml \ Self Tests
+- name: tests.yml \ Unit Tests
+  commands:
+    - command: go test -v ./...
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - "?   \tgithub.com/chakrit/smoke\t[no test files]"
+            - "?   \tgithub.com/chakrit/smoke/checks\t[no test files]"
+            - "?   \tgithub.com/chakrit/smoke/engine\t[no test files]"
+            - === RUN   TestMake
+            - === RUN   TestMake/Diff_"a"_against_""_result_in_1_edits
+            - === RUN   TestMake/Diff_""_against_"a"_result_in_1_edits
+            - === RUN   TestMake/Diff_"aaa"_against_"bbb"_result_in_2_edits
+            - === RUN   TestMake/Diff_"abce"_against_"acde"_result_in_5_edits
+            - === RUN   TestMake/Diff_"aaabbbccceee"_against_"aaacccdddeee"_result_in_5_edits
+            - === RUN   TestMake/Diff_"bbbcccddd"_against_"ccceee"_result_in_4_edits
+            - '--- PASS: TestMake (0.00s)'
+            - '    --- PASS: TestMake/Diff_"a"_against_""_result_in_1_edits (0.00s)'
+            - '    --- PASS: TestMake/Diff_""_against_"a"_result_in_1_edits (0.00s)'
+            - '    --- PASS: TestMake/Diff_"aaa"_against_"bbb"_result_in_2_edits (0.00s)'
+            - '    --- PASS: TestMake/Diff_"abce"_against_"acde"_result_in_5_edits
+              (0.00s)'
+            - '    --- PASS: TestMake/Diff_"aaabbbccceee"_against_"aaacccdddeee"_result_in_5_edits
+              (0.00s)'
+            - '    --- PASS: TestMake/Diff_"bbbcccddd"_against_"ccceee"_result_in_4_edits
+              (0.00s)'
+            - PASS
+            - "ok  \tgithub.com/chakrit/smoke/internal/gendiff\t(cached)"
+            - "?   \tgithub.com/chakrit/smoke/internal/p\t[no test files]"
+            - "?   \tgithub.com/chakrit/smoke/resultspecs\t[no test files]"
+            - "?   \tgithub.com/chakrit/smoke/testspecs\t[no test files]"
+        - name: stderr
+          data:
+            - ""
+- name: tests.yml \ Smoke Tests
   commands:
     - command: go build -o ./bin/smoke -v .
       checks:

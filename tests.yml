@@ -12,7 +12,10 @@ tests:
       - go build -o ./bin/smoke -v .
       - goimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go
       - ./bin/smoke
-  - name: Self Tests
+  - name: Unit Tests
+    commands:
+      - go test -v ./...
+  - name: Smoke Tests
     commands:
       - go build -o ./bin/smoke -v .
       - ./bin/smoke --no-color --list tests.yml
