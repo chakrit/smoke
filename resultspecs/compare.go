@@ -233,7 +233,7 @@ func compareLines(oldlines []string, newlines []string) (edits []LineEdit, diffe
 		case gendiff.Match:
 			for lidx, ridx := d.Lstart, d.Rstart; lidx < d.Lend && ridx < d.Rend; lidx, ridx = lidx+1, ridx+1 {
 				edits = append(edits, LineEdit{
-					Line:   oldlines[d.Lstart],
+					Line:   oldlines[lidx],
 					Action: Equal,
 				})
 			}
