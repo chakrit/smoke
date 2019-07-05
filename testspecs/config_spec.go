@@ -3,7 +3,7 @@ package testspecs
 import (
 	"time"
 
-	lib "github.com/chakrit/smoke/engine"
+	"github.com/chakrit/smoke/engine"
 )
 
 type ConfigSpec struct {
@@ -15,7 +15,7 @@ type ConfigSpec struct {
 
 // Resolve() applies parent-child value overriding and extension logic.
 func (c *ConfigSpec) Resolve(parent *ConfigSpec) {
-	def := lib.DefaultConfig
+	def := engine.DefaultConfig
 
 	if parent != nil {
 		// TODO: This should instead be relative, not just a first non-empty.
@@ -34,18 +34,18 @@ func (c *ConfigSpec) Resolve(parent *ConfigSpec) {
 	}
 }
 
-func (c *ConfigSpec) RunConfig() (*lib.Config, error) {
+func (c *ConfigSpec) RunConfig() (*engine.Config, error) {
 	if c == nil {
 		return nil, nil
 	}
 
-	runcfg := &lib.Config{
+	runcfg := &engine.Config{
 		WorkDir:     c.WorkDir,
 		Env:         c.Env,
 		Interpreter: c.Interpreter,
 	}
 	if c.Timeout == nil {
-		runcfg.Timeout = lib.DefaultConfig.Timeout
+		runcfg.Timeout = engine.DefaultConfig.Timeout
 	} else {
 		runcfg.Timeout = *c.Timeout
 	}

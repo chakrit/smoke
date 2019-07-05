@@ -19,6 +19,11 @@ var ( // stylesheet :p
 	cPass   string
 	cFail   string
 
+	cEqual        string
+	cAdded        string
+	cRemoved      string
+	cInnerChanges string
+
 	verbosity int
 )
 
@@ -28,25 +33,37 @@ func Configure(colored bool, v int, q int) {
 	verbosity = 1 + v - q
 
 	if !colored {
-		cAction = ""
 		cTitle = ""
 		cTitleEm = ""
 		cSubtitle = ""
 		cLowkey = ""
-		cError = ""
 		cReset = ""
+
+		cAction = ""
+		cError = ""
 		cPass = ""
 		cFail = ""
+
+		cEqual = ""
+		cAdded = ""
+		cRemoved = ""
+		cInnerChanges = ""
 	} else {
-		cAction = ansi.ColorCode("cyan+b")
 		cTitle = ansi.Magenta
 		cTitleEm = ansi.ColorCode("magenta+b")
 		cSubtitle = ansi.Blue
 		cLowkey = ansi.LightBlack
-		cError = ansi.Red
 		cReset = ansi.Reset
+
+		cAction = ansi.ColorCode("cyan+b")
+		cError = ansi.Red
 		cPass = ansi.ColorCode("green+b")
 		cFail = ansi.ColorCode("red+b")
+
+		cEqual = ansi.LightBlack
+		cAdded = ansi.Green
+		cRemoved = ansi.Red
+		cInnerChanges = ansi.LightBlack
 	}
 }
 

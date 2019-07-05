@@ -1,10 +1,8 @@
 package main
 
 import (
-	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/chakrit/smoke/engine"
@@ -110,62 +108,66 @@ func commitResults(filename string, results []engine.TestResult) {
 }
 
 func compareResults(filename string, results []engine.TestResult) {
-	target := lockFilename(filename)
-	_, err := os.Stat(target)
+	lockname := lockFilename(filename)
+
+	lockfile, err := os.Open(lockname)
 	if os.IsNotExist(err) {
 		p.Exit(xerrors.New("Lock file does not exists, `--commit` the first one?"))
+	} else if err != nil {
+		p.Exit(xerrors.Errorf(lockname+": %w", err))
+	} else {
+		defer lockfile.Close()
 	}
 
-	tmpfile, err := ioutil.TempFile("", "smoke-*.yml")
-	if tmpfile != nil {
-		defer tmpfile.Close()
+	lockspec, err := resultspecs.Load(lockfile)
+	if err != nil {
+		p.Exit(xerrors.Errorf(lockname+": %w", err))
 	}
+
+	var newspecs []resultspecs.TestResultSpec
+	for _, result := range results {
+		if spec, err := resultspecs.FromTestResult(result); err != nil {
+			p.Exit(xerrors.Errorf("compare: %w", err))
+		} else {
+			newspecs = append(newspecs, spec)
+		}
+	}
+
+	edits, differs, err := resultspecs.Compare(lockspec, newspecs)
 	if err != nil {
 		p.Exit(xerrors.Errorf("compare: %w", err))
 	}
-
-	if err = resultspecs.Save(tmpfile, results); err != nil {
-		p.Exit(xerrors.Errorf("compare "+tmpfile.Name()+": %w", err))
-	}
-
-	// we defer to diff for now :p
-	// TODO: Actual diffing in the CLI
-	p.FileAccess("diff " + target + " " + tmpfile.Name())
-	cmd := exec.Command("/usr/bin/env",
-		"diff",
-		"--context=3",
-		target,
-		tmpfile.Name())
-
-	var (
-		infile  io.WriteCloser
-		outfile io.ReadCloser
-		errfile io.ReadCloser
-	)
-
-	if infile, err = cmd.StdinPipe(); err != nil {
-		p.Exit(xerrors.Errorf("compare "+target+": %w", err))
-	} else if outfile, err = cmd.StdoutPipe(); err != nil {
-		p.Exit(xerrors.Errorf("compare "+target+": %w", err))
-	} else if errfile, err = cmd.StderrPipe(); err != nil {
-		p.Exit(xerrors.Errorf("compare "+target+": %w", err))
-	}
-
-	go func() { _, _ = io.Copy(infile, os.Stdin) }()
-	go func() { _, _ = io.Copy(os.Stdout, outfile) }()
-	go func() { _, _ = io.Copy(os.Stderr, errfile) }()
-
-	err = cmd.Run()
-	if _, ok := err.(*exec.ExitError); err != nil && !ok {
-		p.Exit(xerrors.Errorf("compare "+target+": %w", err))
-	} else if code := cmd.ProcessState.ExitCode(); code == 0 {
-		// err == nil || err is exec.ExitIfErr
+	if !differs {
 		p.Pass("Stable.")
 		os.Exit(0)
-	} else {
-		p.Fail("Changes Detected.")
-		os.Exit(code) // mirror /usr/bin/diff's exit code
+		return
 	}
+
+	for _, edit := range edits {
+		if edit.Action == resultspecs.Equal {
+			continue
+		}
+
+		p.TestEdit(edit)
+		for _, cmdedit := range edit.Commands {
+			if cmdedit.Action == resultspecs.Equal {
+				continue
+			}
+
+			p.CommandEdit(cmdedit)
+			for _, chkedit := range cmdedit.Checks {
+				if chkedit.Action == resultspecs.Equal {
+					continue
+				}
+
+				p.CheckEdit(chkedit)
+				p.Diffs(chkedit.Diffs)
+			}
+		}
+	}
+
+	p.Fail("Changes Detected.")
+	os.Exit(1)
 }
 
 func lockFilename(filename string) string {

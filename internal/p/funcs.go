@@ -6,7 +6,9 @@ import (
 	"strings"
 
 	"github.com/chakrit/smoke/engine"
+	"github.com/chakrit/smoke/resultspecs"
 	"github.com/mgutz/ansi"
+	dmp "github.com/sergi/go-diff/diffmatchpatch"
 )
 
 // utility CLI logs
@@ -49,3 +51,44 @@ func CommandResult(result engine.CommandResult, err error) {
 func FileAccess(f string) { output(2, cSubtitle+"--> "+f+cReset) }
 func Pass(s string)       { output(-1, cPass+"  ✔ "+s+cReset) }
 func Fail(s string)       { output(-1, cFail+"  ✘ "+s+cReset) }
+
+// diff flow
+func TestEdit(edit resultspecs.TestEdit) {
+	c, prefix := colorByAction(edit.Action)
+	output(0, c+prefix+" ==> "+edit.Name+cReset)
+}
+
+func CommandEdit(edit resultspecs.CommandEdit) {
+	c, prefix := colorByAction(edit.Action)
+	output(0, c+prefix+" --> "+edit.Name+cReset)
+}
+
+func CheckEdit(edit resultspecs.CheckEdit) {
+	c, prefix := colorByAction(edit.Action)
+	output(0, c+"    "+prefix+" "+edit.Name+cReset)
+}
+
+func Diffs(diffs []dmp.Diff) {
+	lines := strings.Split(dmp.New().DiffPrettyText(diffs), "\n")
+	for _, line := range lines {
+		output(0, "        "+line)
+	}
+}
+
+func DMPOutput(s string) {
+}
+
+func colorByAction(action resultspecs.Action) (string, string) {
+	switch action {
+	case resultspecs.Equal:
+		return cEqual, "   "
+	case resultspecs.Added:
+		return cAdded, "+++"
+	case resultspecs.Removed:
+		return cRemoved, "---"
+	case resultspecs.InnerChanges:
+		return cInnerChanges, "   "
+	default:
+		panic("bad edit action: " + fmt.Sprint(action))
+	}
+}

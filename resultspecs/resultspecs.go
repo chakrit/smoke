@@ -53,7 +53,11 @@ func FromTestResult(result engine.TestResult) (TestResultSpec, error) {
 }
 
 func Load(r io.Reader) (specs []TestResultSpec, err error) {
-	panic("not implemented")
+	if err := yaml.NewDecoder(r).Decode(&specs); err != nil {
+		return nil, err
+	} else {
+		return specs, nil
+	}
 }
 
 func Save(w io.Writer, results []engine.TestResult) error {
