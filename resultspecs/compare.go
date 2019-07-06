@@ -1,7 +1,7 @@
 package resultspecs
 
 import (
-	"github.com/chakrit/smoke/internal/gendiff"
+	"github.com/chakrit/gendiff"
 )
 
 const (

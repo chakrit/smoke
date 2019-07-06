@@ -1,3 +1,7 @@
+github.com/chakrit/gendiff v0.0.0-20190706081536-26978cd6632a h1:xoESLGQLBUYpFTrGk+n0mSLDN5Z+2sX/et9o9KxvTOw=
+github.com/chakrit/gendiff v0.0.0-20190706081536-26978cd6632a/go.mod h1:t/lC/k+BMUA/FQnUoZ9v7sNtRMSFr3Hkf6UKpiaRook=
+github.com/chakrit/gendiff v0.0.0-20190706084804-757c26039dae h1:zhPzeMyFlzuBPSNRv4Ba1iRL1SptJvfN/SuL2V46wa8=
+github.com/chakrit/gendiff v0.0.0-20190706084804-757c26039dae/go.mod h1:t/lC/k+BMUA/FQnUoZ9v7sNtRMSFr3Hkf6UKpiaRook=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
@@ -18,6 +22,7 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/spf13/pflag v1.0.3 h1:zPAT6CGy6wXeQ7NtTnaTerfKOsV6V6F8agHXFiazDkg=
 github.com/spf13/pflag v1.0.3/go.mod h1:DYY7MBk1bdzusC3SYhjObp+wFpr4gzcvqqNjLnInEg4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
+github.com/stretchr/objx v0.2.0/go.mod h1:qt09Ya8vawLte6SNmTgCsAVtYtaKzEcn8ATUoHMkEqE=
 github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0Q=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
 golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223 h1:DH4skfRX4EBpamg7iV4ZlCpblAHI6s6TDM39bFZumv8=
