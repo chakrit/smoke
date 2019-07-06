@@ -11,5 +11,5 @@ require (
 	github.com/stretchr/objx v0.2.0 // indirect
 	golang.org/x/xerrors v0.0.0-20190513163551-3ee3066db522
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20190502103701-55513cacd4ae
+	gopkg.in/yaml.v3 v3.0.0-20190705120443-117fdf03f45f
 )
