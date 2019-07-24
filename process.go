@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -42,10 +43,14 @@ func processFile(filename string) {
 }
 
 func listTests(tests []*engine.Test) {
+	v := p.Verbosity()
+
 	for _, test := range tests {
-		p.Test(test)
-		for _, cmd := range test.Commands {
-			p.Command(test, cmd)
+		fmt.Fprintln(os.Stdout, test.Name)
+		if v > 1 {
+			for _, cmd := range test.Commands {
+				fmt.Fprintf(os.Stdout, "\t%s\n", cmd)
+			}
 		}
 	}
 }

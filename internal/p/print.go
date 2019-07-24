@@ -29,6 +29,8 @@ var ( // stylesheet :p
 
 func init() { Configure(true, 1, 0) }
 
+func Verbosity() int { return verbosity }
+
 func Configure(colored bool, v int, q int) {
 	verbosity = 1 + v - q
 

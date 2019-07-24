@@ -19,6 +19,7 @@ tests:
     commands:
       - go build -o ./bin/smoke -v .
       - ./bin/smoke --no-color --list tests.yml
+      - ./bin/smoke --no-color --list tests.yml -v
   - name: Errors
     commands:
       - unknowncommand_asdfqwerzcxv # should error
