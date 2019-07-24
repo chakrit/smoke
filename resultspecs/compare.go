@@ -1,11 +1,14 @@
 package resultspecs
 
 import (
+	"strconv"
+
 	"github.com/chakrit/gendiff"
 )
 
 const (
-	Equal = Action(iota)
+	NoOp = Action(iota)
+	Equal
 	Added
 	Removed
 	InnerChanges
@@ -211,7 +214,9 @@ func compareChecks(oldchks []CheckOutputSpec, newchks []CheckOutputSpec) (edits 
 
 func compareLines(oldlines []string, newlines []string) (edits []LineEdit, differs bool, err error) {
 	diffs := gendiff.Make(lineDiff{oldlines, newlines})
+	diffs = gendiff.Compact(diffs, 2)
 
+	prev := gendiff.Diff{Op: -1}
 	for _, d := range diffs {
 		switch d.Op {
 		case gendiff.Delete:
@@ -231,6 +236,16 @@ func compareLines(oldlines []string, newlines []string) (edits []LineEdit, diffe
 			}
 
 		case gendiff.Match:
+			if prev.Op == gendiff.Match {
+				// we have a gap (MMMMMMM -> MM...MM)
+				// insert an indicator
+				skips := d.Rstart - prev.Rend
+				edits = append(edits, LineEdit{
+					Action: Equal,
+					Line:   " ... " + strconv.Itoa(skips) + " line(s) skipped ...",
+				})
+			}
+
 			for lidx, ridx := d.Lstart, d.Rstart; lidx < d.Lend && ridx < d.Rend; lidx, ridx = lidx+1, ridx+1 {
 				edits = append(edits, LineEdit{
 					Line:   oldlines[lidx],
@@ -239,6 +254,8 @@ func compareLines(oldlines []string, newlines []string) (edits []LineEdit, diffe
 			}
 
 		}
+
+		prev = d
 	}
 
 	return

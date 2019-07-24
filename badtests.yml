@@ -7,5 +7,5 @@ checks:
 tests:
   - name: lipsum
     commands:
-      - head -22 badtests.txt | tail -5
-      - tail -22 badtests.txt | head -5
+      - head -22 badtests.txt | tail -9
+      - tail -22 badtests.txt | head -9

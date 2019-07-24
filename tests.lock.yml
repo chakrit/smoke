@@ -119,38 +119,41 @@
         - name: stdout
           data:
             - '    ==> badtests.yml \ lipsum'
-            - '    --> head -22 badtests.txt | tail -5'
+            - '    --> head -22 badtests.txt | tail -9'
             - '        stdout'
-            - '          hexagon. Chillwave you probably haven''t heard of them kale
-              chips whatever selfies kombucha'
-            - '---       live-edge kitsch meditation offal hella swag lo-fi. Air plant
-              lo-fi green juice mumblecore'
-            - '---       a bird on it. Ramps fanny pack humblebrag, leggings gochujang
-              vexillologist echo park'
-            - '          letterpress tbh pok pok. You probably haven''t heard of them
-              kitsch chillwave wayfarers put'
-            - +++       a bird on it. Ramps fanny pack humblebrag, leggings gochujang
-              vexillologist echo park
-            - +++       live-edge kitsch meditation offal hella swag lo-fi. Air plant
-              lo-fi green juice mumblecore
-            - '          mixtape bushwick leggings affogato portland la croix direct
+            - '---       mixtape bushwick leggings affogato portland la croix direct
               trade biodiesel DIY readymade'
-            - '    --> tail -22 badtests.txt | head -5'
+            - +++       fixie tousled deep v af lomo synth. Bushwick la croix ramps
+              twee put a bird on it.
+            - '          '
+            - '          Man braid vinyl disrupt drinking vinegar cold-pressed knausgaard
+              hashtag keytar pabst'
+            - '           ... 3 line(s) skipped ...'
+            - '          a bird on it. Ramps fanny pack humblebrag, leggings gochujang
+              vexillologist echo park'
+            - '          live-edge kitsch meditation offal hella swag lo-fi. Air plant
+              lo-fi green juice mumblecore'
+            - '---       fixie tousled deep v af lomo synth. Bushwick la croix ramps
+              twee put a bird on it.'
+            - +++       mixtape bushwick leggings affogato portland la croix direct
+              trade biodiesel DIY readymade
+            - '    --> tail -22 badtests.txt | head -9'
             - '        stdout'
-            - '          wolf moon vice aesthetic hot chicken banjo gochujang succulents
-              marfa vape mlkshk forage'
-            - '---       chillwave. Farm-to-table venmo intelligentsia cred keytar,
-              irony meditation raclette pok'
-            - '---       before they sold out roof party normcore hammock. Mustache
-              meh man braid, tbh pug raclette'
+            - '---       Biodiesel brooklyn pug whatever shaman semiotics bespoke
+              kinfolk, synth blog. Pabst cloud'
+            - +++       wolf moon vice aesthetic hot chicken banjo gochujang succulents
+              marfa vape mlkshk forage
             - '          snackwave. Squid vaporware affogato, you probably haven''t
               heard of them snackwave raclette'
-            - +++       before they sold out roof party normcore hammock. Mustache
-              meh man braid, tbh pug raclette
-            - +++       chillwave. Farm-to-table venmo intelligentsia cred keytar,
-              irony meditation raclette pok
-            - '          pok chartreuse everyday carry. Thundercats distillery organic
-              scenester. Ugh tattooed'
+            - '          before they sold out roof party normcore hammock. Mustache
+              meh man braid, tbh pug raclette'
+            - '           ... 3 line(s) skipped ...'
+            - '          keffiyeh blue bottle gochujang dreamcatcher.'
+            - '          '
+            - '---       wolf moon vice aesthetic hot chicken banjo gochujang succulents
+              marfa vape mlkshk forage'
+            - +++       Biodiesel brooklyn pug whatever shaman semiotics bespoke kinfolk,
+              synth blog. Pabst cloud
             - ""
             - '  ✘ Changes Detected.'
         - name: stderr
