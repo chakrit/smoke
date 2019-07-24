@@ -3,7 +3,7 @@ module github.com/chakrit/smoke
 go 1.12
 
 require (
-	github.com/chakrit/gendiff v0.0.0-20190706084804-757c26039dae
+	github.com/chakrit/gendiff v0.0.0-20190724171441-c6e430f125ca
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect

@@ -1,5 +1,5 @@
-github.com/chakrit/gendiff v0.0.0-20190706084804-757c26039dae h1:zhPzeMyFlzuBPSNRv4Ba1iRL1SptJvfN/SuL2V46wa8=
-github.com/chakrit/gendiff v0.0.0-20190706084804-757c26039dae/go.mod h1:t/lC/k+BMUA/FQnUoZ9v7sNtRMSFr3Hkf6UKpiaRook=
+github.com/chakrit/gendiff v0.0.0-20190724171441-c6e430f125ca h1:4Rc2ZnvnffwKekJ23lppiwJUdJMIFXCqO/tvMvYD8Hk=
+github.com/chakrit/gendiff v0.0.0-20190724171441-c6e430f125ca/go.mod h1:t/lC/k+BMUA/FQnUoZ9v7sNtRMSFr3Hkf6UKpiaRook=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
