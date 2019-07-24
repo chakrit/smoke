@@ -1,0 +1,11 @@
+---
+config:
+  interpreter: /bin/sh
+  timeout: 3s
+checks:
+  - stdout
+tests:
+  - name: lipsum
+    commands:
+      - head -22 badtests.txt | tail -5
+      - tail -22 badtests.txt | head -5

@@ -1,0 +1,30 @@
+- name: badtests.yml \ lipsum
+  commands:
+    - command: head -22 badtests.txt | tail -5
+      checks:
+        - name: stdout
+          data:
+            - hexagon. Chillwave you probably haven't heard of them kale chips whatever
+              selfies kombucha
+            - live-edge kitsch meditation offal hella swag lo-fi. Air plant lo-fi
+              green juice mumblecore
+            - a bird on it. Ramps fanny pack humblebrag, leggings gochujang vexillologist
+              echo park
+            - letterpress tbh pok pok. You probably haven't heard of them kitsch chillwave
+              wayfarers put
+            - mixtape bushwick leggings affogato portland la croix direct trade biodiesel
+              DIY readymade
+    - command: tail -22 badtests.txt | head -5
+      checks:
+        - name: stdout
+          data:
+            - wolf moon vice aesthetic hot chicken banjo gochujang succulents marfa
+              vape mlkshk forage
+            - chillwave. Farm-to-table venmo intelligentsia cred keytar, irony meditation
+              raclette pok
+            - before they sold out roof party normcore hammock. Mustache meh man braid,
+              tbh pug raclette
+            - snackwave. Squid vaporware affogato, you probably haven't heard of them
+              snackwave raclette
+            - pok chartreuse everyday carry. Thundercats distillery organic scenester.
+              Ugh tattooed

@@ -20,6 +20,9 @@ tests:
       - go build -o ./bin/smoke -v .
       - ./bin/smoke --no-color --list tests.yml
       - ./bin/smoke --no-color --list tests.yml -v
+  - name: Diff Tests
+    commands:
+      - ./bin/smoke --no-color badtests.yml
   - name: Errors
     commands:
       - unknowncommand_asdfqwerzcxv # should error
