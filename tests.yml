@@ -12,15 +12,21 @@ tests:
   - name: Basics
     checks:
       - exitcode
-      - stdout
     tests:
       - name: Checks
+        checks:
+          - stdout
         commands:
           - goimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go
       - name: Unit Tests
         commands:
           - go test -v ./...
+      - name: Common Switches
+        commands:
+          - ./bin/smoke --time -qqqq -vvvv
       - name: Loads
+        checks:
+          - stdout
         commands:
           - ./bin/smoke --no-color --list tests.yml
           - ./bin/smoke --no-color --list tests.yml -v

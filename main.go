@@ -14,6 +14,7 @@ var (
 	shouldCommit   bool
 
 	noColors  bool
+	trackTime bool
 	verbosity int
 	quietness int
 )
@@ -24,6 +25,7 @@ func main() {
 	pflag.BoolVarP(&shouldCommit, "commit", "c", false, "Commit all test output.")
 	pflag.StringVarP(&lockFile, "lockfile", "f", "", "Filename to read lock result from (or write to, when committing).")
 	pflag.BoolVar(&noColors, "no-color", false, "Turns off console coloring.")
+	pflag.BoolVar(&trackTime, "time", false, "Log timestamps.")
 	pflag.CountVarP(&verbosity, "verbose", "v", "Increase log output chattiness.")
 	pflag.CountVarP(&quietness, "quiet", "q", "Decrease log output chattiness.")
 	pflag.Parse()
@@ -40,7 +42,7 @@ func main() {
 		return
 	}
 
-	p.Configure(!noColors, verbosity, quietness)
+	p.Configure(!noColors, trackTime, verbosity, quietness)
 	defer p.Bye()
 
 	for _, filename := range filenames {

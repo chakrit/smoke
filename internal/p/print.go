@@ -3,6 +3,7 @@ package p
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/mgutz/ansi"
 )
@@ -24,17 +25,21 @@ var ( // stylesheet :p
 	cRemoved      string
 	cInnerChanges string
 
+	startTime time.Time
 	verbosity int
 )
 
-func init() { Configure(true, 1, 0) }
+func init() { Configure(true, false, 1, 0) }
 
 func Verbosity() int { return verbosity }
 
-func Configure(colored bool, v int, q int) {
+func Configure(color, trackTime bool, v int, q int) {
 	verbosity = 1 + v - q
+	if trackTime {
+		startTime = time.Now()
+	}
 
-	if !colored {
+	if !color {
 		cTitle = ""
 		cTitleEm = ""
 		cSubtitle = ""
@@ -50,6 +55,7 @@ func Configure(colored bool, v int, q int) {
 		cAdded = ""
 		cRemoved = ""
 		cInnerChanges = ""
+
 	} else {
 		cTitle = ansi.Magenta
 		cTitleEm = ansi.ColorCode("magenta+b")
@@ -72,6 +78,11 @@ func Configure(colored bool, v int, q int) {
 func output(level int, s string, args ...interface{}) {
 	if level >= verbosity {
 		return
+	}
+
+	if !startTime.IsZero() {
+		dur := time.Now().Sub(startTime)
+		_, _ = fmt.Fprintf(os.Stdout, "%20s ", dur)
 	}
 
 	if len(args) == 0 {

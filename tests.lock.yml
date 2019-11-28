@@ -27,14 +27,13 @@
         - name: exitcode
           data:
             - "0"
-        - name: stdout
+- name: tests.yml \ Basics \ Common Switches
+  commands:
+    - command: ./bin/smoke --time -qqqq -vvvv
+      checks:
+        - name: exitcode
           data:
-            - "?   \tgithub.com/chakrit/smoke\t[no test files]"
-            - "?   \tgithub.com/chakrit/smoke/checks\t[no test files]"
-            - "?   \tgithub.com/chakrit/smoke/engine\t[no test files]"
-            - "?   \tgithub.com/chakrit/smoke/internal/p\t[no test files]"
-            - "?   \tgithub.com/chakrit/smoke/resultspecs\t[no test files]"
-            - "?   \tgithub.com/chakrit/smoke/testspecs\t[no test files]"
+            - "1"
 - name: tests.yml \ Basics \ Loads
   commands:
     - command: ./bin/smoke --no-color --list tests.yml
@@ -47,6 +46,7 @@
             - tests.yml \ Builds
             - tests.yml \ Basics \ Checks
             - tests.yml \ Basics \ Unit Tests
+            - tests.yml \ Basics \ Common Switches
             - tests.yml \ Basics \ Loads
             - tests.yml \ Tests \ Diff
             - tests.yml \ Tests \ Errors
@@ -66,6 +66,8 @@
             - "\tgoimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go"
             - tests.yml \ Basics \ Unit Tests
             - "\tgo test -v ./..."
+            - tests.yml \ Basics \ Common Switches
+            - "\t./bin/smoke --time -qqqq -vvvv"
             - tests.yml \ Basics \ Loads
             - "\t./bin/smoke --no-color --list tests.yml"
             - "\t./bin/smoke --no-color --list tests.yml -v"
@@ -262,6 +264,7 @@
             - import (
             - "\t\"fmt\""
             - "\t\"os\""
+            - "\t\"time\""
             - ""
             - "\t\"github.com/mgutz/ansi\""
             - )
@@ -283,17 +286,21 @@
             - "\tcRemoved      string"
             - "\tcInnerChanges string"
             - ""
+            - "\tstartTime time.Time"
             - "\tverbosity int"
             - )
             - ""
-            - func init() { Configure(true, 1, 0) }
+            - func init() { Configure(true, false, 1, 0) }
             - ""
             - func Verbosity() int { return verbosity }
             - ""
-            - func Configure(colored bool, v int, q int) {
+            - func Configure(color, trackTime bool, v int, q int) {
             - "\tverbosity = 1 + v - q"
+            - "\tif trackTime {"
+            - "\t\tstartTime = time.Now()"
+            - "\t}"
             - ""
-            - "\tif !colored {"
+            - "\tif !color {"
             - "\t\tcTitle = \"\""
             - "\t\tcTitleEm = \"\""
             - "\t\tcSubtitle = \"\""
@@ -309,6 +316,7 @@
             - "\t\tcAdded = \"\""
             - "\t\tcRemoved = \"\""
             - "\t\tcInnerChanges = \"\""
+            - ""
             - "\t} else {"
             - "\t\tcTitle = ansi.Magenta"
             - "\t\tcTitleEm = ansi.ColorCode(\"magenta+b\")"
@@ -331,6 +339,11 @@
             - func output(level int, s string, args ...interface{}) {
             - "\tif level >= verbosity {"
             - "\t\treturn"
+            - "\t}"
+            - ""
+            - "\tif !startTime.IsZero() {"
+            - "\t\tdur := time.Now().Sub(startTime)"
+            - "\t\t_, _ = fmt.Fprintf(os.Stdout, \"%20s \", dur)"
             - "\t}"
             - ""
             - "\tif len(args) == 0 {"
