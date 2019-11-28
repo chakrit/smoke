@@ -1,16 +1,17 @@
-- name: tests.yml \ Basics
+- name: tests.yml \ Builds
   commands:
     - command: go build -o ./bin/smoke -v .
       checks:
         - name: exitcode
           data:
             - "0"
-        - name: stdout
+    - command: ./bin/smoke
+      checks:
+        - name: exitcode
           data:
-            - ""
-        - name: stderr
-          data:
-            - ""
+            - "1"
+- name: tests.yml \ Basics \ Checks
+  commands:
     - command: goimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go
       checks:
         - name: exitcode
@@ -19,21 +20,7 @@
         - name: stdout
           data:
             - ""
-        - name: stderr
-          data:
-            - 'stat specs/*.go: no such file or directory'
-    - command: ./bin/smoke
-      checks:
-        - name: exitcode
-          data:
-            - "1"
-        - name: stdout
-          data:
-            - ""
-        - name: stderr
-          data:
-            - requires a spec filename.
-- name: tests.yml \ Unit Tests
+- name: tests.yml \ Basics \ Unit Tests
   commands:
     - command: go test -v ./...
       checks:
@@ -48,22 +35,8 @@
             - "?   \tgithub.com/chakrit/smoke/internal/p\t[no test files]"
             - "?   \tgithub.com/chakrit/smoke/resultspecs\t[no test files]"
             - "?   \tgithub.com/chakrit/smoke/testspecs\t[no test files]"
-        - name: stderr
-          data:
-            - ""
-- name: tests.yml \ Smoke Tests
+- name: tests.yml \ Basics \ Loads
   commands:
-    - command: go build -o ./bin/smoke -v .
-      checks:
-        - name: exitcode
-          data:
-            - "0"
-        - name: stdout
-          data:
-            - ""
-        - name: stderr
-          data:
-            - ""
     - command: ./bin/smoke --no-color --list tests.yml
       checks:
         - name: exitcode
@@ -71,16 +44,14 @@
             - "0"
         - name: stdout
           data:
-            - tests.yml \ Basics
-            - tests.yml \ Unit Tests
-            - tests.yml \ Smoke Tests
-            - tests.yml \ Diff Tests
-            - tests.yml \ Errors
-            - tests.yml \ Run Configs \ WorkDir
-            - tests.yml \ Run Configs \ Env
-        - name: stderr
-          data:
-            - ""
+            - tests.yml \ Builds
+            - tests.yml \ Basics \ Checks
+            - tests.yml \ Basics \ Unit Tests
+            - tests.yml \ Basics \ Loads
+            - tests.yml \ Tests \ Diff
+            - tests.yml \ Tests \ Errors
+            - tests.yml \ Tests \ WorkDir
+            - tests.yml \ Tests \ Env
     - command: ./bin/smoke --no-color --list tests.yml -v
       checks:
         - name: exitcode
@@ -88,28 +59,25 @@
             - "0"
         - name: stdout
           data:
-            - tests.yml \ Basics
+            - tests.yml \ Builds
             - "\tgo build -o ./bin/smoke -v ."
-            - "\tgoimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go"
             - "\t./bin/smoke"
-            - tests.yml \ Unit Tests
+            - tests.yml \ Basics \ Checks
+            - "\tgoimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go"
+            - tests.yml \ Basics \ Unit Tests
             - "\tgo test -v ./..."
-            - tests.yml \ Smoke Tests
-            - "\tgo build -o ./bin/smoke -v ."
+            - tests.yml \ Basics \ Loads
             - "\t./bin/smoke --no-color --list tests.yml"
             - "\t./bin/smoke --no-color --list tests.yml -v"
-            - tests.yml \ Diff Tests
+            - tests.yml \ Tests \ Diff
             - "\t./bin/smoke --no-color badtests.yml"
-            - tests.yml \ Errors
+            - tests.yml \ Tests \ Errors
             - "\tunknowncommand_asdfqwerzcxv"
-            - tests.yml \ Run Configs \ WorkDir
+            - tests.yml \ Tests \ WorkDir
             - "\tls"
-            - tests.yml \ Run Configs \ Env
+            - tests.yml \ Tests \ Env
             - "\techo $YEAS_ITS"
-        - name: stderr
-          data:
-            - ""
-- name: tests.yml \ Diff Tests
+- name: tests.yml \ Tests \ Diff
   commands:
     - command: ./bin/smoke --no-color badtests.yml
       checks:
@@ -159,7 +127,7 @@
         - name: stderr
           data:
             - ""
-- name: tests.yml \ Errors
+- name: tests.yml \ Tests \ Errors
   commands:
     - command: unknowncommand_asdfqwerzcxv
       checks:
@@ -172,7 +140,7 @@
         - name: stderr
           data:
             - '/bin/sh: line 1: unknowncommand_asdfqwerzcxv: command not found'
-- name: tests.yml \ Run Configs \ WorkDir
+- name: tests.yml \ Tests \ WorkDir
   commands:
     - command: ls
       checks:
@@ -186,7 +154,7 @@
         - name: stderr
           data:
             - ""
-- name: tests.yml \ Run Configs \ Env
+- name: tests.yml \ Tests \ Env
   commands:
     - command: echo $YEAS_ITS
       checks:

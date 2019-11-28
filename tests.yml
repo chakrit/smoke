@@ -2,32 +2,40 @@
 config:
   interpreter: /bin/sh
   timeout: 5s
-checks:
-  - exitcode
-  - stdout
-  - stderr
 tests:
-  - name: Basics
+  - name: Builds
+    checks:
+      - exitcode
     commands:
       - go build -o ./bin/smoke -v .
-      - goimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go
       - ./bin/smoke
-  - name: Unit Tests
-    commands:
-      - go test -v ./...
-  - name: Smoke Tests
-    commands:
-      - go build -o ./bin/smoke -v .
-      - ./bin/smoke --no-color --list tests.yml
-      - ./bin/smoke --no-color --list tests.yml -v
-  - name: Diff Tests
-    commands:
-      - ./bin/smoke --no-color badtests.yml
-  - name: Errors
-    commands:
-      - unknowncommand_asdfqwerzcxv # should error
-  - name: Run Configs
+  - name: Basics
+    checks:
+      - exitcode
+      - stdout
     tests:
+      - name: Checks
+        commands:
+          - goimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go
+      - name: Unit Tests
+        commands:
+          - go test -v ./...
+      - name: Loads
+        commands:
+          - ./bin/smoke --no-color --list tests.yml
+          - ./bin/smoke --no-color --list tests.yml -v
+  - name: Tests
+    checks:
+      - exitcode
+      - stdout
+      - stderr
+    tests:
+      - name: Diff
+        commands:
+          - ./bin/smoke --no-color badtests.yml
+      - name: Errors
+        commands:
+          - unknowncommand_asdfqwerzcxv # should error
       - name: WorkDir
         config:
           workdir: ./internal/p
