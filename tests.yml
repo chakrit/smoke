@@ -36,11 +36,15 @@ tests:
       - name: Errors
         commands:
           - unknowncommand_asdfqwerzcxv # should error
-      - name: WorkDir
+      - name: I/O
         config:
           workdir: ./internal/p
+        checks:
+          - exitcode
+          - ./internal/p/*.go # should collect *.go contents into lockfile
         commands:
           - ls # should list the files in internal/p
+      - name: File Checks
       - name: Env
         config:
           env:

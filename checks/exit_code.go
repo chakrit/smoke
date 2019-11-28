@@ -7,7 +7,7 @@ import (
 
 type exitCode struct{}
 
-func (exitCode) Name() string {
+func (exitCode) Spec() string {
 	return "exitcode"
 }
 

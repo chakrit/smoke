@@ -13,6 +13,8 @@ type (
 	stderr struct{}
 )
 
+func (stdout) Spec() string { return "stdout" }
+func (stderr) Spec() string { return "stderr" }
 func (stdout) Name() string { return "stdout" }
 func (stderr) Name() string { return "stderr" }
 

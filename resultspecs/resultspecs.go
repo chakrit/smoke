@@ -35,7 +35,7 @@ func FromTestResult(result engine.TestResult) (TestResultSpec, error) {
 			}
 
 			checks = append(checks, CheckOutputSpec{
-				Name: chk.Check.Name(),
+				Name: chk.Check.Spec(),
 				Data: lines,
 			})
 		}

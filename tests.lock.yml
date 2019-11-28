@@ -50,7 +50,7 @@
             - tests.yml \ Basics \ Loads
             - tests.yml \ Tests \ Diff
             - tests.yml \ Tests \ Errors
-            - tests.yml \ Tests \ WorkDir
+            - tests.yml \ Tests \ I/O
             - tests.yml \ Tests \ Env
     - command: ./bin/smoke --no-color --list tests.yml -v
       checks:
@@ -73,7 +73,7 @@
             - "\t./bin/smoke --no-color badtests.yml"
             - tests.yml \ Tests \ Errors
             - "\tunknowncommand_asdfqwerzcxv"
-            - tests.yml \ Tests \ WorkDir
+            - tests.yml \ Tests \ I/O
             - "\tls"
             - tests.yml \ Tests \ Env
             - "\techo $YEAS_ITS"
@@ -140,7 +140,7 @@
         - name: stderr
           data:
             - '/bin/sh: line 1: unknowncommand_asdfqwerzcxv: command not found'
-- name: tests.yml \ Tests \ WorkDir
+- name: tests.yml \ Tests \ I/O
   commands:
     - command: ls
       checks:
@@ -153,6 +153,194 @@
             - print.go
         - name: stderr
           data:
+            - ""
+        - name: exitcode
+          data:
+            - "0"
+        - name: ./internal/p/*.go
+          data:
+            - '-----BEGIN funcs.go-----'
+            - package p
+            - ""
+            - import (
+            - "\t\"fmt\""
+            - "\t\"os\""
+            - "\t\"strings\""
+            - ""
+            - "\t\"github.com/chakrit/smoke/engine\""
+            - "\t\"github.com/chakrit/smoke/resultspecs\""
+            - "\t\"github.com/mgutz/ansi\""
+            - )
+            - ""
+            - // utility CLI logs
+            - func Usage(s string)  { fmt.Fprintln(os.Stderr, s) }
+            - func Bye()            { output(2, cLowkey+"exited."+cReset) }
+            - func Error(err error) { output(-1, cError+"ERR "+err.Error()+cReset)
+              }
+            - func Action(s string) { output(1, cAction+"≋≋> "+strings.ToUpper(s)+cReset)
+              }
+            - ""
+            - func Exit(err error) {
+            - "\tError(err)"
+            - "\tos.Exit(1)"
+            - '}'
+            - ""
+            - // testing flow
+            - func Test(t *engine.Test)                        { output(1, cTitle+"==>
+              "+cTitleEm+t.Name+cReset) }
+            - func Command(_ *engine.Test, cmd engine.Command) { output(2, cSubtitle+"-->
+              "+string(cmd)+cReset) }
+            - ""
+            - func TestResult(_ engine.TestResult, err error) {
+            - "\tif err != nil {"
+            - "\t\tError(err)"
+            - "\t}"
+            - '}'
+            - ""
+            - func CommandResult(result engine.CommandResult, err error) {
+            - "\tif err != nil {"
+            - "\t\tError(err)"
+            - "\t\treturn"
+            - "\t}"
+            - ""
+            - "\tfor _, chk := range result.Checks {"
+            - "\t\tlines := strings.Split(string(chk.Data), \"\\n\")"
+            - "\t\tfor _, line := range lines {"
+            - "\t\t\toutput(3, ansi.LightBlack+\"%8s:\"+ansi.Reset+\" %s\","
+            - "\t\t\t\tchk.Check.Spec(), line)"
+            - "\t\t}"
+            - "\t}"
+            - '}'
+            - ""
+            - // lockfile flow
+            - func FileAccess(f string) { output(2, cSubtitle+"--> "+f+cReset) }
+            - func Pass(s string)       { output(-1, cPass+"\n  ✔ "+s+"\n"+cReset)
+              }
+            - func Fail(s string)       { output(-1, cFail+"\n  ✘ "+s+"\n"+cReset)
+              }
+            - ""
+            - // diff flow
+            - func TestEdit(edit resultspecs.TestEdit) {
+            - "\tc, prefix := colorByAction(edit.Action)"
+            - "\toutput(0, c+prefix+\" ==> \"+edit.Name+cReset)"
+            - '}'
+            - ""
+            - func CommandEdit(edit resultspecs.CommandEdit) {
+            - "\tc, prefix := colorByAction(edit.Action)"
+            - "\toutput(0, c+prefix+\" --> \"+edit.Name+cReset)"
+            - '}'
+            - ""
+            - func CheckEdit(edit resultspecs.CheckEdit) {
+            - "\tc, prefix := colorByAction(edit.Action)"
+            - "\toutput(0, c+prefix+\"     \"+edit.Name+cReset)"
+            - '}'
+            - ""
+            - func LineEdit(edit resultspecs.LineEdit) {
+            - "\tc, prefix := colorByAction(edit.Action)"
+            - "\toutput(0, c+prefix+\"       \"+edit.Line+cReset)"
+            - '}'
+            - ""
+            - func colorByAction(action resultspecs.Action) (string, string) {
+            - "\tswitch action {"
+            - "\tcase resultspecs.Equal:"
+            - "\t\treturn cEqual, \"   \""
+            - "\tcase resultspecs.Added:"
+            - "\t\treturn cAdded, \"+++\""
+            - "\tcase resultspecs.Removed:"
+            - "\t\treturn cRemoved, \"---\""
+            - "\tcase resultspecs.InnerChanges:"
+            - "\t\treturn cInnerChanges, \"   \""
+            - "\tdefault:"
+            - "\t\tpanic(\"bad edit action: \" + fmt.Sprint(action))"
+            - "\t}"
+            - '}'
+            - '-----END funcs.go-----'
+            - ""
+            - '-----BEGIN print.go-----'
+            - package p
+            - ""
+            - import (
+            - "\t\"fmt\""
+            - "\t\"os\""
+            - ""
+            - "\t\"github.com/mgutz/ansi\""
+            - )
+            - ""
+            - var ( // stylesheet :p
+            - "\tcTitle    string"
+            - "\tcTitleEm  string"
+            - "\tcSubtitle string"
+            - "\tcLowkey   string"
+            - "\tcReset    string"
+            - ""
+            - "\tcAction string"
+            - "\tcError  string"
+            - "\tcPass   string"
+            - "\tcFail   string"
+            - ""
+            - "\tcEqual        string"
+            - "\tcAdded        string"
+            - "\tcRemoved      string"
+            - "\tcInnerChanges string"
+            - ""
+            - "\tverbosity int"
+            - )
+            - ""
+            - func init() { Configure(true, 1, 0) }
+            - ""
+            - func Verbosity() int { return verbosity }
+            - ""
+            - func Configure(colored bool, v int, q int) {
+            - "\tverbosity = 1 + v - q"
+            - ""
+            - "\tif !colored {"
+            - "\t\tcTitle = \"\""
+            - "\t\tcTitleEm = \"\""
+            - "\t\tcSubtitle = \"\""
+            - "\t\tcLowkey = \"\""
+            - "\t\tcReset = \"\""
+            - ""
+            - "\t\tcAction = \"\""
+            - "\t\tcError = \"\""
+            - "\t\tcPass = \"\""
+            - "\t\tcFail = \"\""
+            - ""
+            - "\t\tcEqual = \"\""
+            - "\t\tcAdded = \"\""
+            - "\t\tcRemoved = \"\""
+            - "\t\tcInnerChanges = \"\""
+            - "\t} else {"
+            - "\t\tcTitle = ansi.Magenta"
+            - "\t\tcTitleEm = ansi.ColorCode(\"magenta+b\")"
+            - "\t\tcSubtitle = ansi.Blue"
+            - "\t\tcLowkey = ansi.LightBlack"
+            - "\t\tcReset = ansi.Reset"
+            - ""
+            - "\t\tcAction = ansi.ColorCode(\"cyan+b\")"
+            - "\t\tcError = ansi.Red"
+            - "\t\tcPass = ansi.ColorCode(\"green+b\")"
+            - "\t\tcFail = ansi.ColorCode(\"red+b\")"
+            - ""
+            - "\t\tcEqual = ansi.LightBlack"
+            - "\t\tcAdded = ansi.Green"
+            - "\t\tcRemoved = ansi.Red"
+            - "\t\tcInnerChanges = ansi.LightBlack"
+            - "\t}"
+            - '}'
+            - ""
+            - func output(level int, s string, args ...interface{}) {
+            - "\tif level >= verbosity {"
+            - "\t\treturn"
+            - "\t}"
+            - ""
+            - "\tif len(args) == 0 {"
+            - "\t\t_, _ = os.Stdout.WriteString(s)"
+            - "\t} else {"
+            - "\t\t_, _ = os.Stdout.WriteString(fmt.Sprintf(s, args...))"
+            - "\t}"
+            - "\t_, _ = os.Stdout.WriteString(\"\\n\")"
+            - '}'
+            - '-----END print.go-----'
             - ""
 - name: tests.yml \ Tests \ Env
   commands:

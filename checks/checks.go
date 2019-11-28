@@ -1,6 +1,7 @@
 package checks
 
 import (
+	"net/url"
 	"os/exec"
 	"strings"
 )
@@ -9,20 +10,13 @@ var (
 	ExitCode Interface = exitCode{}
 	Stdout   Interface = stdout{}
 	Stderr   Interface = stderr{}
-	// TODO: Binary versions
-	// TODO: File-based checks
-
-	index = map[string]Interface{}
-	all   = []Interface{
-		ExitCode,
-		Stdout,
-		Stderr,
-	}
+	// TODO: Binary versions of STDIO
+	// TODO: HTTP checks
 )
 
 type (
 	Interface interface {
-		Name() string
+		Spec() string
 		Prepare(*exec.Cmd) error
 		Collect(*exec.Cmd) ([]byte, error)
 		Format([]byte) ([]string, error)
@@ -34,16 +28,31 @@ type (
 	}
 )
 
-func init() {
-	for _, check := range all {
-		index[check.Name()] = check
-	}
-}
-
 func Parse(line string) Interface {
-	// TODO: more complex file system checks
-	line = strings.TrimSpace(line)
-	return index[line]
+	u, err := url.Parse(strings.TrimSpace(line))
+	if err != nil {
+		return nil
+	}
+
+	// It maybe better to follow the kubernetes style of `name: {}` or just go
+	// with polymorphic YAML, this feels magical and unidiomatic.
+	switch u.Scheme {
+	case "":
+		switch strings.ToLower(strings.TrimSpace(u.Path)) {
+		case "exitcode":
+			return exitCode{}
+		case "stdout":
+			return stdout{}
+		case "stderr":
+			return stderr{}
+		default:
+			return fileContent{u.Path}
+		}
+
+	// TODO: case "http"
+	default:
+		return nil
+	}
 }
 
 func PrepareAll(cmd *exec.Cmd, chks []Interface) error {
