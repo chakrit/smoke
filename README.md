@@ -118,6 +118,8 @@ checks:                     # define checks to record and perform for the comman
   - exitcode                # checks and records command's status code on exit
   - stdout                  # checks and records command's entire standard output stream
   - stderr                  # checks and records command's entire standard error stream
+  - go.mod                  # checks and records a file's contents
+  - generated/*.go          # checks and records multiple file's contents.
 commands:                   # define commands that constitutes the test
   - go install -v .
 tests:
