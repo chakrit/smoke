@@ -84,7 +84,7 @@ func (r DefaultRunner) Command(t *Test, c Command) (result CommandResult, err er
 		cmd.Dir = config.WorkDir
 	}
 	if len(config.Env) > 0 {
-		cmd.Env = config.Env
+		cmd.Env = append(cmd.Env, config.Env...)
 	}
 
 	if err := checks.PrepareAll(cmd, t.Checks); err != nil {
