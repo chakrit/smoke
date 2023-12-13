@@ -1,4 +1,11 @@
-- name: badtests.yml \ lipsum
+- name: badtests.yml \ hello
+  commands:
+    - command: echo hello
+      checks:
+        - name: stdout
+          data:
+            - hello
+- name: badtests.yml \ lipsum \ Head
   commands:
     - command: head -22 badtests.txt | tail -9
       checks:
@@ -21,6 +28,8 @@
               green juice mumblecore
             - fixie tousled deep v af lomo synth. Bushwick la croix ramps twee put
               a bird on it.
+- name: badtests.yml \ lipsum \ Tail
+  commands:
     - command: tail -22 badtests.txt | head -9
       checks:
         - name: stdout

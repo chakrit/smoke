@@ -5,7 +5,14 @@ config:
 checks:
   - stdout
 tests:
-  - name: lipsum
+  - name: hello
     commands:
-      - head -22 badtests.txt | tail -9
-      - tail -22 badtests.txt | head -9
+      - echo hello
+  - name: lipsum
+    tests:
+      - name: Head
+        commands:
+        - head -22 badtests.txt | tail -9
+      - name: Tail
+        commands:
+        - tail -22 badtests.txt | head -9

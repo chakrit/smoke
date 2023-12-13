@@ -50,7 +50,6 @@ tests:
           - ./internal/p/*.go # should collect *.go contents into lockfile
         commands:
           - ls # should list the files in internal/p
-      - name: File Checks
       - name: Env
         config:
           env:

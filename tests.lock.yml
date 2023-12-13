@@ -88,7 +88,7 @@
             - "1"
         - name: stdout
           data:
-            - '    ==> badtests.yml \ lipsum'
+            - '    ==> badtests.yml \ lipsum \ Head'
             - '    --> head -22 badtests.txt | tail -9'
             - '        stdout'
             - '---       mixtape bushwick leggings affogato portland la croix direct
@@ -107,6 +107,7 @@
               twee put a bird on it.'
             - +++       mixtape bushwick leggings affogato portland la croix direct
               trade biodiesel DIY readymade
+            - '    ==> badtests.yml \ lipsum \ Tail'
             - '    --> tail -22 badtests.txt | head -9'
             - '        stdout'
             - '---       Biodiesel brooklyn pug whatever shaman semiotics bespoke
