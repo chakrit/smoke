@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/chakrit/smoke/engine"
 	"github.com/chakrit/smoke/internal/p"
@@ -26,6 +27,13 @@ func processFile(filename string) {
 		p.Exit(xerrors.Errorf(filename+": %w", err))
 	}
 
+	if len(includes) > 0 {
+		tests = tests.Whitelist(includes)
+	}
+	if len(excludes) > 0 {
+		tests = tests.Blacklist(excludes)
+	}
+
 	if shouldList {
 		listTests(tests)
 		return
@@ -42,7 +50,7 @@ func processFile(filename string) {
 	}
 }
 
-func listTests(tests []*engine.Test) {
+func listTests(tests engine.Collection) {
 	v := p.Verbosity()
 
 	for _, test := range tests {
@@ -127,6 +135,36 @@ func compareResults(filename string, results []engine.TestResult) {
 	lockspec, err := resultspecs.Load(lockfile)
 	if err != nil {
 		p.Exit(xerrors.Errorf(lockname+": %w", err))
+	}
+
+	// if includes/excludes are set, only compare those, otherwise the excluded/included
+	// tests are also compared even though they havn't been ran
+	// TODO: resultspec.Collection?
+	if len(includes) > 0 {
+		filtered := make([]resultspecs.TestResultSpec, 0, len(lockspec))
+	NextInclude:
+		for _, spec := range lockspec {
+			for _, item := range includes {
+				if strings.Contains(spec.Name, item) {
+					filtered = append(filtered, spec)
+					continue NextInclude
+				}
+			}
+		}
+		lockspec = filtered
+	}
+	if len(excludes) > 0 {
+		filtered := make([]resultspecs.TestResultSpec, 0, len(lockspec))
+	NextExclude:
+		for _, spec := range lockspec {
+			for _, item := range excludes {
+				if strings.Contains(spec.Name, item) {
+					continue NextExclude
+				}
+			}
+			filtered = append(filtered, spec)
+		}
+		lockspec = filtered
 	}
 
 	var newspecs []resultspecs.TestResultSpec
