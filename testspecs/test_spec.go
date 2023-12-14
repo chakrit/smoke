@@ -49,7 +49,7 @@ func (t *TestSpec) Resolve(parent *TestSpec) {
 	}
 }
 
-func (t *TestSpec) Tests() (tests []*engine.Test, err error) {
+func (t *TestSpec) Tests() (tests engine.Collection, err error) {
 	if len(t.Commands) > 0 {
 		var commands []engine.Command
 		for _, cmdstr := range t.Commands {
