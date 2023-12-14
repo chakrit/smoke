@@ -56,3 +56,13 @@ tests:
             - "YEAS_ITS=Working"
         commands:
           - echo $YEAS_ITS
+      - name: Include/Exclude
+        tests:
+          - name: Just Include
+            commands:
+              - ./bin/smoke --no-color -l -i hello badtests.yml
+              - ./bin/smoke --no-color -v -i hello badtests.yml
+          - name: Just Exclude
+            commands:
+              - ./bin/smoke --no-color -l -x Head -x Tail badtests.yml
+              - ./bin/smoke --no-color -v -x Head -x Tail badtests.yml

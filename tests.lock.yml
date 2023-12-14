@@ -52,6 +52,8 @@
             - tests.yml \ Tests \ Errors
             - tests.yml \ Tests \ I/O
             - tests.yml \ Tests \ Env
+            - tests.yml \ Tests \ Include/Exclude \ Just Include
+            - tests.yml \ Tests \ Include/Exclude \ Just Exclude
     - command: ./bin/smoke --no-color --list tests.yml -v
       checks:
         - name: exitcode
@@ -79,6 +81,12 @@
             - "\tls"
             - tests.yml \ Tests \ Env
             - "\techo $YEAS_ITS"
+            - tests.yml \ Tests \ Include/Exclude \ Just Include
+            - "\t./bin/smoke --no-color -l -i hello badtests.yml"
+            - "\t./bin/smoke --no-color -v -i hello badtests.yml"
+            - tests.yml \ Tests \ Include/Exclude \ Just Exclude
+            - "\t./bin/smoke --no-color -l -x Head -x Tail badtests.yml"
+            - "\t./bin/smoke --no-color -v -x Head -x Tail badtests.yml"
 - name: tests.yml \ Tests \ Diff
   commands:
     - command: ./bin/smoke --no-color badtests.yml
@@ -366,6 +374,62 @@
         - name: stdout
           data:
             - Working
+        - name: stderr
+          data:
+            - ""
+- name: tests.yml \ Tests \ Include/Exclude \ Just Include
+  commands:
+    - command: ./bin/smoke --no-color -l -i hello badtests.yml
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - badtests.yml \ hello
+        - name: stderr
+          data:
+            - ""
+    - command: ./bin/smoke --no-color -v -i hello badtests.yml
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - ≋≋> RUNNING TESTS
+            - ==> badtests.yml \ hello
+            - ≋≋> COMPARING LOCK FILE
+            - ""
+            - '  ✔ Stable.'
+        - name: stderr
+          data:
+            - ""
+- name: tests.yml \ Tests \ Include/Exclude \ Just Exclude
+  commands:
+    - command: ./bin/smoke --no-color -l -x Head -x Tail badtests.yml
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - badtests.yml \ hello
+        - name: stderr
+          data:
+            - ""
+    - command: ./bin/smoke --no-color -v -x Head -x Tail badtests.yml
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - ≋≋> RUNNING TESTS
+            - ==> badtests.yml \ hello
+            - ≋≋> COMPARING LOCK FILE
+            - ""
+            - '  ✔ Stable.'
         - name: stderr
           data:
             - ""
