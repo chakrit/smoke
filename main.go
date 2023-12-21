@@ -11,6 +11,7 @@ var (
 	lockFile       string
 	shouldShowHelp bool
 	shouldList     bool
+	shouldPrint    bool
 	shouldCommit   bool
 
 	noColors  bool
@@ -26,6 +27,7 @@ func main() {
 	pflag.BoolVarP(&shouldShowHelp, "help", "h", false, "Show help on usages.")
 
 	pflag.BoolVarP(&shouldList, "list", "l", false, "List all discovered tests and exit.")
+	pflag.BoolVarP(&shouldPrint, "print", "p", false, "Print results but don't do any comparison.")
 	pflag.BoolVarP(&shouldCommit, "commit", "c", false, "Commit all test output.")
 	pflag.StringVarP(&lockFile, "lockfile", "f", "", "Filename to read lock result from (or write to, when committing).")
 

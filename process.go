@@ -41,7 +41,10 @@ func processFile(filename string) {
 
 	p.Action("Running Tests")
 	results := runTests(tests)
-	if shouldCommit {
+	if shouldPrint {
+		p.Action("Printing Result")
+		printResults(results)
+	} else if shouldCommit {
 		p.Action("Writing Lock File")
 		commitResults(filename, results)
 	} else {
@@ -93,6 +96,13 @@ func runTests(tests []*engine.Test) []engine.TestResult {
 	}
 
 	return results
+}
+
+func printResults(results []engine.TestResult) {
+	if err := resultspecs.Save(os.Stdout, results); err != nil {
+		p.Exit(xerrors.Errorf("print to stdout: %w", err))
+	}
+	p.Pass("Print")
 }
 
 func commitResults(filename string, results []engine.TestResult) {
