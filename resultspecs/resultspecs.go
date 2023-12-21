@@ -9,7 +9,17 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	NoOp = Action(iota)
+	Equal
+	Added
+	Removed
+	InnerChanges
+)
+
 type (
+	Action int
+
 	TestResultSpec struct {
 		Name     string              `yaml:"name"`
 		Commands []CommandResultSpec `yaml:"commands"`
@@ -75,4 +85,8 @@ func Save(w io.Writer, results []engine.TestResult) error {
 	} else {
 		return nil
 	}
+}
+
+func Compare(oldspecs []TestResultSpec, newspecs []TestResultSpec) (edits []TestEdit, differs bool, err error) {
+	return compareTests(oldspecs, newspecs)
 }
