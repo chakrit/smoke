@@ -1,5 +1,10 @@
 - name: badtests.yml \ hello
   commands:
+    - command: echo extraneous
+      checks:
+        - name: stdout
+          data:
+            - extraneous
     - command: echo hello
       checks:
         - name: stdout

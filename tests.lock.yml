@@ -96,6 +96,8 @@
             - "1"
         - name: stdout
           data:
+            - '    ==> badtests.yml \ hello'
+            - +++ --> echo missing
             - '    ==> badtests.yml \ lipsum \ Head'
             - '    --> head -22 badtests.txt | tail -9'
             - '        stdout'
@@ -394,14 +396,16 @@
       checks:
         - name: exitcode
           data:
-            - "0"
+            - "1"
         - name: stdout
           data:
             - ≋≋> RUNNING TESTS
             - ==> badtests.yml \ hello
             - ≋≋> COMPARING LOCK FILE
+            - '    ==> badtests.yml \ hello'
+            - +++ --> echo missing
             - ""
-            - '  ✔ Stable.'
+            - '  ✘ Changes Detected.'
         - name: stderr
           data:
             - ""
@@ -422,14 +426,16 @@
       checks:
         - name: exitcode
           data:
-            - "0"
+            - "1"
         - name: stdout
           data:
             - ≋≋> RUNNING TESTS
             - ==> badtests.yml \ hello
             - ≋≋> COMPARING LOCK FILE
+            - '    ==> badtests.yml \ hello'
+            - +++ --> echo missing
             - ""
-            - '  ✔ Stable.'
+            - '  ✘ Changes Detected.'
         - name: stderr
           data:
             - ""

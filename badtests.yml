@@ -7,7 +7,9 @@ checks:
 tests:
   - name: hello
     commands:
+      - echo extraneous
       - echo hello
+      - echo missing
   - name: lipsum
     tests:
       - name: Head
