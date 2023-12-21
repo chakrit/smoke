@@ -97,7 +97,12 @@
         - name: stdout
           data:
             - '    ==> badtests.yml \ hello'
+            - '--- --> echo extraneous'
+            - '---     stdout'
+            - '---       extraneous'
             - +++ --> echo missing
+            - +++     stdout
+            - +++       missing
             - '    ==> badtests.yml \ lipsum \ Head'
             - '    --> head -22 badtests.txt | tail -9'
             - '        stdout'
@@ -403,7 +408,12 @@
             - ==> badtests.yml \ hello
             - ≋≋> COMPARING LOCK FILE
             - '    ==> badtests.yml \ hello'
+            - '--- --> echo extraneous'
+            - '---     stdout'
+            - '---       extraneous'
             - +++ --> echo missing
+            - +++     stdout
+            - +++       missing
             - ""
             - '  ✘ Changes Detected.'
         - name: stderr
@@ -433,7 +443,12 @@
             - ==> badtests.yml \ hello
             - ≋≋> COMPARING LOCK FILE
             - '    ==> badtests.yml \ hello'
+            - '--- --> echo extraneous'
+            - '---     stdout'
+            - '---       extraneous'
             - +++ --> echo missing
+            - +++     stdout
+            - +++       missing
             - ""
             - '  ✘ Changes Detected.'
         - name: stderr

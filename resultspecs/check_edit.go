@@ -54,6 +54,7 @@ func compareChecks(oldchks []CheckOutputSpec, newchks []CheckOutputSpec) (edits 
 				differs, edits = true, append(edits, CheckEdit{
 					Name:   oldchks[lidx].Name,
 					Action: Removed,
+					Lines:  removedLines(oldchks[lidx].Data),
 				})
 			}
 
@@ -62,6 +63,7 @@ func compareChecks(oldchks []CheckOutputSpec, newchks []CheckOutputSpec) (edits 
 				differs, edits = true, append(edits, CheckEdit{
 					Name:   newchks[ridx].Name,
 					Action: Added,
+					Lines:  addedLines(newchks[ridx].Data),
 				})
 			}
 

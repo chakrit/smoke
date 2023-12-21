@@ -54,6 +54,7 @@ func compareCmds(oldcmds []CommandResultSpec, newcmds []CommandResultSpec) (edit
 				differs, edits = true, append(edits, CommandEdit{
 					Name:   oldcmds[lidx].Command,
 					Action: Removed,
+					Checks: removedChecks(oldcmds[lidx].Checks),
 				})
 			}
 
@@ -62,6 +63,7 @@ func compareCmds(oldcmds []CommandResultSpec, newcmds []CommandResultSpec) (edit
 				differs, edits = true, append(edits, CommandEdit{
 					Name:   newcmds[ridx].Command,
 					Action: Added,
+					Checks: addedChecks(newcmds[ridx].Checks),
 				})
 			}
 
