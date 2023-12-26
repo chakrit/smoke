@@ -2,6 +2,7 @@ package testspecs
 
 import (
 	"io"
+	"path/filepath"
 	"time"
 
 	"github.com/chakrit/smoke/engine"
@@ -21,6 +22,10 @@ func Load(reader io.Reader, filename string) (engine.Collection, error) {
 	} else {
 		return tests, nil
 	}
+}
+
+func resolvePaths(strs ...string) string {
+	return filepath.Join(strs...)
 }
 
 func resolveStrings(strs ...string) string {

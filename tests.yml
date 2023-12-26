@@ -18,6 +18,38 @@ tests:
           - stdout
         commands:
           - goimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go
+      - name: Workdirs
+        checks:
+          - stdout
+          - stderr
+        tests:
+          - name: Current dir
+            commands:
+              - ls *.mod
+          - name: One Dir
+            config:
+              workdir: ./bin
+            commands:
+              - ls ../*.mod
+          - name: Two Dirs
+            config:
+              workdir: ./internal/p
+            commands:
+              - ls ../../*.mod
+          - name: Reversing
+            config:
+              workdir: ./internal/p
+            tests:
+              - name: One Dir
+                config:
+                  workdir: ..
+                commands:
+                  - ls ../*.mod
+              - name: Two Dirs
+                config:
+                  workdir: ../..
+                commands:
+                  - ls *.mod
       - name: Unit Tests
         commands:
           - go test -v ./...

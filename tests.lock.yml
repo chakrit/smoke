@@ -20,6 +20,71 @@
         - name: stdout
           data:
             - ""
+- name: tests.yml \ Basics \ Workdirs \ Current dir
+  commands:
+    - command: ls *.mod
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - go.mod
+        - name: stderr
+          data:
+            - ""
+- name: tests.yml \ Basics \ Workdirs \ One Dir
+  commands:
+    - command: ls ../*.mod
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - ../go.mod
+        - name: stderr
+          data:
+            - ""
+- name: tests.yml \ Basics \ Workdirs \ Two Dirs
+  commands:
+    - command: ls ../../*.mod
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - ../../go.mod
+        - name: stderr
+          data:
+            - ""
+- name: tests.yml \ Basics \ Workdirs \ Reversing \ One Dir
+  commands:
+    - command: ls ../*.mod
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - ../go.mod
+        - name: stderr
+          data:
+            - ""
+- name: tests.yml \ Basics \ Workdirs \ Reversing \ Two Dirs
+  commands:
+    - command: ls *.mod
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - go.mod
+        - name: stderr
+          data:
+            - ""
 - name: tests.yml \ Basics \ Unit Tests
   commands:
     - command: go test -v ./...
@@ -45,6 +110,11 @@
           data:
             - tests.yml \ Builds
             - tests.yml \ Basics \ Checks
+            - tests.yml \ Basics \ Workdirs \ Current dir
+            - tests.yml \ Basics \ Workdirs \ One Dir
+            - tests.yml \ Basics \ Workdirs \ Two Dirs
+            - tests.yml \ Basics \ Workdirs \ Reversing \ One Dir
+            - tests.yml \ Basics \ Workdirs \ Reversing \ Two Dirs
             - tests.yml \ Basics \ Unit Tests
             - tests.yml \ Basics \ Common Switches
             - tests.yml \ Basics \ Loads
@@ -66,6 +136,16 @@
             - "\t./bin/smoke"
             - tests.yml \ Basics \ Checks
             - "\tgoimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go"
+            - tests.yml \ Basics \ Workdirs \ Current dir
+            - "\tls *.mod"
+            - tests.yml \ Basics \ Workdirs \ One Dir
+            - "\tls ../*.mod"
+            - tests.yml \ Basics \ Workdirs \ Two Dirs
+            - "\tls ../../*.mod"
+            - tests.yml \ Basics \ Workdirs \ Reversing \ One Dir
+            - "\tls ../*.mod"
+            - tests.yml \ Basics \ Workdirs \ Reversing \ Two Dirs
+            - "\tls *.mod"
             - tests.yml \ Basics \ Unit Tests
             - "\tgo test -v ./..."
             - tests.yml \ Basics \ Common Switches

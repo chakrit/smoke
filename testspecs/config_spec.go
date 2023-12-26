@@ -18,16 +18,12 @@ func (c *ConfigSpec) Resolve(parent *ConfigSpec) {
 	def := engine.DefaultConfig
 
 	if parent != nil {
-		// TODO: This should instead be relative, not just a first non-empty.
-		//   i.e. when parent has workdir = "somefolder" and child has
-		//   workdir = "..", this should result in the current folder being
-		//   workdir
-		c.WorkDir = resolveStrings(c.WorkDir, parent.WorkDir)
+		c.WorkDir = resolvePaths(parent.WorkDir, c.WorkDir)
 		c.Env = append(parent.Env, c.Env...)
 		c.Interpreter = resolveStrings(c.Interpreter, parent.Interpreter)
 		c.Timeout = resolveDurations(c.Timeout, parent.Timeout)
 	} else {
-		c.WorkDir = resolveStrings(c.WorkDir, def.WorkDir)
+		c.WorkDir = resolvePaths(def.WorkDir, c.WorkDir)
 		c.Env = append(def.Env, c.Env...)
 		c.Interpreter = resolveStrings(c.Interpreter, def.Interpreter)
 		c.Timeout = resolveDurations(c.Timeout, &def.Timeout)
