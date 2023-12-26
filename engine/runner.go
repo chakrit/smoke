@@ -2,12 +2,12 @@ package engine
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os/exec"
 	"time"
 
 	"github.com/chakrit/smoke/checks"
-	"golang.org/x/xerrors"
 )
 
 type Runner interface {
@@ -88,10 +88,10 @@ func (r DefaultRunner) Command(t *Test, c Command) (result CommandResult, err er
 	}
 
 	if err := checks.PrepareAll(cmd, t.Checks); err != nil {
-		return CommandResult{}, xerrors.Errorf("checks", err)
+		return CommandResult{}, fmt.Errorf("checks: %w", err)
 	}
 	if err := cmd.Start(); err != nil {
-		return CommandResult{}, xerrors.Errorf("start", err)
+		return CommandResult{}, fmt.Errorf("start: %w", err)
 	}
 
 	go func() { errc <- cmd.Wait() }()
@@ -100,7 +100,7 @@ func (r DefaultRunner) Command(t *Test, c Command) (result CommandResult, err er
 	case <-time.After(config.Timeout):
 		_ = cmd.Process.Kill()
 		_ = <-errc // wait() should return by now (prevent send on close)
-		return CommandResult{}, xerrors.New("timeout")
+		return CommandResult{}, errors.New("timeout")
 
 	case err = <-errc: // Wait() returned
 		if err == nil {
@@ -108,12 +108,12 @@ func (r DefaultRunner) Command(t *Test, c Command) (result CommandResult, err er
 		} else if _, ok := err.(*exec.ExitError); ok {
 			// success case, with diff exit code
 		} else {
-			return CommandResult{}, xerrors.Errorf("wait", err)
+			return CommandResult{}, fmt.Errorf("wait: %w", err)
 		}
 	}
 
 	if outputs, err := checks.CollectAll(cmd, t.Checks); err != nil {
-		return CommandResult{}, xerrors.Errorf("checks", err)
+		return CommandResult{}, fmt.Errorf("checks: %w", err)
 	} else {
 		return CommandResult{
 			Command: c,

@@ -1,12 +1,10 @@
 package resultspecs
 
 import (
-	"io"
-
-	"golang.org/x/xerrors"
-
+	"fmt"
 	"github.com/chakrit/smoke/engine"
 	"gopkg.in/yaml.v3"
+	"io"
 )
 
 const (
@@ -41,7 +39,7 @@ func FromTestResult(result engine.TestResult) (TestResultSpec, error) {
 		for _, chk := range cmd.Checks {
 			lines, err := chk.Check.Format(chk.Data)
 			if err != nil {
-				return TestResultSpec{}, xerrors.Errorf("resultspecs: %w", err)
+				return TestResultSpec{}, fmt.Errorf("resultspecs: %w", err)
 			}
 
 			checks = append(checks, CheckOutputSpec{

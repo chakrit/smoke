@@ -1,9 +1,8 @@
 package testspecs
 
 import (
+	"errors"
 	"strings"
-
-	"golang.org/x/xerrors"
 
 	"github.com/chakrit/smoke/checks"
 	"github.com/chakrit/smoke/engine"
@@ -60,7 +59,7 @@ func (t *TestSpec) Tests() (tests engine.Collection, err error) {
 		var allchecks []checks.Interface
 		for _, name := range t.Checks {
 			if check := checks.Parse(name); check == nil {
-				return nil, xerrors.New("unknown check `" + name + "`")
+				return nil, errors.New("unknown check `" + name + "`")
 			} else {
 				allchecks = append(allchecks, check)
 			}

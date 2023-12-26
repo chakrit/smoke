@@ -1,8 +1,8 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,20 +11,19 @@ import (
 	"github.com/chakrit/smoke/internal/p"
 	"github.com/chakrit/smoke/resultspecs"
 	"github.com/chakrit/smoke/testspecs"
-	"golang.org/x/xerrors"
 )
 
 func processFile(filename string) {
 	file, err := os.Open(filename)
 	if err != nil {
-		p.Exit(xerrors.Errorf(filename+": %w", err))
+		p.Exit(fmt.Errorf(filename+": %w", err))
 	}
 
 	defer file.Close()
 
 	tests, err := testspecs.Load(file, filename)
 	if err != nil {
-		p.Exit(xerrors.Errorf(filename+": %w", err))
+		p.Exit(fmt.Errorf(filename+": %w", err))
 	}
 
 	if len(includes) > 0 {
@@ -71,7 +70,7 @@ func runTests(tests []*engine.Test) []engine.TestResult {
 		failed = false
 		hooks  = Hooks{
 			WrapErr: func(t *engine.Test, err error) error {
-				return xerrors.Errorf(t.Name+": %w", err)
+				return fmt.Errorf(t.Name+": %w", err)
 			},
 		}
 
@@ -100,22 +99,21 @@ func runTests(tests []*engine.Test) []engine.TestResult {
 
 func printResults(results []engine.TestResult) {
 	if err := resultspecs.Save(os.Stdout, results); err != nil {
-		p.Exit(xerrors.Errorf("print to stdout: %w", err))
+		p.Exit(fmt.Errorf("print to stdout: %w", err))
 	}
 	p.Pass("Print")
 }
 
 func commitResults(filename string, results []engine.TestResult) {
-	tmpfile, err := ioutil.TempFile("", "smoke-*.yml")
+	tmpfile, err := os.CreateTemp("", "smoke-*.yml")
 	if err != nil {
-		p.Exit(xerrors.Errorf("commit: %w", err))
+		p.Exit(fmt.Errorf("commit: %w", err))
 	}
-
 	defer tmpfile.Close()
 
 	p.FileAccess(tmpfile.Name())
 	if err = resultspecs.Save(tmpfile, results); err != nil {
-		p.Exit(xerrors.Errorf("commit "+tmpfile.Name()+": %w", err))
+		p.Exit(fmt.Errorf("commit "+tmpfile.Name()+": %w", err))
 	}
 
 	// write successful, move into place
@@ -124,7 +122,7 @@ func commitResults(filename string, results []engine.TestResult) {
 	tmpfile.Close()
 
 	if err = os.Rename(tmpfile.Name(), target); err != nil {
-		p.Exit(xerrors.Errorf("commit "+target+": %w", err))
+		p.Exit(fmt.Errorf("commit "+target+": %w", err))
 	} else {
 		p.Pass("Commit " + target)
 	}
@@ -135,16 +133,16 @@ func compareResults(filename string, results []engine.TestResult) {
 
 	lockfile, err := os.Open(lockname)
 	if os.IsNotExist(err) {
-		p.Exit(xerrors.New("Lock file does not exists, `--commit` the first one?"))
+		p.Exit(errors.New("Lock file does not exists, `--commit` the first one?"))
 	} else if err != nil {
-		p.Exit(xerrors.Errorf(lockname+": %w", err))
+		p.Exit(fmt.Errorf(lockname+": %w", err))
 	} else {
 		defer lockfile.Close()
 	}
 
 	lockspec, err := resultspecs.Load(lockfile)
 	if err != nil {
-		p.Exit(xerrors.Errorf(lockname+": %w", err))
+		p.Exit(fmt.Errorf(lockname+": %w", err))
 	}
 
 	// if includes/excludes are set, only compare those, otherwise the excluded/included
@@ -180,7 +178,7 @@ func compareResults(filename string, results []engine.TestResult) {
 	var newspecs []resultspecs.TestResultSpec
 	for _, result := range results {
 		if spec, err := resultspecs.FromTestResult(result); err != nil {
-			p.Exit(xerrors.Errorf("compare: %w", err))
+			p.Exit(fmt.Errorf("compare: %w", err))
 		} else {
 			newspecs = append(newspecs, spec)
 		}
@@ -188,7 +186,7 @@ func compareResults(filename string, results []engine.TestResult) {
 
 	edits, differs, err := resultspecs.Compare(lockspec, newspecs)
 	if err != nil {
-		p.Exit(xerrors.Errorf("compare: %w", err))
+		p.Exit(fmt.Errorf("compare: %w", err))
 	}
 	if !differs {
 		p.Pass("Stable.")

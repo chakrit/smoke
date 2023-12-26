@@ -2,10 +2,9 @@ package checks
 
 import (
 	"bytes"
+	"errors"
 	"os/exec"
 	"strings"
-
-	"golang.org/x/xerrors"
 )
 
 type (
@@ -29,14 +28,14 @@ func (stderr) Prepare(cmd *exec.Cmd) error {
 
 func (stdout) Collect(cmd *exec.Cmd) ([]byte, error) {
 	if buf, ok := cmd.Stdout.(*bytes.Buffer); !ok {
-		return nil, xerrors.New("stdout: pipe is not a bytes.Buffer{}")
+		return nil, errors.New("stdout: pipe is not a bytes.Buffer{}")
 	} else {
 		return buf.Bytes(), nil
 	}
 }
 func (stderr) Collect(cmd *exec.Cmd) ([]byte, error) {
 	if buf, ok := cmd.Stderr.(*bytes.Buffer); !ok {
-		return nil, xerrors.New("stderr: pipe is not a bytes.Buffer{}")
+		return nil, errors.New("stderr: pipe is not a bytes.Buffer{}")
 	} else {
 		return buf.Bytes(), nil
 	}
