@@ -18,6 +18,8 @@ type Runner interface {
 type RunHooks interface {
 	BeforeTest(t *Test)
 	BeforeCommand(t *Test, cmd Command)
+	BeforeCheck(t *Test, cmd Command, chk checks.Interface)
+	AfterCheck(t *Test, cmd Command, chk checks.Interface, result checks.Result, err error)
 	AfterCommand(t *Test, cmd Command, result CommandResult, err error)
 	AfterTest(t *Test, result TestResult, err error)
 }
@@ -112,12 +114,25 @@ func (r DefaultRunner) Command(t *Test, c Command) (result CommandResult, err er
 		}
 	}
 
-	if outputs, err := checks.CollectAll(cmd, t.Checks); err != nil {
-		return CommandResult{}, fmt.Errorf("checks: %w", err)
-	} else {
-		return CommandResult{
-			Command: c,
-			Checks:  outputs,
-		}, nil
+	var outputs []checks.Result
+	for _, chk := range t.Checks {
+		r.Hooks.BeforeCheck(t, c, chk)
+		if buf, err := chk.Collect(cmd); err != nil {
+			r.Hooks.AfterCheck(t, c, chk, checks.Result{}, err)
+			return CommandResult{}, fmt.Errorf("checks: %w", err)
+
+		} else {
+			result := checks.Result{
+				Check: chk,
+				Data:  buf,
+			}
+			r.Hooks.AfterCheck(t, c, chk, result, nil)
+			outputs = append(outputs, result)
+		}
 	}
+
+	return CommandResult{
+		Command: c,
+		Checks:  outputs,
+	}, nil
 }

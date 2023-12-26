@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/chakrit/smoke/checks"
 	"github.com/chakrit/smoke/engine"
 	"github.com/chakrit/smoke/internal/p"
 )
@@ -14,15 +15,18 @@ var _ engine.RunHooks = Hooks{}
 func (h Hooks) BeforeTest(t *engine.Test) {
 	p.Test(t)
 }
-
 func (h Hooks) BeforeCommand(t *engine.Test, cmd engine.Command) {
 	p.Command(t, cmd)
 }
-
+func (h Hooks) BeforeCheck(t *engine.Test, cmd engine.Command, chk checks.Interface) {
+	p.Check(t, cmd, chk)
+}
+func (h Hooks) AfterCheck(t *engine.Test, cmd engine.Command, chk checks.Interface, result checks.Result, err error) {
+	p.CheckResult(result, h.wrapErr(t, err))
+}
 func (h Hooks) AfterCommand(t *engine.Test, cmd engine.Command, result engine.CommandResult, err error) {
 	p.CommandResult(result, h.wrapErr(t, err))
 }
-
 func (h Hooks) AfterTest(t *engine.Test, result engine.TestResult, err error) {
 	p.TestResult(result, h.wrapErr(t, err))
 }

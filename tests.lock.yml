@@ -178,48 +178,35 @@
           data:
             - '    ==> badtests.yml \ hello'
             - '--- --> echo extraneous'
-            - '---     stdout'
+            - '---   > stdout'
             - '---       extraneous'
             - +++ --> echo missing
-            - +++     stdout
+            - +++   > stdout
             - +++       missing
             - '    ==> badtests.yml \ lipsum \ Head'
             - '    --> head -22 badtests.txt | tail -9'
-            - '        stdout'
-            - '---       mixtape bushwick leggings affogato portland la croix direct
-              trade biodiesel DIY readymade'
-            - +++       fixie tousled deep v af lomo synth. Bushwick la croix ramps
-              twee put a bird on it.
+            - '      > stdout'
+            - '---       mixtape bushwick leggings affogato portland la croix direct trade biodiesel DIY readymade'
+            - +++       fixie tousled deep v af lomo synth. Bushwick la croix ramps twee put a bird on it.
             - '          '
-            - '          Man braid vinyl disrupt drinking vinegar cold-pressed knausgaard
-              hashtag keytar pabst'
+            - '          Man braid vinyl disrupt drinking vinegar cold-pressed knausgaard hashtag keytar pabst'
             - '           ... 3 line(s) skipped ...'
-            - '          a bird on it. Ramps fanny pack humblebrag, leggings gochujang
-              vexillologist echo park'
-            - '          live-edge kitsch meditation offal hella swag lo-fi. Air plant
-              lo-fi green juice mumblecore'
-            - '---       fixie tousled deep v af lomo synth. Bushwick la croix ramps
-              twee put a bird on it.'
-            - +++       mixtape bushwick leggings affogato portland la croix direct
-              trade biodiesel DIY readymade
+            - '          a bird on it. Ramps fanny pack humblebrag, leggings gochujang vexillologist echo park'
+            - '          live-edge kitsch meditation offal hella swag lo-fi. Air plant lo-fi green juice mumblecore'
+            - '---       fixie tousled deep v af lomo synth. Bushwick la croix ramps twee put a bird on it.'
+            - +++       mixtape bushwick leggings affogato portland la croix direct trade biodiesel DIY readymade
             - '    ==> badtests.yml \ lipsum \ Tail'
             - '    --> tail -22 badtests.txt | head -9'
-            - '        stdout'
-            - '---       Biodiesel brooklyn pug whatever shaman semiotics bespoke
-              kinfolk, synth blog. Pabst cloud'
-            - +++       wolf moon vice aesthetic hot chicken banjo gochujang succulents
-              marfa vape mlkshk forage
-            - '          snackwave. Squid vaporware affogato, you probably haven''t
-              heard of them snackwave raclette'
-            - '          before they sold out roof party normcore hammock. Mustache
-              meh man braid, tbh pug raclette'
+            - '      > stdout'
+            - '---       Biodiesel brooklyn pug whatever shaman semiotics bespoke kinfolk, synth blog. Pabst cloud'
+            - +++       wolf moon vice aesthetic hot chicken banjo gochujang succulents marfa vape mlkshk forage
+            - '          snackwave. Squid vaporware affogato, you probably haven''t heard of them snackwave raclette'
+            - '          before they sold out roof party normcore hammock. Mustache meh man braid, tbh pug raclette'
             - '           ... 3 line(s) skipped ...'
             - '          keffiyeh blue bottle gochujang dreamcatcher.'
             - '          '
-            - '---       wolf moon vice aesthetic hot chicken banjo gochujang succulents
-              marfa vape mlkshk forage'
-            - +++       Biodiesel brooklyn pug whatever shaman semiotics bespoke kinfolk,
-              synth blog. Pabst cloud
+            - '---       wolf moon vice aesthetic hot chicken banjo gochujang succulents marfa vape mlkshk forage'
+            - +++       Biodiesel brooklyn pug whatever shaman semiotics bespoke kinfolk, synth blog. Pabst cloud
             - ""
             - '  ✘ Changes Detected.'
         - name: stderr
@@ -265,18 +252,16 @@
             - "\t\"os\""
             - "\t\"strings\""
             - ""
+            - "\t\"github.com/chakrit/smoke/checks\""
             - "\t\"github.com/chakrit/smoke/engine\""
             - "\t\"github.com/chakrit/smoke/resultspecs\""
-            - "\t\"github.com/mgutz/ansi\""
             - )
             - ""
             - // utility CLI logs
             - func Usage(s string)  { fmt.Fprintln(os.Stderr, s) }
             - func Bye()            { output(2, cLowkey+"exited."+cReset) }
-            - func Error(err error) { output(-1, cError+"ERR "+err.Error()+cReset)
-              }
-            - func Action(s string) { output(1, cAction+"≋≋> "+strings.ToUpper(s)+cReset)
-              }
+            - func Error(err error) { output(-1, cError+"ERR "+err.Error()+cReset) }
+            - func Action(s string) { output(1, cAction+"≋≋> "+strings.ToUpper(s)+cReset) }
             - ""
             - func Exit(err error) {
             - "\tError(err)"
@@ -284,10 +269,9 @@
             - '}'
             - ""
             - // testing flow
-            - func Test(t *engine.Test)                        { output(1, cTitle+"==>
-              "+cTitleEm+t.Name+cReset) }
-            - func Command(_ *engine.Test, cmd engine.Command) { output(2, cSubtitle+"-->
-              "+string(cmd)+cReset) }
+            - func Test(t *engine.Test)                                          { output(1, cTitle+"==> "+cTitleEm+t.Name+cReset) }
+            - func Command(_ *engine.Test, cmd engine.Command)                   { output(2, cSubtitle+"--> "+string(cmd)+cReset) }
+            - func Check(_ *engine.Test, _ engine.Command, chk checks.Interface) { /* no-op */ }
             - ""
             - func TestResult(_ engine.TestResult, err error) {
             - "\tif err != nil {"
@@ -298,24 +282,25 @@
             - func CommandResult(result engine.CommandResult, err error) {
             - "\tif err != nil {"
             - "\t\tError(err)"
+            - "\t}"
+            - '}'
+            - ""
+            - func CheckResult(result checks.Result, err error) {
+            - "\tif err != nil {"
+            - "\t\tError(err)"
             - "\t\treturn"
             - "\t}"
             - ""
-            - "\tfor _, chk := range result.Checks {"
-            - "\t\tlines := strings.Split(string(chk.Data), \"\\n\")"
-            - "\t\tfor _, line := range lines {"
-            - "\t\t\toutput(3, ansi.LightBlack+\"%8s:\"+ansi.Reset+\" %s\","
-            - "\t\t\t\tchk.Check.Spec(), line)"
-            - "\t\t}"
+            - "\tlines := strings.Split(string(result.Data), \"\\n\")"
+            - "\tfor _, line := range lines {"
+            - "\t\toutput(3, cLowkey+\"  > %s:\"+cReset+\" %s\", result.Check.Spec(), line)"
             - "\t}"
             - '}'
             - ""
             - // lockfile flow
             - func FileAccess(f string) { output(2, cSubtitle+"--> "+f+cReset) }
-            - func Pass(s string)       { output(-1, cPass+"\n  ✔ "+s+"\n"+cReset)
-              }
-            - func Fail(s string)       { output(-1, cFail+"\n  ✘ "+s+"\n"+cReset)
-              }
+            - func Pass(s string)       { output(-1, cPass+"\n  ✔ "+s+"\n"+cReset) }
+            - func Fail(s string)       { output(-1, cFail+"\n  ✘ "+s+"\n"+cReset) }
             - ""
             - // diff flow
             - func TestEdit(edit resultspecs.TestEdit) {
@@ -330,7 +315,7 @@
             - ""
             - func CheckEdit(edit resultspecs.CheckEdit) {
             - "\tc, prefix := colorByAction(edit.Action)"
-            - "\toutput(0, c+prefix+\"     \"+edit.Name+cReset)"
+            - "\toutput(0, c+prefix+\"   > \"+edit.Name+cReset)"
             - '}'
             - ""
             - func LineEdit(edit resultspecs.LineEdit) {
@@ -489,10 +474,10 @@
             - ≋≋> COMPARING LOCK FILE
             - '    ==> badtests.yml \ hello'
             - '--- --> echo extraneous'
-            - '---     stdout'
+            - '---   > stdout'
             - '---       extraneous'
             - +++ --> echo missing
-            - +++     stdout
+            - +++   > stdout
             - +++       missing
             - ""
             - '  ✘ Changes Detected.'
@@ -524,10 +509,10 @@
             - ≋≋> COMPARING LOCK FILE
             - '    ==> badtests.yml \ hello'
             - '--- --> echo extraneous'
-            - '---     stdout'
+            - '---   > stdout'
             - '---       extraneous'
             - +++ --> echo missing
-            - +++     stdout
+            - +++   > stdout
             - +++       missing
             - ""
             - '  ✘ Changes Detected.'
