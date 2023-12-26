@@ -11,7 +11,6 @@ var (
 	Stdout   Interface = stdout{}
 	Stderr   Interface = stderr{}
 	// TODO: Binary versions of STDIO
-	// TODO: HTTP checks
 )
 
 type (
@@ -28,14 +27,30 @@ type (
 	}
 )
 
+// It maybe better to:
+// 1. Follow the kubernetes style of `name: {}` or..
+// 2. Uses polymorphic YAML or...
+// 3. Writes a proper parser
 func Parse(line string) Interface {
+	lowline := strings.ToLower(line)
+	if strings.HasPrefix(lowline, "get ") ||
+		strings.HasPrefix(lowline, "head ") ||
+		strings.HasPrefix(lowline, "put ") ||
+		strings.HasPrefix(lowline, "post ") ||
+		strings.HasPrefix(lowline, "patch ") ||
+		strings.HasPrefix(lowline, "delete ") ||
+		strings.HasPrefix(lowline, "options ") ||
+		strings.HasPrefix(lowline, "trace ") {
+
+		parts := strings.SplitN(line, " ", 2)
+		return httpRequest{parts[0], parts[1]}
+	}
+
 	u, err := url.Parse(strings.TrimSpace(line))
 	if err != nil {
 		return nil
 	}
 
-	// It maybe better to follow the kubernetes style of `name: {}` or just go
-	// with polymorphic YAML, this feels magical and unidiomatic.
 	switch u.Scheme {
 	case "":
 		switch strings.ToLower(strings.TrimSpace(u.Path)) {
@@ -49,7 +64,6 @@ func Parse(line string) Interface {
 			return fileContent{u.Path}
 		}
 
-	// TODO: case "http"
 	default:
 		return nil
 	}

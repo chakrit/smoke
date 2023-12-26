@@ -124,6 +124,7 @@
             - tests.yml \ Tests \ Env
             - tests.yml \ Tests \ Include/Exclude \ Just Include
             - tests.yml \ Tests \ Include/Exclude \ Just Exclude
+            - tests.yml \ Tests \ HTTP
     - command: ./bin/smoke --no-color --list tests.yml -v
       checks:
         - name: exitcode
@@ -167,6 +168,8 @@
             - tests.yml \ Tests \ Include/Exclude \ Just Exclude
             - "\t./bin/smoke --no-color -l -x Head -x Tail badtests.yml"
             - "\t./bin/smoke --no-color -v -x Head -x Tail badtests.yml"
+            - tests.yml \ Tests \ HTTP
+            - "\techo just the checks"
 - name: tests.yml \ Tests \ Diff
   commands:
     - command: ./bin/smoke --no-color badtests.yml
@@ -519,3 +522,21 @@
         - name: stderr
           data:
             - ""
+- name: tests.yml \ Tests \ HTTP
+  commands:
+    - command: echo just the checks
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - just the checks
+        - name: stderr
+          data:
+            - ""
+        - name: GET https://chakrit.net
+          data:
+            - 200 OK
+            - ""
+            - <!DOCTYPE html><html><head><title>Chakrit.net</title><meta charset="utf-8"><meta name="description" content="All-rounded polyglot developer based in Bangkok, Thailand"><link rel="icon shortcut" href="/favicon.31c9f3a9.png"><link rel="stylesheet" href="/src.999c18a6.css"><script defer src="/src.79b6671f.js"></script></head><body>  </body></html>

@@ -98,3 +98,8 @@ tests:
             commands:
               - ./bin/smoke --no-color -l -x Head -x Tail badtests.yml
               - ./bin/smoke --no-color -v -x Head -x Tail badtests.yml
+      - name: HTTP
+        checks:
+          - GET https://chakrit.net
+        commands:
+          - echo just the checks
