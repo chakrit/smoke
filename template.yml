@@ -1,0 +1,17 @@
+---
+config:
+  interpreter: /bin/sh
+  timeout: 5s
+tests:
+  - name: Suite
+    checks:
+      - stdout
+      - stderr
+      - exitcode
+    tests:
+      - name: Just echo
+        commands:
+          - echo hello world
+      - name: Just exit
+        commands:
+          - exit 1
