@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"os"
 
 	"github.com/chakrit/smoke/internal/p"
@@ -8,11 +9,16 @@ import (
 )
 
 var (
+	//go:embed template.yml
+	smokeTemplate []byte
+
 	lockFile       string
 	shouldShowHelp bool
-	shouldList     bool
-	shouldPrint    bool
-	shouldCommit   bool
+
+	shouldInit   bool
+	shouldList   bool
+	shouldPrint  bool
+	shouldCommit bool
 
 	noColors  bool
 	trackTime bool
@@ -26,6 +32,7 @@ var (
 func main() {
 	pflag.BoolVarP(&shouldShowHelp, "help", "h", false, "Show help on usages.")
 
+	pflag.BoolVar(&shouldInit, "init", false, "Writes a starter smoke-tests.yml file.")
 	pflag.BoolVarP(&shouldList, "list", "l", false, "List all discovered tests and exit.")
 	pflag.BoolVarP(&shouldPrint, "print", "p", false, "Print results but don't do any comparison.")
 	pflag.BoolVarP(&shouldCommit, "commit", "c", false, "Commit all test output.")
@@ -42,6 +49,14 @@ func main() {
 
 	if shouldShowHelp {
 		pflag.Usage()
+		return
+	}
+
+	if shouldInit {
+		if err := os.WriteFile("smoke-tests.yml", smokeTemplate, 0644); err != nil {
+			p.Exit(err)
+		}
+		p.Pass("Wrote smoke-tests.yml")
 		return
 	}
 
