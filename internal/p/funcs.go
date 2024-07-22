@@ -78,6 +78,8 @@ func LineEdit(edit resultspecs.LineEdit) {
 
 func colorByAction(action resultspecs.Action) (string, string) {
 	switch action {
+	case resultspecs.NoOp:
+		return cEqual, "   "
 	case resultspecs.Equal:
 		return cEqual, "   "
 	case resultspecs.Added:
