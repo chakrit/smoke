@@ -17,7 +17,8 @@ tests:
         checks:
           - stdout
         commands:
-          - goimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go
+          - goimports -l *.go checks/*.go engine/*.go internal/p/*.go internal/*.go
+          - goimports -l testspecs/*.go resultspecs/*.go
       - name: Workdirs
         checks:
           - stdout

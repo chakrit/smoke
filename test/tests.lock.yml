@@ -12,14 +12,23 @@
             - "1"
 - name: test/tests.yml \ Basics \ Checks
   commands:
-    - command: goimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go
+    - command: goimports -l *.go checks/*.go engine/*.go internal/p/*.go internal/*.go
       checks:
         - name: exitcode
           data:
-            - "2"
+            - "0"
         - name: stdout
           data:
             - ""
+    - command: goimports -l testspecs/*.go resultspecs/*.go
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - resultspecs/line_edit.go
+            - resultspecs/resultspecs.go
 - name: test/tests.yml \ Basics \ Workdirs \ Current dir
   commands:
     - command: ls *.mod
