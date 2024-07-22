@@ -100,6 +100,6 @@ tests:
               - ./bin/smoke --no-color -v -x Head -x Tail badtests.yml
       - name: HTTP
         checks:
-          - GET https://chakrit.net
+          - GET https://raw.githubusercontent.com/chakrit/smoke/master/LICENSE
         commands:
           - echo just the checks
