@@ -196,7 +196,6 @@ func compareResults(filename string, results []engine.TestResult) {
 
 	// if includes/excludes are set, only compare those, otherwise the excluded/included
 	// tests are also compared even though they havn't been ran
-	// TODO: resultspec.Collection?
 	if len(includes) > 0 {
 		lockspec = internal.Whitelist(lockspec, includes, func(s resultspecs.TestResultSpec) string {
 			return s.Name
