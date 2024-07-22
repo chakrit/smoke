@@ -37,7 +37,6 @@ func main() {
 	pflag.BoolVarP(&shouldList, "list", "l", false, "List all discovered tests and exit.")
 	pflag.BoolVarP(&shouldPrint, "print", "p", false, "Print raw test results to stdout for scripting purposes.")
 	pflag.BoolVarP(&shouldCommit, "commit", "c", false, "Commit all test output.")
-	pflag.StringVarP(&lockFile, "lockfile", "f", "", "Filename to read lock result from (or write to, when committing).")
 
 	pflag.BoolVar(&noColors, "no-color", false, "Turns off console coloring.")
 	pflag.BoolVar(&trackTime, "time", false, "Log timestamps.")
