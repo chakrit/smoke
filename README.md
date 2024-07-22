@@ -1,24 +1,23 @@
 ![](https://raw.githubusercontent.com/chakrit/smoke/master/smoke.jpg)
 
-*WARNING:* Smoking is seriously bad for your health. Be [smoke-free][1].
+:warning: *WARNING:* :warning: Smoking is seriously bad for your health. Be [smoke-free][1].
 
 # SMOKE
 
-> Microsoft claims that after code reviews, "smoke testing is the most
+> :exclamation: Microsoft claims that after code reviews, "smoke testing is the most
 > cost-effective method for identifying and fixing defects in software"
 >
 > <cite>[Wikipedia][0]</cite>
 
 SMOKE is a CLI tool that helps you quickly and easily do smoke testing on your
 software. It works on the simple assumption that **code that produces the same
-observably correct output exhibits correct behavior.**
+observably correct output will exhibits the same correct behavior.**
 
-This, of course, is not 100% true all the time but you can get pretty far with
-reliability with just by writing a small smoke testing file and using SMOKE to
-help you.
+This, of course, is not 100% true all the time but you can get pretty far with reliability
+just by writing a small smoke testing file and using SMOKE to help you.
 
-*WARNING:* This is not a replacement for proper testing regiment. Use your own
-judgement and discretion if you are dealing with mission-critical software.
+> :warning: *WARNING:* :warning This is not a replacement for proper testing regiment. Use your own
+> judgement and discretion if you are dealing with mission-critical software.
 
 # INSTALL
 
