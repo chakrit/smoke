@@ -13,7 +13,7 @@ tests:
     tests:
       - name: Head
         commands:
-        - head -22 badtests.txt | tail -9
+          - head -22 test/badtests.txt | tail -9
       - name: Tail
         commands:
-        - tail -22 badtests.txt | head -9
+          - tail -22 test/badtests.txt | head -9

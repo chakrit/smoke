@@ -128,22 +128,22 @@
             - 'ERR tests.yml: open tests.yml: no such file or directory'
 - name: test/tests.yml \ Tests \ Diff
   commands:
-    - command: ./bin/smoke --no-color badtests.yml
+    - command: ./bin/smoke --no-color test/badtests.yml
       checks:
         - name: exitcode
           data:
             - "1"
         - name: stdout
           data:
-            - '    ==> badtests.yml \ hello'
+            - '    ==> test/badtests.yml \ hello'
             - '--- --> echo extraneous'
             - '---   > stdout'
             - '---       extraneous'
             - +++ --> echo missing
             - +++   > stdout
             - +++       missing
-            - '    ==> badtests.yml \ lipsum \ Head'
-            - '    --> head -22 badtests.txt | tail -9'
+            - '    ==> test/badtests.yml \ lipsum \ Head'
+            - '    --> head -22 test/badtests.txt | tail -9'
             - '      > stdout'
             - '---       mixtape bushwick leggings affogato portland la croix direct trade biodiesel DIY readymade'
             - +++       fixie tousled deep v af lomo synth. Bushwick la croix ramps twee put a bird on it.
@@ -154,8 +154,8 @@
             - '          live-edge kitsch meditation offal hella swag lo-fi. Air plant lo-fi green juice mumblecore'
             - '---       fixie tousled deep v af lomo synth. Bushwick la croix ramps twee put a bird on it.'
             - +++       mixtape bushwick leggings affogato portland la croix direct trade biodiesel DIY readymade
-            - '    ==> badtests.yml \ lipsum \ Tail'
-            - '    --> tail -22 badtests.txt | head -9'
+            - '    ==> test/badtests.yml \ lipsum \ Tail'
+            - '    --> tail -22 test/badtests.txt | head -9'
             - '      > stdout'
             - '---       Biodiesel brooklyn pug whatever shaman semiotics bespoke kinfolk, synth blog. Pabst cloud'
             - +++       wolf moon vice aesthetic hot chicken banjo gochujang succulents marfa vape mlkshk forage
@@ -412,18 +412,18 @@
             - ""
 - name: test/tests.yml \ Tests \ Include/Exclude \ Just Include
   commands:
-    - command: ./bin/smoke --no-color -l -i hello badtests.yml
+    - command: ./bin/smoke --no-color -l -i hello test/badtests.yml
       checks:
         - name: exitcode
           data:
             - "0"
         - name: stdout
           data:
-            - badtests.yml \ hello
+            - test/badtests.yml \ hello
         - name: stderr
           data:
             - ""
-    - command: ./bin/smoke --no-color -v -i hello badtests.yml
+    - command: ./bin/smoke --no-color -v -i hello test/badtests.yml
       checks:
         - name: exitcode
           data:
@@ -431,9 +431,9 @@
         - name: stdout
           data:
             - ≋≋> RUNNING TESTS
-            - ==> badtests.yml \ hello
+            - ==> test/badtests.yml \ hello
             - ≋≋> COMPARING LOCK FILE
-            - '    ==> badtests.yml \ hello'
+            - '    ==> test/badtests.yml \ hello'
             - '--- --> echo extraneous'
             - '---   > stdout'
             - '---       extraneous'
@@ -447,18 +447,18 @@
             - ""
 - name: test/tests.yml \ Tests \ Include/Exclude \ Just Exclude
   commands:
-    - command: ./bin/smoke --no-color -l -x Head -x Tail badtests.yml
+    - command: ./bin/smoke --no-color -l -x Head -x Tail test/badtests.yml
       checks:
         - name: exitcode
           data:
             - "0"
         - name: stdout
           data:
-            - badtests.yml \ hello
+            - test/badtests.yml \ hello
         - name: stderr
           data:
             - ""
-    - command: ./bin/smoke --no-color -v -x Head -x Tail badtests.yml
+    - command: ./bin/smoke --no-color -v -x Head -x Tail test/badtests.yml
       checks:
         - name: exitcode
           data:
@@ -466,9 +466,9 @@
         - name: stdout
           data:
             - ≋≋> RUNNING TESTS
-            - ==> badtests.yml \ hello
+            - ==> test/badtests.yml \ hello
             - ≋≋> COMPARING LOCK FILE
-            - '    ==> badtests.yml \ hello'
+            - '    ==> test/badtests.yml \ hello'
             - '--- --> echo extraneous'
             - '---   > stdout'
             - '---       extraneous'

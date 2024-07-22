@@ -71,7 +71,7 @@ tests:
     tests:
       - name: Diff
         commands:
-          - ./bin/smoke --no-color badtests.yml
+          - ./bin/smoke --no-color test/badtests.yml
       - name: Errors
         commands:
           - unknowncommand_asdfqwerzcxv # should error
@@ -93,12 +93,12 @@ tests:
         tests:
           - name: Just Include
             commands:
-              - ./bin/smoke --no-color -l -i hello badtests.yml
-              - ./bin/smoke --no-color -v -i hello badtests.yml
+              - ./bin/smoke --no-color -l -i hello test/badtests.yml
+              - ./bin/smoke --no-color -v -i hello test/badtests.yml
           - name: Just Exclude
             commands:
-              - ./bin/smoke --no-color -l -x Head -x Tail badtests.yml
-              - ./bin/smoke --no-color -v -x Head -x Tail badtests.yml
+              - ./bin/smoke --no-color -l -x Head -x Tail test/badtests.yml
+              - ./bin/smoke --no-color -v -x Head -x Tail test/badtests.yml
       - name: HTTP
         checks:
           - GET https://raw.githubusercontent.com/chakrit/smoke/master/LICENSE
