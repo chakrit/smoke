@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/chakrit/smoke/engine"
+	"github.com/chakrit/smoke/internal"
 	"github.com/chakrit/smoke/internal/p"
 	"github.com/chakrit/smoke/resultspecs"
 	"github.com/chakrit/smoke/testspecs"
@@ -18,7 +18,6 @@ func processFile(filename string) {
 	if err != nil {
 		p.Exit(fmt.Errorf(filename+": %w", err))
 	}
-
 	defer file.Close()
 
 	tests, err := testspecs.Load(file, filename)
@@ -27,10 +26,14 @@ func processFile(filename string) {
 	}
 
 	if len(includes) > 0 {
-		tests = tests.Whitelist(includes)
+		tests = internal.Whitelist(tests, includes, func(t *engine.Test) string {
+			return t.Name
+		})
 	}
 	if len(excludes) > 0 {
-		tests = tests.Blacklist(excludes)
+		tests = internal.Blacklist(tests, excludes, func(t *engine.Test) string {
+			return t.Name
+		})
 	}
 
 	if shouldList {
@@ -52,7 +55,7 @@ func processFile(filename string) {
 	}
 }
 
-func listTests(tests engine.Collection) {
+func listTests(tests []*engine.Test) {
 	v := p.Verbosity()
 
 	for _, test := range tests {
@@ -149,30 +152,14 @@ func compareResults(filename string, results []engine.TestResult) {
 	// tests are also compared even though they havn't been ran
 	// TODO: resultspec.Collection?
 	if len(includes) > 0 {
-		filtered := make([]resultspecs.TestResultSpec, 0, len(lockspec))
-	NextInclude:
-		for _, spec := range lockspec {
-			for _, item := range includes {
-				if strings.Contains(spec.Name, item) {
-					filtered = append(filtered, spec)
-					continue NextInclude
-				}
-			}
-		}
-		lockspec = filtered
+		lockspec = internal.Whitelist(lockspec, includes, func(s resultspecs.TestResultSpec) string {
+			return s.Name
+		})
 	}
 	if len(excludes) > 0 {
-		filtered := make([]resultspecs.TestResultSpec, 0, len(lockspec))
-	NextExclude:
-		for _, spec := range lockspec {
-			for _, item := range excludes {
-				if strings.Contains(spec.Name, item) {
-					continue NextExclude
-				}
-			}
-			filtered = append(filtered, spec)
-		}
-		lockspec = filtered
+		lockspec = internal.Blacklist(lockspec, excludes, func(s resultspecs.TestResultSpec) string {
+			return s.Name
+		})
 	}
 
 	var newspecs []resultspecs.TestResultSpec

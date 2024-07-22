@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Load(reader io.Reader, filename string) (engine.Collection, error) {
+func Load(reader io.Reader, filename string) ([]*engine.Test, error) {
 	root := &TestSpec{}
 	if err := yaml.NewDecoder(reader).Decode(root); err != nil {
 		return nil, err
