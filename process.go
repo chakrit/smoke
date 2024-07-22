@@ -14,6 +14,11 @@ import (
 )
 
 func processFile(filename string) {
+	if shouldShowExpected {
+		showResults(filename)
+		return
+	}
+
 	file, err := os.Open(filename)
 	if err != nil {
 		p.Exit(fmt.Errorf(filename+": %w", err))
@@ -63,6 +68,47 @@ func listTests(tests []*engine.Test) {
 		if v > 1 {
 			for _, cmd := range test.Commands {
 				fmt.Fprintf(os.Stdout, "\t%s\n", cmd)
+			}
+		}
+	}
+}
+
+func showResults(filename string) {
+	target := lockFilename(filename)
+	p.FileAccess(target)
+
+	file, err := os.Open(target)
+	if err != nil {
+		p.Exit(err)
+		return
+	}
+	defer file.Close()
+
+	results, err := resultspecs.Load(file)
+	if err != nil {
+		p.Exit(fmt.Errorf(target+": %w", err))
+	}
+
+	if len(includes) > 0 {
+		results = internal.Whitelist(results, includes, func(r resultspecs.TestResultSpec) string {
+			return r.Name
+		})
+	}
+	if len(excludes) > 0 {
+		results = internal.Blacklist(results, excludes, func(r resultspecs.TestResultSpec) string {
+			return r.Name
+		})
+	}
+
+	for _, test := range results {
+		p.TestEdit(resultspecs.TestEdit{Name: test.Name, Action: resultspecs.NoOp})
+		for _, cmd := range test.Commands {
+			p.CommandEdit(resultspecs.CommandEdit{Name: cmd.Command, Action: resultspecs.NoOp})
+			for _, check := range cmd.Checks {
+				p.CheckEdit(resultspecs.CheckEdit{Name: check.Name, Action: resultspecs.NoOp})
+				for _, line := range check.Data {
+					p.LineEdit(resultspecs.LineEdit{Line: line, Action: resultspecs.NoOp})
+				}
 			}
 		}
 	}

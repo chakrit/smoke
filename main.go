@@ -12,8 +12,8 @@ var (
 	//go:embed template.yml
 	smokeTemplate []byte
 
-	lockFile       string
-	shouldShowHelp bool
+	shouldShowHelp     bool
+	shouldShowExpected bool
 
 	shouldInit   bool
 	shouldList   bool
@@ -31,10 +31,11 @@ var (
 
 func main() {
 	pflag.BoolVarP(&shouldShowHelp, "help", "h", false, "Show help on usages.")
+	pflag.BoolVarP(&shouldShowExpected, "show-expected", "s", false, "Show currently locked results without running the tests.")
 
 	pflag.BoolVar(&shouldInit, "init", false, "Writes a starter smoke-tests.yml file.")
 	pflag.BoolVarP(&shouldList, "list", "l", false, "List all discovered tests and exit.")
-	pflag.BoolVarP(&shouldPrint, "print", "p", false, "Print results but don't do any comparison.")
+	pflag.BoolVarP(&shouldPrint, "print", "p", false, "Print raw test results to stdout for scripting purposes.")
 	pflag.BoolVarP(&shouldCommit, "commit", "c", false, "Commit all test output.")
 	pflag.StringVarP(&lockFile, "lockfile", "f", "", "Filename to read lock result from (or write to, when committing).")
 
