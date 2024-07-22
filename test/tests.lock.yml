@@ -1,4 +1,4 @@
-- name: tests.yml \ Builds
+- name: test/tests.yml \ Builds
   commands:
     - command: go build -o ./bin/smoke -v .
       checks:
@@ -10,7 +10,7 @@
         - name: exitcode
           data:
             - "1"
-- name: tests.yml \ Basics \ Checks
+- name: test/tests.yml \ Basics \ Checks
   commands:
     - command: goimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go
       checks:
@@ -20,7 +20,7 @@
         - name: stdout
           data:
             - ""
-- name: tests.yml \ Basics \ Workdirs \ Current dir
+- name: test/tests.yml \ Basics \ Workdirs \ Current dir
   commands:
     - command: ls *.mod
       checks:
@@ -33,7 +33,7 @@
         - name: stderr
           data:
             - ""
-- name: tests.yml \ Basics \ Workdirs \ One Dir
+- name: test/tests.yml \ Basics \ Workdirs \ One Dir
   commands:
     - command: ls ../*.mod
       checks:
@@ -46,7 +46,7 @@
         - name: stderr
           data:
             - ""
-- name: tests.yml \ Basics \ Workdirs \ Two Dirs
+- name: test/tests.yml \ Basics \ Workdirs \ Two Dirs
   commands:
     - command: ls ../../*.mod
       checks:
@@ -59,7 +59,7 @@
         - name: stderr
           data:
             - ""
-- name: tests.yml \ Basics \ Workdirs \ Reversing \ One Dir
+- name: test/tests.yml \ Basics \ Workdirs \ Reversing \ One Dir
   commands:
     - command: ls ../*.mod
       checks:
@@ -72,7 +72,7 @@
         - name: stderr
           data:
             - ""
-- name: tests.yml \ Basics \ Workdirs \ Reversing \ Two Dirs
+- name: test/tests.yml \ Basics \ Workdirs \ Reversing \ Two Dirs
   commands:
     - command: ls *.mod
       checks:
@@ -85,92 +85,39 @@
         - name: stderr
           data:
             - ""
-- name: tests.yml \ Basics \ Unit Tests
+- name: test/tests.yml \ Basics \ Unit Tests
   commands:
     - command: go test -v ./...
       checks:
         - name: exitcode
           data:
             - "0"
-- name: tests.yml \ Basics \ Common Switches
+- name: test/tests.yml \ Basics \ Common Switches
   commands:
     - command: ./bin/smoke --time -qqqq -vvvv
       checks:
         - name: exitcode
           data:
             - "1"
-- name: tests.yml \ Basics \ Loads
+- name: test/tests.yml \ Basics \ Loads
   commands:
     - command: ./bin/smoke --no-color --list tests.yml
       checks:
         - name: exitcode
           data:
-            - "0"
+            - "1"
         - name: stdout
           data:
-            - tests.yml \ Builds
-            - tests.yml \ Basics \ Checks
-            - tests.yml \ Basics \ Workdirs \ Current dir
-            - tests.yml \ Basics \ Workdirs \ One Dir
-            - tests.yml \ Basics \ Workdirs \ Two Dirs
-            - tests.yml \ Basics \ Workdirs \ Reversing \ One Dir
-            - tests.yml \ Basics \ Workdirs \ Reversing \ Two Dirs
-            - tests.yml \ Basics \ Unit Tests
-            - tests.yml \ Basics \ Common Switches
-            - tests.yml \ Basics \ Loads
-            - tests.yml \ Tests \ Diff
-            - tests.yml \ Tests \ Errors
-            - tests.yml \ Tests \ I/O
-            - tests.yml \ Tests \ Env
-            - tests.yml \ Tests \ Include/Exclude \ Just Include
-            - tests.yml \ Tests \ Include/Exclude \ Just Exclude
-            - tests.yml \ Tests \ HTTP
+            - 'ERR tests.yml: open tests.yml: no such file or directory'
     - command: ./bin/smoke --no-color --list tests.yml -v
       checks:
         - name: exitcode
           data:
-            - "0"
+            - "1"
         - name: stdout
           data:
-            - tests.yml \ Builds
-            - "\tgo build -o ./bin/smoke -v ."
-            - "\t./bin/smoke"
-            - tests.yml \ Basics \ Checks
-            - "\tgoimports -l *.go checks/*.go engine/*.go internal/p/*.go specs/*.go"
-            - tests.yml \ Basics \ Workdirs \ Current dir
-            - "\tls *.mod"
-            - tests.yml \ Basics \ Workdirs \ One Dir
-            - "\tls ../*.mod"
-            - tests.yml \ Basics \ Workdirs \ Two Dirs
-            - "\tls ../../*.mod"
-            - tests.yml \ Basics \ Workdirs \ Reversing \ One Dir
-            - "\tls ../*.mod"
-            - tests.yml \ Basics \ Workdirs \ Reversing \ Two Dirs
-            - "\tls *.mod"
-            - tests.yml \ Basics \ Unit Tests
-            - "\tgo test -v ./..."
-            - tests.yml \ Basics \ Common Switches
-            - "\t./bin/smoke --time -qqqq -vvvv"
-            - tests.yml \ Basics \ Loads
-            - "\t./bin/smoke --no-color --list tests.yml"
-            - "\t./bin/smoke --no-color --list tests.yml -v"
-            - tests.yml \ Tests \ Diff
-            - "\t./bin/smoke --no-color badtests.yml"
-            - tests.yml \ Tests \ Errors
-            - "\tunknowncommand_asdfqwerzcxv"
-            - tests.yml \ Tests \ I/O
-            - "\tls"
-            - tests.yml \ Tests \ Env
-            - "\techo $YEAS_ITS"
-            - tests.yml \ Tests \ Include/Exclude \ Just Include
-            - "\t./bin/smoke --no-color -l -i hello badtests.yml"
-            - "\t./bin/smoke --no-color -v -i hello badtests.yml"
-            - tests.yml \ Tests \ Include/Exclude \ Just Exclude
-            - "\t./bin/smoke --no-color -l -x Head -x Tail badtests.yml"
-            - "\t./bin/smoke --no-color -v -x Head -x Tail badtests.yml"
-            - tests.yml \ Tests \ HTTP
-            - "\techo just the checks"
-- name: tests.yml \ Tests \ Diff
+            - 'ERR tests.yml: open tests.yml: no such file or directory'
+- name: test/tests.yml \ Tests \ Diff
   commands:
     - command: ./bin/smoke --no-color badtests.yml
       checks:
@@ -215,7 +162,7 @@
         - name: stderr
           data:
             - ""
-- name: tests.yml \ Tests \ Errors
+- name: test/tests.yml \ Tests \ Errors
   commands:
     - command: unknowncommand_asdfqwerzcxv
       checks:
@@ -228,7 +175,7 @@
         - name: stderr
           data:
             - '/bin/sh: line 1: unknowncommand_asdfqwerzcxv: command not found'
-- name: tests.yml \ Tests \ I/O
+- name: test/tests.yml \ Tests \ I/O
   commands:
     - command: ls
       checks:
@@ -439,7 +386,7 @@
             - '}'
             - '-----END print.go-----'
             - ""
-- name: tests.yml \ Tests \ Env
+- name: test/tests.yml \ Tests \ Env
   commands:
     - command: echo $YEAS_ITS
       checks:
@@ -452,7 +399,7 @@
         - name: stderr
           data:
             - ""
-- name: tests.yml \ Tests \ Include/Exclude \ Just Include
+- name: test/tests.yml \ Tests \ Include/Exclude \ Just Include
   commands:
     - command: ./bin/smoke --no-color -l -i hello badtests.yml
       checks:
@@ -487,7 +434,7 @@
         - name: stderr
           data:
             - ""
-- name: tests.yml \ Tests \ Include/Exclude \ Just Exclude
+- name: test/tests.yml \ Tests \ Include/Exclude \ Just Exclude
   commands:
     - command: ./bin/smoke --no-color -l -x Head -x Tail badtests.yml
       checks:
@@ -522,7 +469,7 @@
         - name: stderr
           data:
             - ""
-- name: tests.yml \ Tests \ HTTP
+- name: test/tests.yml \ Tests \ HTTP
   commands:
     - command: echo just the checks
       checks:
