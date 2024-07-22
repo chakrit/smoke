@@ -275,6 +275,8 @@
             - ""
             - func colorByAction(action resultspecs.Action) (string, string) {
             - "\tswitch action {"
+            - "\tcase resultspecs.NoOp:"
+            - "\t\treturn cEqual, \"   \""
             - "\tcase resultspecs.Equal:"
             - "\t\treturn cEqual, \"   \""
             - "\tcase resultspecs.Added:"
