@@ -104,3 +104,12 @@ tests:
           - GET https://raw.githubusercontent.com/chakrit/smoke/master/LICENSE
         commands:
           - echo just the checks
+      - name: Subtests
+        commands:
+          - echo "parent command"
+        tests:
+          - name: Command Inherits
+            commands:
+              - echo "child command"
+            checks:
+              - stdout

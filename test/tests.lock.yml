@@ -515,3 +515,46 @@
             - COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
             - IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
             - CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+- name: test/tests.yml \ Tests \ Subtests
+  commands:
+    - command: echo "parent command"
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - parent command
+        - name: stderr
+          data:
+            - ""
+- name: test/tests.yml \ Tests \ Subtests \ Command Inherits
+  commands:
+    - command: echo "parent command"
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - parent command
+        - name: stderr
+          data:
+            - ""
+        - name: stdout
+          data:
+            - parent command
+    - command: echo "child command"
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - child command
+        - name: stderr
+          data:
+            - ""
+        - name: stdout
+          data:
+            - child command
