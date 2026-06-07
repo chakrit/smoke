@@ -64,9 +64,7 @@ Tasks:
       Drop `STABLE`/`Changes Detected` framing that reads as pass/fail; prefer
       neutral states (e.g. `UNCHANGED` / `CHANGED` / `NEW` / `MISSING`). Never
       emit "pass", "green", or a ✓ that implies a passing assertion.
-* [ ] Audit exit-code semantics and document the contract explicitly: exit 0 means
-      "matches lock", NOT "tests passed". Decide what an agent should infer and
-      state it in `--help` and the README.
+* [ ] Exit-code semantics: see the dedicated "Exit-code design" epic below.
 * [ ] Distinguish the no-lock first-run state (`NEW` / `UNREVIEWED`) from
       `UNCHANGED`, so an agent knows a human/LLM eyeball is still required before
       the golden can be trusted.
@@ -81,6 +79,45 @@ Tasks:
       golden is correct vs. when it's hiding a regression.
 * [ ] Record the vocabulary + exit-code contract as a `docs/decisions/` entry —
       this is a semantics ruling other tools/agents will depend on.
+
+## Epic: Exit-code design
+
+Today exit `1` is overloaded: it means both "output drifted" (an expected, benign
+workflow state needing review) *and* "the tool itself failed" (timeout, missing
+lock, unparseable spec, runner error). Nothing wrapping SMOKE — a CI gate, a shell
+script, an LLM — can tell a regression from a crash. Give each outcome class a
+distinct, documented, stable code.
+
+Anchor on `diff(1)`'s long-established convention, since SMOKE is conceptually a
+diff: `0` = no difference, `1` = differences found, `2` = trouble. This keeps "fail
+the build on any nonzero" working for CI while letting an agent branch on the
+specific code.
+
+Proposed code space (to ratify in the decision doc):
+
+| Code | Meaning                          | Notes                                  |
+| ---- | -------------------------------- | -------------------------------------- |
+| 0    | All checks matched the lock      | NOT "tests passed" — drift-free only.  |
+| 1    | Drift detected (output changed)  | Expected during intentional changes.   |
+| 2    | Operational error                | Bad spec, runner failure, timeout.     |
+| ?    | No lock / unreviewed first run   | Distinct code, or fold into 2? Decide. |
+| 64+  | Usage error                      | `pflag` convention is `2`; reconcile.  |
+
+Tasks:
+
+* [ ] Inventory every current exit path (`main.go`, `process.go` compare/commit,
+      `runTests` failure, usage errors) and map each to an outcome class.
+* [ ] Resolve the collision between drift (`diff`-style `2` = trouble) and pflag's
+      usage-error `2`. Pick one scheme and apply it consistently.
+* [ ] Decide the no-lock / unreviewed-first-run code (today it hard-errors). It is
+      semantically distinct from both "matched" and "drift".
+* [ ] Implement distinct codes; centralize them as named constants rather than
+      scattered `os.Exit(1)` literals.
+* [ ] Mirror the exit code in the `--json` output (a `status` field) so agents
+      don't have to shell-inspect `$?`.
+* [ ] Document the full table in `--help` and README; freeze it as a contract.
+* [ ] Record the chosen scheme in `docs/decisions/` (shared ruling with the
+      semantics epic's vocabulary contract).
 
 ## Backlog (unsorted)
 
