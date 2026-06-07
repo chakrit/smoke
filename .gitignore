@@ -1,3 +1,20 @@
 .idea
 bin
 vendor
+
+# ACE-managed — do not edit this block.
+# Managed by ACE. See https://github.com/ace-rs/ace
+.agents/agents
+.agents/commands
+.agents/rules
+.agents/skills
+.claude/agents
+.claude/commands
+.claude/rules
+.claude/skills
+.opencode/agents
+.opencode/commands
+.opencode/rules
+.opencode/skills
+ace.local.toml
+# end ACE
