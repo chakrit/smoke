@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -139,7 +138,7 @@ func runTests(tests []*engine.Test) []engine.TestResult {
 
 	if failed {
 		// TODO: Also fail, if testresult.any(:failed?)
-		os.Exit(1)
+		os.Exit(p.ExitTrouble)
 		return nil
 	}
 
@@ -182,7 +181,8 @@ func compareResults(filename string, results []engine.TestResult) {
 
 	lockfile, err := os.Open(lockname)
 	if os.IsNotExist(err) {
-		p.Exit(errors.New("Lock file does not exists, `--commit` the first one?"))
+		p.New(lockname)
+		os.Exit(p.ExitNew)
 	} else if err != nil {
 		p.Exit(fmt.Errorf(lockname+": %w", err))
 	} else {
@@ -221,9 +221,8 @@ func compareResults(filename string, results []engine.TestResult) {
 		p.Exit(fmt.Errorf("compare: %w", err))
 	}
 	if !differs {
-		p.Pass("Stable.")
-		os.Exit(0)
-		return
+		p.Unchanged(lockname)
+		os.Exit(p.ExitUnchanged)
 	}
 
 	for _, edit := range edits {
@@ -251,8 +250,8 @@ func compareResults(filename string, results []engine.TestResult) {
 		}
 	}
 
-	p.Fail("Changes Detected.")
-	os.Exit(1)
+	p.Changed(lockname)
+	os.Exit(p.ExitChanged)
 }
 
 func lockFilename(filename string) string {

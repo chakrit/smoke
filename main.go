@@ -58,7 +58,8 @@ func main() {
 
 	if initFile != "" {
 		if args := pflag.Args(); len(args) > 0 {
-			p.Exit(fmt.Errorf("use --init=PATH to write elsewhere; unexpected argument %q", args[0]))
+			p.Usage(fmt.Sprintf("use --init=PATH to write elsewhere; unexpected argument %q", args[0]))
+			os.Exit(p.ExitUsage)
 		}
 		initSpec(initFile)
 		return
@@ -68,14 +69,14 @@ func main() {
 	// partial tests/modifications
 	if shouldCommit && (len(includes) > 0 || len(excludes) > 0) {
 		p.Usage("cannot commit partial results when using --include or --exclude")
-		os.Exit(1)
+		os.Exit(p.ExitUsage)
 		return
 	}
 
 	filenames := pflag.Args()
 	if len(filenames) < 1 {
 		p.Usage("requires a spec filename.")
-		os.Exit(1)
+		os.Exit(p.ExitUsage)
 		return
 	}
 

@@ -10,6 +10,15 @@ import (
 	"github.com/chakrit/smoke/resultspecs"
 )
 
+// Exit codes — frozen contract, see docs/spec/exit-codes.md.
+const (
+	ExitUnchanged = 0  // output matched the lock
+	ExitChanged   = 1  // drift detected
+	ExitTrouble   = 2  // operational error (bad spec, runner crash, I/O)
+	ExitNew       = 3  // no lock; first run unreviewed
+	ExitUsage     = 64 // invalid invocation (EX_USAGE)
+)
+
 // utility CLI logs
 func Usage(s string)  { fmt.Fprintln(os.Stderr, s) }
 func Bye()            { output(2, cLowkey+"exited."+cReset) }
@@ -18,7 +27,7 @@ func Action(s string) { output(1, cAction+"≋≋> "+strings.ToUpper(s)+cReset) 
 
 func Exit(err error) {
 	Error(err)
-	os.Exit(1)
+	os.Exit(ExitTrouble)
 }
 
 // testing flow
@@ -53,7 +62,18 @@ func CheckResult(result checks.Result, err error) {
 // lockfile flow
 func FileAccess(f string) { output(2, cSubtitle+"--> "+f+cReset) }
 func Pass(s string)       { output(-1, cPass+"\n  ✔ "+s+"\n"+cReset) }
-func Fail(s string)       { output(-1, cFail+"\n  ✘ "+s+"\n"+cReset) }
+
+// drift verdicts — neutral vocabulary, no pass/fail framing. UNCHANGED means
+// drift-free, not verified-correct; CHANGED means review, not failure.
+func Unchanged(lock string) {
+	output(-1, "\nUNCHANGED — output matches "+lock+" (drift-free, not verified correct)\n")
+}
+func Changed(lock string) {
+	output(-1, cAction+"\nCHANGED — output drifted from "+lock+"; review and re-commit if intended\n"+cReset)
+}
+func New(lock string) {
+	output(-1, cAction+"\nNEW — no lock at "+lock+"; first run unreviewed, --commit to create the golden\n"+cReset)
+}
 
 // diff flow
 func TestEdit(edit resultspecs.TestEdit) {

@@ -45,3 +45,17 @@ redundantly, by stream.
 - **Agent in a TDD loop:** `1` (`CHANGED`) is the *expected* state during an
   intentional change — eyeball and `--commit`, do not "fix" output back to
   green. `3` (`NEW`) means review and commit the first lock. `2`/`64` mean stop.
+
+## Implementation status
+
+The five codes are wired (`internal/p` constants; compare-mode emits
+`0`/`1`/`3`, `p.Exit` emits `2`, usage paths emit `64`). Two parts of this spec
+are **not yet implemented** and remain the target, not the present behavior:
+
+- **Timeout** currently routes through the runner-error path and exits `2`
+  (operational), not `1` (drift). Reclassifying it requires engine surgery —
+  turning a timeout into a recordable check result instead of an aborting error
+  — so it is deferred to its own slice.
+- **Stream separation** is not done: operational/usage diagnostics still print
+  to stdout (`p.Error` → stdout), not stderr. Exit codes already disambiguate;
+  the stderr axis is the redundant second one and lands in a follow-up.

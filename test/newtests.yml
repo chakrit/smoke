@@ -1,0 +1,10 @@
+---
+config:
+  interpreter: /bin/sh
+tests:
+  - name: Echo
+    checks:
+      - exitcode
+      - stdout
+    commands:
+      - echo new-fixture

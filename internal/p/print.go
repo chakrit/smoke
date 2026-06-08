@@ -18,7 +18,6 @@ var ( // stylesheet :p
 	cAction string
 	cError  string
 	cPass   string
-	cFail   string
 
 	cEqual        string
 	cAdded        string
@@ -49,7 +48,6 @@ func Configure(color, trackTime bool, v int, q int) {
 		cAction = ""
 		cError = ""
 		cPass = ""
-		cFail = ""
 
 		cEqual = ""
 		cAdded = ""
@@ -66,7 +64,6 @@ func Configure(color, trackTime bool, v int, q int) {
 		cAction = ansi.ColorCode("cyan+b")
 		cError = ansi.Red
 		cPass = ansi.ColorCode("green+b")
-		cFail = ansi.ColorCode("red+b")
 
 		cEqual = ansi.LightBlack
 		cAdded = ansi.Green

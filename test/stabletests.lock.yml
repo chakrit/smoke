@@ -1,0 +1,10 @@
+- name: test/stabletests.yml \ Echo
+  commands:
+    - command: echo unchanged-fixture
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - unchanged-fixture

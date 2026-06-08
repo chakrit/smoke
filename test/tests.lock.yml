@@ -9,7 +9,7 @@
       checks:
         - name: exitcode
           data:
-            - "1"
+            - "64"
 - name: test/tests.yml \ Basics \ Checks
   commands:
     - command: goimports -l *.go checks/*.go engine/*.go internal/p/*.go internal/*.go
@@ -107,14 +107,14 @@
       checks:
         - name: exitcode
           data:
-            - "1"
+            - "64"
 - name: test/tests.yml \ Basics \ Loads
   commands:
     - command: ./bin/smoke --no-color --list tests.yml
       checks:
         - name: exitcode
           data:
-            - "1"
+            - "2"
         - name: stdout
           data:
             - 'ERR tests.yml: open tests.yml: no such file or directory'
@@ -122,7 +122,7 @@
       checks:
         - name: exitcode
           data:
-            - "1"
+            - "2"
         - name: stdout
           data:
             - 'ERR tests.yml: open tests.yml: no such file or directory'
@@ -167,7 +167,7 @@
             - '---       wolf moon vice aesthetic hot chicken banjo gochujang succulents marfa vape mlkshk forage'
             - +++       Biodiesel brooklyn pug whatever shaman semiotics bespoke kinfolk, synth blog. Pabst cloud
             - ""
-            - '  ✘ Changes Detected.'
+            - CHANGED — output drifted from test/badtests.lock.yml; review and re-commit if intended
         - name: stderr
           data:
             - ""
@@ -216,6 +216,15 @@
             - "\t\"github.com/chakrit/smoke/resultspecs\""
             - )
             - ""
+            - // Exit codes — frozen contract, see docs/spec/exit-codes.md.
+            - const (
+            - "\tExitUnchanged = 0  // output matched the lock"
+            - "\tExitChanged   = 1  // drift detected"
+            - "\tExitTrouble   = 2  // operational error (bad spec, runner crash, I/O)"
+            - "\tExitNew       = 3  // no lock; first run unreviewed"
+            - "\tExitUsage     = 64 // invalid invocation (EX_USAGE)"
+            - )
+            - ""
             - // utility CLI logs
             - func Usage(s string)  { fmt.Fprintln(os.Stderr, s) }
             - func Bye()            { output(2, cLowkey+"exited."+cReset) }
@@ -224,7 +233,7 @@
             - ""
             - func Exit(err error) {
             - "\tError(err)"
-            - "\tos.Exit(1)"
+            - "\tos.Exit(ExitTrouble)"
             - '}'
             - ""
             - // testing flow
@@ -259,7 +268,18 @@
             - // lockfile flow
             - func FileAccess(f string) { output(2, cSubtitle+"--> "+f+cReset) }
             - func Pass(s string)       { output(-1, cPass+"\n  ✔ "+s+"\n"+cReset) }
-            - func Fail(s string)       { output(-1, cFail+"\n  ✘ "+s+"\n"+cReset) }
+            - ""
+            - // drift verdicts — neutral vocabulary, no pass/fail framing. UNCHANGED means
+            - // drift-free, not verified-correct; CHANGED means review, not failure.
+            - func Unchanged(lock string) {
+            - "\toutput(-1, \"\\nUNCHANGED — output matches \"+lock+\" (drift-free, not verified correct)\\n\")"
+            - '}'
+            - func Changed(lock string) {
+            - "\toutput(-1, cAction+\"\\nCHANGED — output drifted from \"+lock+\"; review and re-commit if intended\\n\"+cReset)"
+            - '}'
+            - func New(lock string) {
+            - "\toutput(-1, cAction+\"\\nNEW — no lock at \"+lock+\"; first run unreviewed, --commit to create the golden\\n\"+cReset)"
+            - '}'
             - ""
             - // diff flow
             - func TestEdit(edit resultspecs.TestEdit) {
@@ -321,7 +341,6 @@
             - "\tcAction string"
             - "\tcError  string"
             - "\tcPass   string"
-            - "\tcFail   string"
             - ""
             - "\tcEqual        string"
             - "\tcAdded        string"
@@ -352,7 +371,6 @@
             - "\t\tcAction = \"\""
             - "\t\tcError = \"\""
             - "\t\tcPass = \"\""
-            - "\t\tcFail = \"\""
             - ""
             - "\t\tcEqual = \"\""
             - "\t\tcAdded = \"\""
@@ -369,7 +387,6 @@
             - "\t\tcAction = ansi.ColorCode(\"cyan+b\")"
             - "\t\tcError = ansi.Red"
             - "\t\tcPass = ansi.ColorCode(\"green+b\")"
-            - "\t\tcFail = ansi.ColorCode(\"red+b\")"
             - ""
             - "\t\tcEqual = ansi.LightBlack"
             - "\t\tcAdded = ansi.Green"
@@ -441,7 +458,7 @@
             - +++   > stdout
             - +++       missing
             - ""
-            - '  ✘ Changes Detected.'
+            - CHANGED — output drifted from test/badtests.lock.yml; review and re-commit if intended
         - name: stderr
           data:
             - ""
@@ -476,7 +493,7 @@
             - +++   > stdout
             - +++       missing
             - ""
-            - '  ✘ Changes Detected.'
+            - CHANGED — output drifted from test/badtests.lock.yml; review and re-commit if intended
         - name: stderr
           data:
             - ""
@@ -577,10 +594,49 @@
       checks:
         - name: exitcode
           data:
-            - "1"
+            - "2"
         - name: stdout
           data:
             - ERR test/tests.yml already exists
+        - name: stderr
+          data:
+            - ""
+- name: test/tests.yml \ Tests \ States \ New
+  commands:
+    - command: ./bin/smoke --no-color test/newtests.yml
+      checks:
+        - name: exitcode
+          data:
+            - "3"
+        - name: stdout
+          data:
+            - NEW — no lock at test/newtests.lock.yml; first run unreviewed, --commit to create the golden
+        - name: stderr
+          data:
+            - ""
+- name: test/tests.yml \ Tests \ States \ Unchanged
+  commands:
+    - command: ./bin/smoke --no-color test/stabletests.yml
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - UNCHANGED — output matches test/stabletests.lock.yml (drift-free, not verified correct)
+        - name: stderr
+          data:
+            - ""
+- name: test/tests.yml \ Tests \ States \ Operational
+  commands:
+    - command: ./bin/smoke --no-color test/nonexistent.yml
+      checks:
+        - name: exitcode
+          data:
+            - "2"
+        - name: stdout
+          data:
+            - 'ERR test/nonexistent.yml: open test/nonexistent.yml: no such file or directory'
         - name: stderr
           data:
             - ""

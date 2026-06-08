@@ -121,3 +121,14 @@ tests:
           - name: No clobber
             commands:
               - ./bin/smoke --no-color --init=test/tests.yml
+      - name: States
+        tests:
+          - name: New
+            commands:
+              - ./bin/smoke --no-color test/newtests.yml
+          - name: Unchanged
+            commands:
+              - ./bin/smoke --no-color test/stabletests.yml
+          - name: Operational
+            commands:
+              - ./bin/smoke --no-color test/nonexistent.yml

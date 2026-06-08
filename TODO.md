@@ -60,14 +60,18 @@ Failure modes to design against:
 
 Tasks:
 
-* [ ] Redesign the output vocabulary so it describes *drift*, not *correctness*.
+* [x] Redesign the output vocabulary so it describes *drift*, not *correctness*.
       Drop `STABLE`/`Changes Detected` framing that reads as pass/fail; prefer
       neutral states (e.g. `UNCHANGED` / `CHANGED` / `NEW` / `MISSING`). Never
-      emit "pass", "green", or a ✓ that implies a passing assertion.
-* [ ] Exit-code semantics: see the dedicated "Exit-code design" epic below.
-* [ ] Distinguish the no-lock first-run state (`NEW` / `UNREVIEWED`) from
+      emit "pass", "green", or a ✓ that implies a passing assertion. (Compare-mode
+      verdicts now `UNCHANGED`/`CHANGED`/`NEW`; ✔/✘ dropped; no green/red on
+      verdicts. `MISSING` folds into `CHANGED` per the contract.)
+* [x] Exit-code semantics: see the dedicated "Exit-code design" epic below.
+      (Contract wired: `0/1/2/3/64` as `internal/p` constants.)
+* [x] Distinguish the no-lock first-run state (`NEW` / `UNREVIEWED`) from
       `UNCHANGED`, so an agent knows a human/LLM eyeball is still required before
-      the golden can be trusted.
+      the golden can be trusted. (No-lock now reports `NEW` + exit `3` instead of
+      hard-erroring.)
 * [ ] Add a machine-readable mode (`--json` or similar) reporting per-check status
       with unambiguous fields (`matched`/`changed`/`new`/`missing`) and zero
       pass/fail language — the primary surface for agentic consumers. Dovetails
@@ -113,8 +117,10 @@ Tasks:
       usage moves to `64`/`EX_USAGE`.)
 * [x] Decide the no-lock / unreviewed-first-run code (today it hard-errors). It is
       semantically distinct from both "matched" and "drift". (Own code `3` = `NEW`.)
-* [ ] Implement distinct codes; centralize them as named constants rather than
-      scattered `os.Exit(1)` literals.
+* [x] Implement distinct codes; centralize them as named constants rather than
+      scattered `os.Exit(1)` literals. (`p.Exit{Unchanged,Changed,Trouble,New,Usage}`
+      in `internal/p`. Caveat: timeout interim-classifies as `2`, not `1` — see
+      spec implementation-status; stderr routing still pending.)
 * [ ] Mirror the exit code in the `--json` output (a `status` field) so agents
       don't have to shell-inspect `$?`.
 * [ ] Document the full table in `--help` and README; freeze it as a contract.
