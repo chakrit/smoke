@@ -105,19 +105,22 @@ Proposed code space (to ratify in the decision doc):
 
 Tasks:
 
-* [ ] Inventory every current exit path (`main.go`, `process.go` compare/commit,
-      `runTests` failure, usage errors) and map each to an outcome class.
-* [ ] Resolve the collision between drift (`diff`-style `2` = trouble) and pflag's
-      usage-error `2`. Pick one scheme and apply it consistently.
-* [ ] Decide the no-lock / unreviewed-first-run code (today it hard-errors). It is
-      semantically distinct from both "matched" and "drift".
+* [x] Inventory every current exit path (`main.go`, `process.go` compare/commit,
+      `runTests` failure, usage errors) and map each to an outcome class. (Captured
+      in the decision doc + `docs/spec/exit-codes.md`.)
+* [x] Resolve the collision between drift (`diff`-style `2` = trouble) and pflag's
+      usage-error `2`. Pick one scheme and apply it consistently. (Trouble keeps `2`;
+      usage moves to `64`/`EX_USAGE`.)
+* [x] Decide the no-lock / unreviewed-first-run code (today it hard-errors). It is
+      semantically distinct from both "matched" and "drift". (Own code `3` = `NEW`.)
 * [ ] Implement distinct codes; centralize them as named constants rather than
       scattered `os.Exit(1)` literals.
 * [ ] Mirror the exit code in the `--json` output (a `status` field) so agents
       don't have to shell-inspect `$?`.
 * [ ] Document the full table in `--help` and README; freeze it as a contract.
-* [ ] Record the chosen scheme in `docs/decisions/` (shared ruling with the
-      semantics epic's vocabulary contract).
+* [x] Record the chosen scheme in `docs/decisions/` (shared ruling with the
+      semantics epic's vocabulary contract). → `2026-06-08-exit-code-contract.md`
+      + live contract in `docs/spec/exit-codes.md`.
 
 ## Backlog (unsorted)
 
