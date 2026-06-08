@@ -558,3 +558,29 @@
         - name: stdout
           data:
             - child command
+- name: test/tests.yml \ Tests \ Init \ Writes named file
+  commands:
+    - command: rm -f test/init-scratch.yml && ./bin/smoke --no-color --init=test/init-scratch.yml && rm test/init-scratch.yml
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - '  ✔ Wrote test/init-scratch.yml'
+        - name: stderr
+          data:
+            - ""
+- name: test/tests.yml \ Tests \ Init \ No clobber
+  commands:
+    - command: ./bin/smoke --no-color --init=test/tests.yml
+      checks:
+        - name: exitcode
+          data:
+            - "1"
+        - name: stdout
+          data:
+            - ERR test/tests.yml already exists
+        - name: stderr
+          data:
+            - ""

@@ -4,17 +4,17 @@
 
 `main.go`'s `--init` is half-baked. Tighten it into a predictable scaffolder.
 
-* [ ] Honor the positional filename: `smoke --init foo.yml` should write `foo.yml`,
-      not always `smoke-tests.yml`. Fall back to a default only when no arg is given.
-* [ ] Settle the canonical default filename. README's workflow says `tests.yml`;
-      `--init` writes `smoke-tests.yml`; `template.yml` is the embedded source. Pick
-      one name and align README, `--init`, and examples.
-* [ ] Don't clobber. `os.WriteFile` truncates silently — refuse to overwrite an
-      existing file unless `--force` (or similar) is passed.
-* [ ] Report the path actually written (the success message currently hard-codes
-      `smoke-tests.yml` even when that's not the target).
-* [ ] Add a self-test in `test/tests.yml` covering init into a temp name + the
-      no-clobber guard.
+* [x] Honor a custom filename: `smoke --init=foo.yml` writes `foo.yml`. Bare `smoke
+      --init` falls back to the default. (pflag's `NoOptDefVal` can't also consume a
+      space-separated arg, so the `=` form is required; a stray positional errors
+      rather than silently writing the default.)
+* [x] Settle the canonical default filename: `tests.yml` (already what README and the
+      self-tests use; `--init` was the lone outlier writing `smoke-tests.yml`).
+* [x] Don't clobber. `initSpec` opens with `O_CREATE|O_EXCL` and refuses if the file
+      exists. (Hard refuse, no `--force` override — by decision.)
+* [x] Report the path actually written (`p.Pass("Wrote " + target)`).
+* [x] Add a self-test in `test/tests.yml` (`Tests \ Init`): writes a named file +
+      the no-clobber guard.
 
 ## Epic: First-class CUE support
 

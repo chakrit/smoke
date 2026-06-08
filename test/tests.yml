@@ -113,3 +113,11 @@ tests:
               - echo "child command"
             checks:
               - stdout
+      - name: Init
+        tests:
+          - name: Writes named file
+            commands:
+              - rm -f test/init-scratch.yml && ./bin/smoke --no-color --init=test/init-scratch.yml && rm test/init-scratch.yml
+          - name: No clobber
+            commands:
+              - ./bin/smoke --no-color --init=test/tests.yml
