@@ -123,7 +123,8 @@ Tasks:
       operational/usage diagnostics route to stderr. Spec status now `accepted`.)
 * [ ] Mirror the exit code in the `--json` output (a `status` field) so agents
       don't have to shell-inspect `$?`.
-* [ ] Document the full table in `--help` and README; freeze it as a contract.
+* [x] Document the full table in `--help` and README; freeze it as a contract.
+      (`usageExitCodes` in `main.go`; table in `README.md`.)
 * [x] Record the chosen scheme in `docs/decisions/` (shared ruling with the
       semantics epic's vocabulary contract). → `2026-06-08-exit-code-contract.md`
       + live contract in `docs/spec/exit-codes.md`.
@@ -153,8 +154,7 @@ review, not a failing assertion; `UNCHANGED` is drift-free, not verified-correct
 * [ ] Allow partially committing some results but not all.
 * [ ] Allow committing last run results (so we don't have to re-run tests to commit
       again).
-* [ ] Reconcile pflag's bad-flag exit code. Our explicit usage paths exit `64`
-      (`ExitUsage`), but pflag's own parse-error path still exits `2` (its default,
-      colliding with operational trouble) and is unreached by our code. Make a bad
-      flag exit `64` too — likely `pflag.CommandLine.SetOutput` + handling
-      `pflag.Parse` errors ourselves rather than letting pflag exit. Low priority.
+* [x] Reconcile pflag's bad-flag exit code. `pflag.CommandLine` switched to
+      `ContinueOnError`; `main` handles the `Parse` error itself (stderr + usage +
+      `ExitUsage`), so a bad flag exits `64` instead of pflag's default `2`.
+      Regression-locked by `test/tests.yml \ Tests \ Usage`.

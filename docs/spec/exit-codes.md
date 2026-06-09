@@ -51,8 +51,10 @@ constants (compare-mode emits `0`/`1`/`3`, `p.Exit` emits `2`, usage paths emit
 `64`). A timed-out command is recorded as a synthetic `timeout` check
 (`checks.Timeout`) and compares as drift (`1`), not a tool error. Operational
 and usage diagnostics route to stderr via `p.Error`; the drift/match report
-stays on stdout.
+stays on stdout. Bad-flag parse errors also exit `64`: `pflag.CommandLine` runs
+in `ContinueOnError` mode and `main` handles the error rather than letting pflag
+exit `2`, so no usage path collides with operational trouble.
 
-Two surfaces from the broader exit-code epic remain open and are tracked
-separately: the `--json` `status` field mirroring the code, and documenting the
-table in `--help` / README.
+One surface from the broader exit-code epic remains open and is tracked
+separately: the `--json` `status` field mirroring the code. The contract table
+is documented on both user-facing surfaces (`--help` and README).

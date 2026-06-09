@@ -58,6 +58,9 @@ func usage() {
 
 func main() {
 	pflag.Usage = usage
+	// ContinueOnError makes pflag return parse errors instead of exiting 2 itself
+	// (its ExitOnError default), so a bad flag routes through our ExitUsage (64).
+	pflag.CommandLine.Init(os.Args[0], pflag.ContinueOnError)
 
 	pflag.BoolVarP(&shouldShowHelp, "help", "h", false, "Show help on usages.")
 	pflag.BoolVarP(&shouldShowExpected, "show-expected", "s", false, "Show currently locked results without running the tests.")
@@ -75,7 +78,11 @@ func main() {
 
 	pflag.StringSliceVarP(&includes, "include", "i", nil, "Only run tests matching the given pattern")
 	pflag.StringSliceVarP(&excludes, "exclude", "x", nil, "Do not run tests matching the given pattern")
-	pflag.Parse()
+	if err := pflag.CommandLine.Parse(os.Args[1:]); err != nil {
+		p.Usage(err.Error())
+		pflag.Usage()
+		os.Exit(p.ExitUsage)
+	}
 
 	if shouldShowHelp {
 		pflag.Usage()

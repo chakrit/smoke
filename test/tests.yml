@@ -119,6 +119,9 @@ tests:
               - echo "child command"
             checks:
               - stdout
+      - name: Usage
+        commands:
+          - ./bin/smoke --no-color --bogus-flag # bad flag must exit 64
       - name: Init
         tests:
           - name: Writes named file
