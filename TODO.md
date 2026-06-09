@@ -119,8 +119,8 @@ Tasks:
       semantically distinct from both "matched" and "drift". (Own code `3` = `NEW`.)
 * [x] Implement distinct codes; centralize them as named constants rather than
       scattered `os.Exit(1)` literals. (`p.Exit{Unchanged,Changed,Trouble,New,Usage}`
-      in `internal/p`. Caveat: timeout interim-classifies as `2`, not `1` — see
-      spec implementation-status; stderr routing still pending.)
+      in `internal/p`. Timeout now drifts as exit `1` via synthetic `checks.Timeout`;
+      operational/usage diagnostics route to stderr. Spec status now `accepted`.)
 * [ ] Mirror the exit code in the `--json` output (a `status` field) so agents
       don't have to shell-inspect `$?`.
 * [ ] Document the full table in `--help` and README; freeze it as a contract.
