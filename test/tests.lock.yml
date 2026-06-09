@@ -108,6 +108,44 @@
         - name: exitcode
           data:
             - "64"
+- name: test/tests.yml \ Basics \ Help
+  commands:
+    - command: ./bin/smoke --help
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: exitcode
+          data:
+            - "0"
+        - name: stderr
+          data:
+            - SMOKE is a drift detector for command output, not an assertion engine.
+            - A clean run means output matched the committed golden — UNCHANGED is not "correct".
+            - ""
+            - 'Usage:'
+            - '  smoke [flags] <spec.yml>...'
+            - ""
+            - 'Flags:'
+            - '  -c, --commit                      Commit all test output.'
+            - '  -x, --exclude strings             Do not run tests matching the given pattern'
+            - '  -h, --help                        Show help on usages.'
+            - '  -i, --include strings             Only run tests matching the given pattern'
+            - '      --init string[="tests.yml"]   Write a starter tests.yml file; pass a path to write elsewhere.'
+            - '  -l, --list                        List all discovered tests and exit.'
+            - '      --no-color                    Turns off console coloring.'
+            - '  -p, --print                       Print raw test results to stdout for scripting purposes.'
+            - '  -q, --quiet count                 Decrease log output chattiness.'
+            - '  -s, --show-expected               Show currently locked results without running the tests.'
+            - '      --time                        Log timestamps.'
+            - '  -v, --verbose count               Increase log output chattiness.'
+            - ""
+            - 'Exit codes:'
+            - '  0   UNCHANGED   output matched the lock (not "tests passed")'
+            - '  1   CHANGED     drift — output moved from the golden (includes MISSING, timeout)'
+            - '  2               operational error — SMOKE itself failed (bad spec, crash, I/O)'
+            - '  3   NEW         no lock yet; first run is unreviewed'
+            - '  64              usage error — invalid invocation'
 - name: test/tests.yml \ Basics \ Loads
   commands:
     - command: ./bin/smoke --no-color --list tests.yml

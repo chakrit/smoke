@@ -35,7 +35,7 @@ SMOKE assumes the following **1st-run** workflow:
 
 1. Writes a new feature.
 2. Writes a `tests.yml` file.
-3. Runs `smoke tests.yml`.
+3. Runs `smoke tests.yml` — SMOKE reports **NEW** (exit 3): no lock yet.
 4. Eyeballs 👀 the output.
 5. If it looks correct, commits it with `smoke -c tests.yml`.
 
@@ -43,18 +43,22 @@ Later on subsequent runs:
 
 1. Make changes.
 2. Runs `smoke tests.yml`
-3. Gets GREEN if the output doesn't change.
+3. Gets **UNCHANGED** (exit 0) if the output doesn't change.
 
 When making changes that should change the output:
 
 1. Make changes.
 2. Runs `smoke tests.yml`
-3. Gets RED if the output actually changes.
+3. Gets **CHANGED** (exit 1) if the output moves.
 4. Eyeballs 👀 the changes.
 5. If it looks correct, commits it with `smoke -c tests.yml`.
 
 Repeat the 1st-run workflow if the changes are expected and they are supposed to
 be the new definition "correct".
+
+`UNCHANGED` means drift-free, not verified-correct: it says the output matches
+the golden, never that the behavior behind it is right. Re-committing a `CHANGED`
+result you didn't eyeball just locks in the drift.
 
 Committing will produce a `.lock.yml` file, which should be checked into source
 control so that other engineers can also run `smoke tests.yml` to check.
@@ -128,6 +132,24 @@ tests:
     commands:               # subtests inherits parent's command list
       - smoke               # runs after `go install -v .` finish
 ```
+
+# EXIT CODES
+
+SMOKE exits with exactly one of these codes. Each names a distinct outcome
+class; shipped codes are frozen. See [`docs/spec/exit-codes.md`](docs/spec/exit-codes.md)
+for the full contract.
+
+| Code | State       | Meaning                                                   |
+| ---- | ----------- | -------------------------------------------------------- |
+| 0    | `UNCHANGED` | Output matched the lock. *Not* "tests passed."           |
+| 1    | `CHANGED`   | Drift detected — output moved (includes `MISSING`, timeout). |
+| 2    | —           | Operational error: bad spec, runner crash, I/O.          |
+| 3    | `NEW`       | No lock file; first run is unreviewed.                   |
+| 64   | —           | Usage error: invalid invocation.                         |
+
+"Fail the build on any nonzero" works for CI — `0` is the only clean pass.
+`UNCHANGED` means drift-free, not verified-correct. Driving SMOKE from an agent
+or TDD loop? See [`docs/spec/using-smoke-in-tdd.md`](docs/spec/using-smoke-in-tdd.md).
 
 # LICENSE
 

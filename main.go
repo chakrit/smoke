@@ -30,7 +30,35 @@ var (
 	excludes []string
 )
 
+// usageHeader frames SMOKE as a drift detector, not a pass/fail test runner —
+// the same framing the exit-code contract encodes. See docs/spec/exit-codes.md.
+const usageHeader = `SMOKE is a drift detector for command output, not an assertion engine.
+A clean run means output matched the committed golden — UNCHANGED is not "correct".
+
+Usage:
+  smoke [flags] <spec.yml>...
+
+Flags:
+`
+
+const usageExitCodes = `
+Exit codes:
+  0   UNCHANGED   output matched the lock (not "tests passed")
+  1   CHANGED     drift — output moved from the golden (includes MISSING, timeout)
+  2               operational error — SMOKE itself failed (bad spec, crash, I/O)
+  3   NEW         no lock yet; first run is unreviewed
+  64              usage error — invalid invocation
+`
+
+func usage() {
+	fmt.Fprint(os.Stderr, usageHeader)
+	pflag.PrintDefaults()
+	fmt.Fprint(os.Stderr, usageExitCodes)
+}
+
 func main() {
+	pflag.Usage = usage
+
 	pflag.BoolVarP(&shouldShowHelp, "help", "h", false, "Show help on usages.")
 	pflag.BoolVarP(&shouldShowExpected, "show-expected", "s", false, "Show currently locked results without running the tests.")
 

@@ -57,6 +57,12 @@ tests:
       - name: Common Switches
         commands:
           - ./bin/smoke --time -qqqq -vvvv
+      - name: Help
+        checks:
+          - exitcode
+          - stderr
+        commands:
+          - ./bin/smoke --help
       - name: Loads
         checks:
           - stdout
