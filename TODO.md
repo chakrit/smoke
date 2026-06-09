@@ -153,3 +153,8 @@ review, not a failing assertion; `UNCHANGED` is drift-free, not verified-correct
 * [ ] Allow partially committing some results but not all.
 * [ ] Allow committing last run results (so we don't have to re-run tests to commit
       again).
+* [ ] Reconcile pflag's bad-flag exit code. Our explicit usage paths exit `64`
+      (`ExitUsage`), but pflag's own parse-error path still exits `2` (its default,
+      colliding with operational trouble) and is unreached by our code. Make a bad
+      flag exit `64` too — likely `pflag.CommandLine.SetOutput` + handling
+      `pflag.Parse` errors ourselves rather than letting pflag exit. Low priority.
