@@ -122,6 +122,10 @@ tests:
       - name: Usage
         commands:
           - ./bin/smoke --no-color --bogus-flag # bad flag must exit 64
+      - name: CUE
+        commands:
+          - ./bin/smoke --no-color --list test/cuetests.cue # .cue spec loads
+          - ./bin/smoke --no-color test/cuetests.cue # and compares UNCHANGED
       - name: Init
         tests:
           - name: Writes named file

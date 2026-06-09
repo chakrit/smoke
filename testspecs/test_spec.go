@@ -9,13 +9,13 @@ import (
 )
 
 type TestSpec struct {
-	Name     string `yaml:"name"`
-	Filename string
+	Name     string `yaml:"name" json:"name"`
+	Filename string `json:"-"`
 
-	Config   *ConfigSpec `yaml:"config"`
-	Commands []string    `yaml:"commands"`
-	Checks   []string    `yaml:"checks"`
-	Children []*TestSpec `yaml:"tests"`
+	Config   *ConfigSpec `yaml:"config" json:"config"`
+	Commands []string    `yaml:"commands" json:"commands"`
+	Checks   []string    `yaml:"checks" json:"checks"`
+	Children []*TestSpec `yaml:"tests" json:"tests"`
 }
 
 // Resolve() applies parent-child value overriding and extension logic.

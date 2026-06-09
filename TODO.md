@@ -21,22 +21,26 @@
 Today `testspecs.Load` is YAML-only. Make `.cue` test specs a first-class input so
 specs can be generated/validated by CUE tooling. Folds in the old stdin item below.
 
-* [ ] Decide the integration boundary: embed `cuelang.org/go` (no external binary,
-      heavier dep) vs shell out to a `cue` binary on PATH. Record the call in
-      `docs/decisions/`.
-* [ ] Front-end dispatch by extension in `testspecs.Load` (`.cue` → evaluate to the
-      test tree; `.yml`/`.yaml` → current path). Keep engine/resultspecs layers
-      format-agnostic.
-* [ ] Define lock-file semantics for `.cue` inputs. Results are emitted as YAML via
-      `resultspecs.Save`, so `lockFilename` should likely map `foo.cue` →
-      `foo.lock.yml` rather than `.lock.cue`. Resolve the ambiguity flagged in the
-      old stdin note.
+* [x] Integration boundary: **embed `cuelang.org/go`** (pinned evaluator, hermetic
+      like the YAML path; no runtime `cue` dependency). Ruled inline — no separate
+      decision doc for a tool this size. Note: the dep forces `go 1.25` in `go.mod`,
+      which made `go vet`'s non-constant-format-string check fatal and required a
+      cleanup of `internal/p`'s `output`/`outputErr` helpers (now literal writers; the
+      one formatted callsite uses a constant format).
+* [x] Front-end dispatch by extension in `testspecs.Load` (`.cue` → `cuecontext`
+      eval → `TestSpec` via json tags → existing `Resolve`/`Tests`; `.yml`/`.yaml`
+      → current path). Unknown extensions now rejected (default-deny). engine /
+      resultspecs layers untouched.
+* [x] Lock-file semantics: `lockFilename` maps `foo.cue` → `foo.lock.yml` (results
+      are always YAML). `.yml`/`.yaml` unchanged.
 * [ ] Read tests from stdin to support piping from other toolings (e.g.
       `cue export | smoke -`). Decide how the lock file is located when input has no
-      filename (require an explicit `--lock` path?).
+      filename (require an explicit `--lock` path?). **Deferred to its own slice —
+      separable from CUE.**
 * [ ] Ship a CUE schema (`#Test`/`#Config` definitions) so authors get validation and
-      editor support when writing `.cue` specs.
-* [ ] Self-tests: a `.cue` spec round-trips (run → commit → stable) under `test/`.
+      editor support when writing `.cue` specs. **Next slice (C).**
+* [x] Self-tests: a `.cue` spec round-trips (run → commit → stable) under `test/`.
+      (`test/cuetests.cue` + `test/tests.yml \ Tests \ CUE`.)
 
 ## Epic: Disambiguate semantics for LLM consumers
 

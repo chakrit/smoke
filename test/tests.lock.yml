@@ -299,7 +299,7 @@
             - ""
             - "\tlines := strings.Split(string(result.Data), \"\\n\")"
             - "\tfor _, line := range lines {"
-            - "\t\toutput(3, cLowkey+\"  > %s:\"+cReset+\" %s\", result.Check.Spec(), line)"
+            - "\t\toutput(3, fmt.Sprintf(\"%s  > %s:%s %s\", cLowkey, result.Check.Spec(), cReset, line))"
             - "\t}"
             - '}'
             - ""
@@ -437,10 +437,10 @@
             - // output writes the drift/match report to stdout. outputErr routes operational
             - // diagnostics to stderr so consumers can separate "output drifted" from "SMOKE
             - // broke" by stream — see docs/spec/exit-codes.md.
-            - func output(level int, s string, args ...interface{})    { outputTo(os.Stdout, level, s, args...) }
-            - func outputErr(level int, s string, args ...interface{}) { outputTo(os.Stderr, level, s, args...) }
+            - func output(level int, s string)    { outputTo(os.Stdout, level, s) }
+            - func outputErr(level int, s string) { outputTo(os.Stderr, level, s) }
             - ""
-            - func outputTo(w io.Writer, level int, s string, args ...interface{}) {
+            - func outputTo(w io.Writer, level int, s string) {
             - "\tif level >= verbosity {"
             - "\t\treturn"
             - "\t}"
@@ -450,11 +450,7 @@
             - "\t\t_, _ = fmt.Fprintf(w, \"%20s \", dur)"
             - "\t}"
             - ""
-            - "\tif len(args) == 0 {"
-            - "\t\t_, _ = io.WriteString(w, s)"
-            - "\t} else {"
-            - "\t\t_, _ = io.WriteString(w, fmt.Sprintf(s, args...))"
-            - "\t}"
+            - "\t_, _ = io.WriteString(w, s)"
             - "\t_, _ = io.WriteString(w, \"\\n\")"
             - '}'
             - '-----END print.go-----'
@@ -659,6 +655,31 @@
             - '  2               operational error — SMOKE itself failed (bad spec, crash, I/O)'
             - '  3   NEW         no lock yet; first run is unreviewed'
             - '  64              usage error — invalid invocation'
+- name: test/tests.yml \ Tests \ CUE
+  commands:
+    - command: ./bin/smoke --no-color --list test/cuetests.cue
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - test/cuetests.cue \ Echo
+            - test/cuetests.cue \ Arithmetic
+        - name: stderr
+          data:
+            - ""
+    - command: ./bin/smoke --no-color test/cuetests.cue
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - UNCHANGED — output matches test/cuetests.lock.yml (drift-free, not verified correct)
+        - name: stderr
+          data:
+            - ""
 - name: test/tests.yml \ Tests \ Init \ Writes named file
   commands:
     - command: rm -f test/init-scratch.yml && ./bin/smoke --no-color --init=test/init-scratch.yml && rm test/init-scratch.yml

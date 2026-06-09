@@ -76,10 +76,10 @@ func Configure(color, trackTime bool, v int, q int) {
 // output writes the drift/match report to stdout. outputErr routes operational
 // diagnostics to stderr so consumers can separate "output drifted" from "SMOKE
 // broke" by stream — see docs/spec/exit-codes.md.
-func output(level int, s string, args ...interface{})    { outputTo(os.Stdout, level, s, args...) }
-func outputErr(level int, s string, args ...interface{}) { outputTo(os.Stderr, level, s, args...) }
+func output(level int, s string)    { outputTo(os.Stdout, level, s) }
+func outputErr(level int, s string) { outputTo(os.Stderr, level, s) }
 
-func outputTo(w io.Writer, level int, s string, args ...interface{}) {
+func outputTo(w io.Writer, level int, s string) {
 	if level >= verbosity {
 		return
 	}
@@ -89,10 +89,6 @@ func outputTo(w io.Writer, level int, s string, args ...interface{}) {
 		_, _ = fmt.Fprintf(w, "%20s ", dur)
 	}
 
-	if len(args) == 0 {
-		_, _ = io.WriteString(w, s)
-	} else {
-		_, _ = io.WriteString(w, fmt.Sprintf(s, args...))
-	}
+	_, _ = io.WriteString(w, s)
 	_, _ = io.WriteString(w, "\n")
 }

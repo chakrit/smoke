@@ -55,7 +55,7 @@ func CheckResult(result checks.Result, err error) {
 
 	lines := strings.Split(string(result.Data), "\n")
 	for _, line := range lines {
-		output(3, cLowkey+"  > %s:"+cReset+" %s", result.Check.Spec(), line)
+		output(3, fmt.Sprintf("%s  > %s:%s %s", cLowkey, result.Check.Spec(), cReset, line))
 	}
 }
 

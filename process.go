@@ -256,5 +256,11 @@ func compareResults(filename string, results []engine.TestResult) {
 
 func lockFilename(filename string) string {
 	ext := filepath.Ext(filename)
-	return filename[:len(filename)-len(ext)] + ".lock" + ext
+	base := filename[:len(filename)-len(ext)]
+	// results are always serialized as YAML, so .cue specs lock to .lock.yml
+	// rather than a .lock.cue we could never round-trip.
+	if ext == ".cue" {
+		return base + ".lock.yml"
+	}
+	return base + ".lock" + ext
 }

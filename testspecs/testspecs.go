@@ -1,27 +1,50 @@
 package testspecs
 
 import (
+	"fmt"
 	"io"
 	"path/filepath"
-	"time"
 
+	"cuelang.org/go/cue/cuecontext"
 	"github.com/chakrit/smoke/engine"
 	"gopkg.in/yaml.v3"
 )
 
 func Load(reader io.Reader, filename string) ([]*engine.Test, error) {
 	root := &TestSpec{}
-	if err := yaml.NewDecoder(reader).Decode(root); err != nil {
-		return nil, err
+
+	switch ext := filepath.Ext(filename); ext {
+	case ".cue":
+		if err := decodeCUE(reader, root); err != nil {
+			return nil, err
+		}
+	case ".yml", ".yaml", "":
+		if err := yaml.NewDecoder(reader).Decode(root); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unsupported spec format %q", ext)
 	}
 
 	root.Filename = filename
 	root.Resolve(nil)
-	if tests, err := root.Tests(); err != nil {
-		return nil, err
-	} else {
-		return tests, nil
+	return root.Tests()
+}
+
+// decodeCUE evaluates a single CUE file into the test tree. The struct's json
+// tags drive the mapping; CUE has no native duration, so timeout is a string
+// parsed later in ConfigSpec.RunConfig (same path as YAML).
+func decodeCUE(reader io.Reader, root *TestSpec) error {
+	src, err := io.ReadAll(reader)
+	if err != nil {
+		return err
 	}
+
+	value := cuecontext.New().CompileBytes(src)
+	if err := value.Err(); err != nil {
+		return err
+	}
+	return value.Decode(root)
 }
 
 func resolvePaths(strs ...string) string {
@@ -35,13 +58,4 @@ func resolveStrings(strs ...string) string {
 		}
 	}
 	return ""
-}
-
-func resolveDurations(durations ...*time.Duration) *time.Duration {
-	for _, dur := range durations {
-		if dur != nil {
-			return dur
-		}
-	}
-	return nil
 }

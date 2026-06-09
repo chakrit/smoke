@@ -1,0 +1,20 @@
+- name: test/cuetests.cue \ Echo
+  commands:
+    - command: echo cue-driven smoke test
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - cue-driven smoke test
+- name: test/cuetests.cue \ Arithmetic
+  commands:
+    - command: echo $((6 * 7))
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - "42"
