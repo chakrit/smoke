@@ -2,6 +2,7 @@ package p
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -72,20 +73,26 @@ func Configure(color, trackTime bool, v int, q int) {
 	}
 }
 
-func output(level int, s string, args ...interface{}) {
+// output writes the drift/match report to stdout. outputErr routes operational
+// diagnostics to stderr so consumers can separate "output drifted" from "SMOKE
+// broke" by stream — see docs/spec/exit-codes.md.
+func output(level int, s string, args ...interface{})    { outputTo(os.Stdout, level, s, args...) }
+func outputErr(level int, s string, args ...interface{}) { outputTo(os.Stderr, level, s, args...) }
+
+func outputTo(w io.Writer, level int, s string, args ...interface{}) {
 	if level >= verbosity {
 		return
 	}
 
 	if !startTime.IsZero() {
-		dur := time.Now().Sub(startTime)
-		_, _ = fmt.Fprintf(os.Stdout, "%20s ", dur)
+		dur := time.Since(startTime)
+		_, _ = fmt.Fprintf(w, "%20s ", dur)
 	}
 
 	if len(args) == 0 {
-		_, _ = os.Stdout.WriteString(s)
+		_, _ = io.WriteString(w, s)
 	} else {
-		_, _ = os.Stdout.WriteString(fmt.Sprintf(s, args...))
+		_, _ = io.WriteString(w, fmt.Sprintf(s, args...))
 	}
-	_, _ = os.Stdout.WriteString("\n")
+	_, _ = io.WriteString(w, "\n")
 }

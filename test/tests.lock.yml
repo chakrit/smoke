@@ -117,7 +117,7 @@
             - "2"
         - name: stdout
           data:
-            - 'ERR tests.yml: open tests.yml: no such file or directory'
+            - ""
     - command: ./bin/smoke --no-color --list tests.yml -v
       checks:
         - name: exitcode
@@ -125,7 +125,7 @@
             - "2"
         - name: stdout
           data:
-            - 'ERR tests.yml: open tests.yml: no such file or directory'
+            - ""
 - name: test/tests.yml \ Tests \ Diff
   commands:
     - command: ./bin/smoke --no-color test/badtests.yml
@@ -228,7 +228,7 @@
             - // utility CLI logs
             - func Usage(s string)  { fmt.Fprintln(os.Stderr, s) }
             - func Bye()            { output(2, cLowkey+"exited."+cReset) }
-            - func Error(err error) { output(-1, cError+"ERR "+err.Error()+cReset) }
+            - func Error(err error) { outputErr(-1, cError+"ERR "+err.Error()+cReset) }
             - func Action(s string) { output(1, cAction+"≋≋> "+strings.ToUpper(s)+cReset) }
             - ""
             - func Exit(err error) {
@@ -325,6 +325,7 @@
             - ""
             - import (
             - "\t\"fmt\""
+            - "\t\"io\""
             - "\t\"os\""
             - "\t\"time\""
             - ""
@@ -395,22 +396,28 @@
             - "\t}"
             - '}'
             - ""
-            - func output(level int, s string, args ...interface{}) {
+            - // output writes the drift/match report to stdout. outputErr routes operational
+            - // diagnostics to stderr so consumers can separate "output drifted" from "SMOKE
+            - // broke" by stream — see docs/spec/exit-codes.md.
+            - func output(level int, s string, args ...interface{})    { outputTo(os.Stdout, level, s, args...) }
+            - func outputErr(level int, s string, args ...interface{}) { outputTo(os.Stderr, level, s, args...) }
+            - ""
+            - func outputTo(w io.Writer, level int, s string, args ...interface{}) {
             - "\tif level >= verbosity {"
             - "\t\treturn"
             - "\t}"
             - ""
             - "\tif !startTime.IsZero() {"
-            - "\t\tdur := time.Now().Sub(startTime)"
-            - "\t\t_, _ = fmt.Fprintf(os.Stdout, \"%20s \", dur)"
+            - "\t\tdur := time.Since(startTime)"
+            - "\t\t_, _ = fmt.Fprintf(w, \"%20s \", dur)"
             - "\t}"
             - ""
             - "\tif len(args) == 0 {"
-            - "\t\t_, _ = os.Stdout.WriteString(s)"
+            - "\t\t_, _ = io.WriteString(w, s)"
             - "\t} else {"
-            - "\t\t_, _ = os.Stdout.WriteString(fmt.Sprintf(s, args...))"
+            - "\t\t_, _ = io.WriteString(w, fmt.Sprintf(s, args...))"
             - "\t}"
-            - "\t_, _ = os.Stdout.WriteString(\"\\n\")"
+            - "\t_, _ = io.WriteString(w, \"\\n\")"
             - '}'
             - '-----END print.go-----'
             - ""
@@ -597,10 +604,10 @@
             - "2"
         - name: stdout
           data:
-            - ERR test/tests.yml already exists
+            - ""
         - name: stderr
           data:
-            - ""
+            - ERR test/tests.yml already exists
 - name: test/tests.yml \ Tests \ States \ New
   commands:
     - command: ./bin/smoke --no-color test/newtests.yml
@@ -636,7 +643,7 @@
             - "2"
         - name: stdout
           data:
-            - 'ERR test/nonexistent.yml: open test/nonexistent.yml: no such file or directory'
+            - ""
         - name: stderr
           data:
-            - ""
+            - 'ERR test/nonexistent.yml: open test/nonexistent.yml: no such file or directory'

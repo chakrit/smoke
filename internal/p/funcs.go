@@ -22,7 +22,7 @@ const (
 // utility CLI logs
 func Usage(s string)  { fmt.Fprintln(os.Stderr, s) }
 func Bye()            { output(2, cLowkey+"exited."+cReset) }
-func Error(err error) { output(-1, cError+"ERR "+err.Error()+cReset) }
+func Error(err error) { outputErr(-1, cError+"ERR "+err.Error()+cReset) }
 func Action(s string) { output(1, cAction+"≋≋> "+strings.ToUpper(s)+cReset) }
 
 func Exit(err error) {
