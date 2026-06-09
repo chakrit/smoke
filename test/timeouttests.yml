@@ -1,0 +1,10 @@
+---
+config:
+  interpreter: /bin/sh
+  timeout: 1s
+tests:
+  - name: Hangs
+    checks:
+      - stdout
+    commands:
+      - sleep 5; echo done

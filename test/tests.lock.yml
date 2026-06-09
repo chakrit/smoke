@@ -647,3 +647,10 @@
         - name: stderr
           data:
             - 'ERR test/nonexistent.yml: open test/nonexistent.yml: no such file or directory'
+- name: test/tests.yml \ Tests \ States \ Timeout
+  commands:
+    - command: ./bin/smoke --no-color test/timeouttests.yml
+      checks:
+        - name: timeout
+          data:
+            - timed out after 5s

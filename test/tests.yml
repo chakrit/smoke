@@ -132,3 +132,6 @@ tests:
           - name: Operational
             commands:
               - ./bin/smoke --no-color test/nonexistent.yml
+          - name: Timeout
+            commands:
+              - ./bin/smoke --no-color test/timeouttests.yml

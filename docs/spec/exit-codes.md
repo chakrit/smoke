@@ -1,12 +1,10 @@
 # Exit Codes
 
-- **Status:** draft
+- **Status:** accepted
 
 > The numeric scheme and its rationale were ruled in
 > [`../decisions/2026-06-08-exit-code-contract.md`](../decisions/2026-06-08-exit-code-contract.md).
 > This spec is the live contract surface; that decision is the frozen *why*.
-> `draft` until the implementation epic lands — today's code still overloads
-> `1` across drift, operational, and usage failures.
 
 ## Contract
 
@@ -48,14 +46,13 @@ redundantly, by stream.
 
 ## Implementation status
 
-The five codes are wired (`internal/p` constants; compare-mode emits
-`0`/`1`/`3`, `p.Exit` emits `2`, usage paths emit `64`). Two parts of this spec
-are **not yet implemented** and remain the target, not the present behavior:
+The full contract is implemented. The five codes are wired as `internal/p`
+constants (compare-mode emits `0`/`1`/`3`, `p.Exit` emits `2`, usage paths emit
+`64`). A timed-out command is recorded as a synthetic `timeout` check
+(`checks.Timeout`) and compares as drift (`1`), not a tool error. Operational
+and usage diagnostics route to stderr via `p.Error`; the drift/match report
+stays on stdout.
 
-- **Timeout** currently routes through the runner-error path and exits `2`
-  (operational), not `1` (drift). Reclassifying it requires engine surgery —
-  turning a timeout into a recordable check result instead of an aborting error
-  — so it is deferred to its own slice.
-- **Stream separation** is not done: operational/usage diagnostics still print
-  to stdout (`p.Error` → stdout), not stderr. Exit codes already disambiguate;
-  the stderr axis is the redundant second one and lands in a follow-up.
+Two surfaces from the broader exit-code epic remain open and are tracked
+separately: the `--json` `status` field mirroring the code, and documenting the
+table in `--help` / README.

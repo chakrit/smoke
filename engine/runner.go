@@ -2,7 +2,6 @@ package engine
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os/exec"
 	"time"
@@ -101,8 +100,19 @@ func (r DefaultRunner) Command(t *Test, c Command) (result CommandResult, err er
 	select {
 	case <-time.After(config.Timeout):
 		_ = cmd.Process.Kill()
-		_ = <-errc // wait() should return by now (prevent send on close)
-		return CommandResult{}, errors.New("timeout")
+		<-errc // wait() should return by now (prevent send on close)
+
+		// A timed-out command is misbehaving observably — record it as a check
+		// result so it compares as drift (exit 1), not as a tool error (exit 2).
+		// Data uses the configured deadline, not elapsed time, so it stays stable
+		// across runs. See docs/spec/exit-codes.md.
+		return CommandResult{
+			Command: c,
+			Checks: []checks.Result{{
+				Check: checks.Timeout,
+				Data:  []byte("timed out after " + config.Timeout.String()),
+			}},
+		}, nil
 
 	case err = <-errc: // Wait() returned
 		if err == nil {
