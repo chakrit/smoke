@@ -128,6 +128,26 @@ Tasks:
       semantics epic's vocabulary contract). → `2026-06-08-exit-code-contract.md`
       + live contract in `docs/spec/exit-codes.md`.
 
+## Epic: Repo doubles as an installable skill
+
+Make this repo usable as an agent skill: an agent adds the repo as a skill and
+gets instructions on correct use of the tool — how to set up golden-file smoke
+testing, the workflow (run → eyeball → commit), and the gotchas to watch.
+
+The headline gotcha is the semantics this project already nailed down: red/green
+here means *unmatched/diffed*, NOT test pass/fail. `CHANGED` is expected drift to
+review, not a failing assertion; `UNCHANGED` is drift-free, not verified-correct.
+
+* [ ] Author a `SKILL.md` (skill-creator conventions) with name/description
+      front-matter so the skill triggers on golden-file / snapshot / smoke-test
+      intents.
+* [ ] Body: setup (`--init`, writing `tests.yml`, checks), the run→eyeball→commit
+      workflow, exit-code contract, and the drift≠pass/fail framing. Reuse
+      `docs/spec/using-smoke-in-tdd.md` and `docs/spec/exit-codes.md` rather than
+      duplicating — link or distill.
+* [ ] Decide packaging: where `SKILL.md` lives so `ace`/Claude skill loaders find
+      it, and whether supporting `references/` files are needed.
+
 ## Backlog (unsorted)
 
 * [ ] Allow partially committing some results but not all.
