@@ -24,7 +24,7 @@ drifts. Not a replacement for proper tests; a fast drift detector.
 | `process.go`   | Per-file orchestration: load → filter → run → (print \| commit \| compare).|
 | `engine/`      | Runner, `Config`, `Test`/`*Result` types, `RunHooks`.                      |
 | `checks/`      | Pluggable observations: `exitcode`, `stdout`, `stderr`, file globs.        |
-| `testspecs/`   | YAML loader for `tests.yml` (recursively nested test tree).                |
+| `testspecs/`   | Spec loader for `tests.yml` / `.cue` (recursively nested test tree).       |
 | `resultspecs/` | Lock-file format + diff/compare engine.                                    |
 | `internal/p`   | Console printing/coloring.                                                 |
 | `test/`        | Self-hosting smoke tests of the `smoke` binary itself.                     |
