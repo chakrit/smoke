@@ -26,7 +26,7 @@ func processFile(filename string) {
 
 	tests, err := testspecs.Load(file, filename)
 	if err != nil {
-		p.Exit(fmt.Errorf(filename+": %w", err))
+		p.DataErr(fmt.Errorf(filename+": %w", err))
 	}
 
 	if len(includes) > 0 {
@@ -85,7 +85,7 @@ func showResults(filename string) {
 
 	results, err := resultspecs.Load(file)
 	if err != nil {
-		p.Exit(fmt.Errorf(target+": %w", err))
+		p.DataErr(fmt.Errorf(target+": %w", err))
 	}
 
 	if len(includes) > 0 {
@@ -191,7 +191,7 @@ func compareResults(filename string, results []engine.TestResult) {
 
 	lockspec, err := resultspecs.Load(lockfile)
 	if err != nil {
-		p.Exit(fmt.Errorf(lockname+": %w", err))
+		p.DataErr(fmt.Errorf(lockname+": %w", err))
 	}
 
 	// if includes/excludes are set, only compare those, otherwise the excluded/included

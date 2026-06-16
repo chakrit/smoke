@@ -14,9 +14,10 @@ import (
 const (
 	ExitUnchanged = 0  // output matched the lock
 	ExitChanged   = 1  // drift detected
-	ExitTrouble   = 2  // operational error (bad spec, runner crash, I/O)
+	ExitTrouble   = 2  // operational error (runner crash, I/O)
 	ExitNew       = 3  // no lock; first run unreviewed
 	ExitUsage     = 64 // invalid invocation (EX_USAGE)
+	ExitDataErr   = 65 // spec or lock file read but malformed (EX_DATAERR)
 )
 
 // utility CLI logs
@@ -28,6 +29,13 @@ func Action(s string) { output(1, cAction+"≋≋> "+strings.ToUpper(s)+cReset) 
 func Exit(err error) {
 	Error(err)
 	os.Exit(ExitTrouble)
+}
+
+// DataErr exits when a spec or lock file is read but won't parse or validate —
+// malformed input, distinct from operational trouble. See exit-codes.md.
+func DataErr(err error) {
+	Error(err)
+	os.Exit(ExitDataErr)
 }
 
 // testing flow

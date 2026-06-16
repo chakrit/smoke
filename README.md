@@ -143,9 +143,10 @@ for the full contract.
 | ---- | ----------- | -------------------------------------------------------- |
 | 0    | `UNCHANGED` | Output matched the lock. *Not* "tests passed."           |
 | 1    | `CHANGED`   | Drift detected — output moved (includes `MISSING`, timeout). |
-| 2    | —           | Operational error: bad spec, runner crash, I/O.          |
+| 2    | —           | Operational error: SMOKE itself broke (runner crash, I/O). |
 | 3    | `NEW`       | No lock file; first run is unreviewed.                   |
-| 64   | —           | Usage error: invalid invocation.                         |
+| 64   | —           | Usage error: invalid invocation (bad flags).             |
+| 65   | —           | Data error: a spec or lock file is malformed.            |
 
 "Fail the build on any nonzero" works for CI — `0` is the only clean pass.
 `UNCHANGED` means drift-free, not verified-correct. Driving SMOKE from an agent

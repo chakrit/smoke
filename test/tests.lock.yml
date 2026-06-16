@@ -143,9 +143,10 @@
             - 'Exit codes:'
             - '  0   UNCHANGED   output matched the lock (not "tests passed")'
             - '  1   CHANGED     drift — output moved from the golden (includes MISSING, timeout)'
-            - '  2               operational error — SMOKE itself failed (bad spec, crash, I/O)'
+            - '  2               operational error — SMOKE itself broke (runner crash, I/O)'
             - '  3   NEW         no lock yet; first run is unreviewed'
-            - '  64              usage error — invalid invocation'
+            - '  64              usage error — invalid invocation (bad flags)'
+            - '  65              data error — spec or lock file is malformed'
 - name: test/tests.yml \ Basics \ Loads
   commands:
     - command: ./bin/smoke --no-color --list tests.yml
@@ -258,9 +259,10 @@
             - const (
             - "\tExitUnchanged = 0  // output matched the lock"
             - "\tExitChanged   = 1  // drift detected"
-            - "\tExitTrouble   = 2  // operational error (bad spec, runner crash, I/O)"
+            - "\tExitTrouble   = 2  // operational error (runner crash, I/O)"
             - "\tExitNew       = 3  // no lock; first run unreviewed"
             - "\tExitUsage     = 64 // invalid invocation (EX_USAGE)"
+            - "\tExitDataErr   = 65 // spec or lock file read but malformed (EX_DATAERR)"
             - )
             - ""
             - // utility CLI logs
@@ -272,6 +274,13 @@
             - func Exit(err error) {
             - "\tError(err)"
             - "\tos.Exit(ExitTrouble)"
+            - '}'
+            - ""
+            - // DataErr exits when a spec or lock file is read but won't parse or validate —
+            - // malformed input, distinct from operational trouble. See exit-codes.md.
+            - func DataErr(err error) {
+            - "\tError(err)"
+            - "\tos.Exit(ExitDataErr)"
             - '}'
             - ""
             - // testing flow
@@ -652,9 +661,10 @@
             - 'Exit codes:'
             - '  0   UNCHANGED   output matched the lock (not "tests passed")'
             - '  1   CHANGED     drift — output moved from the golden (includes MISSING, timeout)'
-            - '  2               operational error — SMOKE itself failed (bad spec, crash, I/O)'
+            - '  2               operational error — SMOKE itself broke (runner crash, I/O)'
             - '  3   NEW         no lock yet; first run is unreviewed'
-            - '  64              usage error — invalid invocation'
+            - '  64              usage error — invalid invocation (bad flags)'
+            - '  65              data error — spec or lock file is malformed'
 - name: test/tests.yml \ Tests \ CUE
   commands:
     - command: ./bin/smoke --no-color --list test/cuetests.cue
@@ -745,6 +755,20 @@
         - name: stderr
           data:
             - 'ERR test/nonexistent.yml: open test/nonexistent.yml: no such file or directory'
+- name: test/tests.yml \ Tests \ States \ Malformed
+  commands:
+    - command: ./bin/smoke --no-color test/malformedtests.yml
+      checks:
+        - name: exitcode
+          data:
+            - "65"
+        - name: stdout
+          data:
+            - ""
+        - name: stderr
+          data:
+            - 'ERR test/malformedtests.yml: yaml: unmarshal errors:'
+            - '  line 3: cannot unmarshal !!seq into testspecs.TestSpec'
 - name: test/tests.yml \ Tests \ States \ Timeout
   commands:
     - command: ./bin/smoke --no-color test/timeouttests.yml

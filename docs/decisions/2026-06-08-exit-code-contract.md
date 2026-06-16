@@ -6,24 +6,47 @@
 
 ## Decision
 
-SMOKE exits with one of five stable, documented codes. Each names a distinct
+SMOKE exits with one of six stable, documented codes. Each names a distinct
 outcome class; no code is shared across classes.
 
 | Code | State       | Trigger                                                  |
 | ---- | ----------- | ------------------------------------------------------- |
 | 0    | `UNCHANGED` | Observable output matched the lock. *Not* "tests passed."|
 | 1    | `CHANGED`   | Drift detected. Includes `MISSING` and command timeout. |
-| 2    | Operational | Tool itself failed: bad spec, runner crash, I/O error.  |
+| 2    | Operational | Tool itself broke: runner crash, I/O error.             |
 | 3    | `NEW`       | No lock file / unreviewed first run.                    |
-| 64   | Usage       | Invalid invocation (`EX_USAGE`, sysexits.h).            |
+| 64   | Usage       | Invalid invocation — bad flags/argv (`EX_USAGE`, sysexits.h). |
+| 65   | Data        | A spec or lock file was read but is malformed (`EX_DATAERR`). |
 
-Operational (`2`) and usage (`64`) diagnostics write to **stderr**. The
-drift/match report writes to **stdout**. A consumer can therefore separate
-"the command's output drifted" from "SMOKE broke" by both exit code *and*
-stream.
+Operational (`2`), usage (`64`), and data-error (`65`) diagnostics write to
+**stderr**. The drift/match report writes to **stdout**. A consumer can
+therefore separate "the command's output drifted" from "SMOKE broke" by both
+exit code *and* stream.
 
 Codes are a contract: once shipped they are frozen. New outcome classes get a
 new code, never a re-used one.
+
+## Amendment — 2026-06-16: add `65` (`EX_DATAERR`)
+
+The original scheme folded "bad spec" into operational `2`. The Loader/validation
+slice (the CUE epic) surfaced a distinct class the original scheme had no room
+for: a spec or lock file that SMOKE *reads* but cannot parse or validate — a
+deterministic, fix-your-file failure caught before any command runs. That is
+neither a usage error (the invocation was fine) nor SMOKE breaking (nothing
+crashed); it is `EX_DATAERR`. We add `65` for it and **narrow `2`** to genuine
+operational trouble (runner crash, I/O).
+
+This is consistent with the freeze rule above — a new outcome class gets a new
+code. The narrowing of `2` is the only backward-incompatible part, and it was
+safe to make: no consumer was branching on these codes yet, so re-pointing
+malformed-input failures from `2` to `65` broke nothing. `65` absorbs the whole
+malformed-input continuum — YAML/JSON syntax, structural validation, bad
+timeout durations, CUE unification — for both spec and lock files; splitting
+that across two codes would re-create the overloading this contract exists to
+remove. A missing/unreadable file stays `2` (I/O, not malformed content);
+`EX_NOINPUT` (66) was considered and rejected to keep the code space small.
+
+With this, the contract is re-frozen at six codes.
 
 ## Rationale
 

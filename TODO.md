@@ -39,7 +39,11 @@ specs can be generated/validated by CUE tooling. Folds in the old stdin item bel
       Each loader owns format-specific parsing; a shared `validate(*TestSpec)`
       runs post-`Resolve` for format-agnostic checks (check names resolve, leaves
       have commands) and takes over timeout-duration parsing so a bad `"5s"` fails
-      at load, not at run. Validation is per-format + shared (not CUE-universal)
+      at load, not at run. All `validate`/parse failures exit `65` (`EX_DATAERR`)
+      via `p.DataErr` — the exit-code contract was unfrozen and extended to add
+      it (see `docs/decisions/2026-06-08-exit-code-contract.md`); the malformed
+      path is already wired, so Slice C just routes its new validation errors
+      through it. Validation is per-format + shared (not CUE-universal)
       and **first-error** — all-errors reporting is deferred to vNext, designed
       alongside partial load/commit/run (see backlog). Adds JSON, JSONC
       (comment-strip pre-step), JSONL (each line a `TestSpec`; the stream is the

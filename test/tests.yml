@@ -145,6 +145,9 @@ tests:
           - name: Operational
             commands:
               - ./bin/smoke --no-color test/nonexistent.yml
+          - name: Malformed
+            commands:
+              - ./bin/smoke --no-color test/malformedtests.yml # bad spec must exit 65
           - name: Timeout
             commands:
               - ./bin/smoke --no-color test/timeouttests.yml

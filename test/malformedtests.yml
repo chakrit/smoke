@@ -1,0 +1,3 @@
+# A sequence at the document root cannot decode into a TestSpec mapping, so
+# yaml.Decode fails — exercising the EX_DATAERR (65) malformed-spec path.
+- this spec is a list, not a test mapping

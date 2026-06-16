@@ -45,9 +45,10 @@ const usageExitCodes = `
 Exit codes:
   0   UNCHANGED   output matched the lock (not "tests passed")
   1   CHANGED     drift — output moved from the golden (includes MISSING, timeout)
-  2               operational error — SMOKE itself failed (bad spec, crash, I/O)
+  2               operational error — SMOKE itself broke (runner crash, I/O)
   3   NEW         no lock yet; first run is unreviewed
-  64              usage error — invalid invocation
+  64              usage error — invalid invocation (bad flags)
+  65              data error — spec or lock file is malformed
 `
 
 func usage() {

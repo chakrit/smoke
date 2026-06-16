@@ -21,8 +21,9 @@ Map the states to what they actually mean, not to test-runner habits:
 | `UNCHANGED` | 0    | **not** "passed"      | Output matches the golden. Says nothing about correctness. |
 | `CHANGED`   | 1    | **not** "failed"      | Output drifted. Expected during intentional changes — review it. |
 | `NEW`       | 3    | —                     | No golden yet. A human/LLM must eyeball and commit the first lock. |
-| (operational) | 2  | —                     | SMOKE itself broke. Stop and fix the harness/spec. |
-| (usage)     | 64   | —                     | Invalid invocation. Stop.                     |
+| (operational) | 2  | —                     | SMOKE itself broke (runner crash, I/O). Stop and fix the harness. |
+| (usage)     | 64   | —                     | Invalid invocation — bad flags. Stop.         |
+| (data)      | 65   | —                     | A spec or lock file is malformed. Stop and fix the file. |
 
 ## The three traps
 
@@ -52,7 +53,8 @@ Do not parse human output or pattern-match colors/words. Branch on `$?`:
 - `0` — no drift. Continue; do not treat as a verification pass.
 - `1` — drift. Surface the diff for review; re-commit only if the change was
   intended and the new output checks out.
-- `2` / `64` — SMOKE or the invocation broke. Stop; this is not drift.
+- `2` / `64` / `65` — SMOKE broke (`2`), the invocation was bad (`64`), or a
+  spec/lock file is malformed (`65`). Stop; none of these is drift.
 - `3` — first run, no golden. Review the output and commit the initial lock.
 
 The whole point of the distinct codes is that you never have to guess which of
