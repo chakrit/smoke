@@ -33,25 +33,30 @@ specs can be generated/validated by CUE tooling. Folds in the old stdin item bel
       resultspecs layers untouched.
 * [x] Lock-file semantics: `lockFilename` maps `foo.cue` → `foo.lock.yml` (results
       are always YAML). `.yml`/`.yaml` unchanged.
-* [ ] **Loader abstraction + validation.** Replace the extension `switch` in
-      `testspecs.Load` with a thin `Loader interface { Load(io.Reader)
-      (*TestSpec, error) }`, dispatched by extension (map/switch, no registry).
-      Each loader owns format-specific parsing; a shared `validate(*TestSpec)`
-      runs post-`Resolve` for format-agnostic checks (check names resolve, leaves
-      have commands) and takes over timeout-duration parsing so a bad `"5s"` fails
-      at load, not at run. All `validate`/parse failures exit `65` (`EX_DATAERR`)
-      via `p.DataErr` — the exit-code contract was unfrozen and extended to add
-      it (see `docs/decisions/2026-06-08-exit-code-contract.md`); the malformed
-      path is already wired, so Slice C just routes its new validation errors
-      through it. Validation is per-format + shared (not CUE-universal)
-      and **first-error** — all-errors reporting is deferred to vNext, designed
-      alongside partial load/commit/run (see backlog). Adds JSON, JSONC
-      (comment-strip pre-step), JSONL (each line a `TestSpec`; the stream is the
-      children of an implicit empty root — equiv. to a YAML `tests: [...]` with no
-      top-level command). `lockFilename` generalizes: any non-YAML ext →
-      `.lock.yml`. Self-tests: round-trip per new format + one structure-invalid
-      case proving `validate` fires. **Next slice (C).** Load `general-coding`,
-      `go-coding`, `cue-coding`.
+* [ ] **Loader abstraction + leaf validation.** Replace the extension `switch` in
+      `testspecs.Load` with an unexported `loader interface { Load(io.Reader)
+      (*TestSpec, error) }` + `loaderFor` dispatch on `filepath.Ext` (default-deny).
+      Each loader owns format-specific parsing; `Load()` =
+      `loaderFor` → `loader.Load` → set `Filename` → `Resolve(nil)` → `Tests()`.
+      **Plan finalized (2026-06-16): first-error, minimal — NO standalone
+      `validate(*TestSpec)`, NO shadow fields, NO IR.** The one genuinely-new check
+      (a leaf — `len(Children)==0` — must have commands, else error not silent skip)
+      folds into the existing `Tests()` walk, alongside the check-name and timeout
+      parses that already live there as **live** conversion errors. All parse/leaf
+      failures exit `65` (`EX_DATAERR`) via `p.DataErr` — path already wired, no new
+      wiring. (CORRECTION: the old "takes over timeout parsing so a bad `"5s"` fails
+      at load not run" rationale was wrong — `RunConfig` is reached only via `Tests`
+      via `Load`, so it already parses at load today. The seam was only
+      organizational, and we're consciously not reorganizing it now; the proper
+      split into a total parse + fold-based validate is deferred to the all-errors
+      pass — see backlog.) Adds JSON (`json:` tags already exist — near-free) and
+      JSONL (each line a `TestSpec`; the stream is the children of an implicit empty
+      root — equiv. to a YAML `tests: [...]` with no top-level command). **JSONC
+      deferred** (needs a dep or a string-aware comment-stripper — its own
+      follow-up). `lockFilename` generalizes: any non-YAML ext → `.lock.yml`.
+      Self-tests: round-trip per new format + one structure-invalid (bad-leaf) case
+      proving the leaf check fires → exit 65. **Slice C (in progress, red next).**
+      Load `general-coding`, `go-coding`, `cue-coding`.
 * [ ] Read tests from stdin to support piping from other toolings (e.g.
       `cue export | smoke -`). Decide how the lock file is located when input has no
       filename (require an explicit `--lock` path?). **Slice E — separable from CUE.**
@@ -180,7 +185,17 @@ review, not a failing assertion; `UNCHANGED` is drift-free, not verified-correct
 * [ ] All-errors validation reporting — collect every spec error per load, not just
       the first. Shares the "don't abort on first problem" machinery with partial
       load/commit/run above; design as one pass, not before. (vNext; the CUE Loader
-      slice ships first-error only.)
+      slice ships first-error only.) **Intended mechanism (decided 2026-06-16):**
+      "parse don't validate" — parse becomes *total* (never fails), each failable
+      field carries `value-or-Err` as data in a typed IR, and a fold-based
+      `validate` walks the IR collecting errors. First-error vs all-errors is then
+      a one-line change in the fold. This is also where `Tests()` finally splits
+      into a total parse + validate. Don't build the IR before this lands — under
+      first-error it's dead weight.
+* [ ] JSONC support — deferred out of the Loader slice (Slice C). Needs either a new
+      dependency or a hand-rolled string-aware comment-stripper (must skip `//` and
+      `/* */` inside string literals — correctness risk on untrusted input). Decide
+      dep-vs-stripper on its own merits. Weakest-value of the JSON-family formats.
 * [x] Reconcile pflag's bad-flag exit code. `pflag.CommandLine` switched to
       `ContinueOnError`; `main` handles the `Parse` error itself (stderr + usage +
       `ExitUsage`), so a bad flag exits `64` instead of pflag's default `2`.
