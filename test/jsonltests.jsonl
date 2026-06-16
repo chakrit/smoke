@@ -1,0 +1,2 @@
+{"name":"Echo","checks":["exitcode","stdout"],"commands":["echo jsonl-driven smoke test"]}
+{"name":"Arithmetic","checks":["exitcode","stdout"],"commands":["echo $((6 * 7))"]}

@@ -257,10 +257,13 @@ func compareResults(filename string, results []engine.TestResult) {
 func lockFilename(filename string) string {
 	ext := filepath.Ext(filename)
 	base := filename[:len(filename)-len(ext)]
-	// results are always serialized as YAML, so .cue specs lock to .lock.yml
-	// rather than a .lock.cue we could never round-trip.
-	if ext == ".cue" {
+	// results are always serialized as YAML, so only YAML specs keep their
+	// extension; every other format (.cue, .json, .jsonl) locks to .lock.yml
+	// rather than a .lock.<ext> we could never round-trip.
+	switch ext {
+	case ".yml", ".yaml":
+		return base + ".lock" + ext
+	default:
 		return base + ".lock.yml"
 	}
-	return base + ".lock" + ext
 }

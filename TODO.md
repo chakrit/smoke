@@ -33,7 +33,7 @@ specs can be generated/validated by CUE tooling. Folds in the old stdin item bel
       resultspecs layers untouched.
 * [x] Lock-file semantics: `lockFilename` maps `foo.cue` → `foo.lock.yml` (results
       are always YAML). `.yml`/`.yaml` unchanged.
-* [ ] **Loader abstraction + leaf validation.** Replace the extension `switch` in
+* [x] **Loader abstraction + leaf validation.** Replace the extension `switch` in
       `testspecs.Load` with an unexported `loader interface { Load(io.Reader)
       (*TestSpec, error) }` + `loaderFor` dispatch on `filepath.Ext` (default-deny).
       Each loader owns format-specific parsing; `Load()` =
@@ -55,8 +55,12 @@ specs can be generated/validated by CUE tooling. Folds in the old stdin item bel
       deferred** (needs a dep or a string-aware comment-stripper — its own
       follow-up). `lockFilename` generalizes: any non-YAML ext → `.lock.yml`.
       Self-tests: round-trip per new format + one structure-invalid (bad-leaf) case
-      proving the leaf check fires → exit 65. **Slice C (in progress, red next).**
-      Load `general-coding`, `go-coding`, `cue-coding`.
+      proving the leaf check fires → exit 65. **Slice C DONE (2026-06-16):** loaders
+      in `testspecs/loaders.go` (`loader`/`loaderFor` + yaml/cue/json/jsonl), leaf
+      check folded into `Tests()`, `lockFilename` YAML-whitelisted. Go unit tests in
+      `testspecs/testspecs_test.go` + `lockfile_test.go`; smoke self-tests added
+      (JSON/JSONL round-trip, Bad-leaf → 65). Load `general-coding`, `go-coding`,
+      `cue-coding`.
 * [ ] Read tests from stdin to support piping from other toolings (e.g.
       `cue export | smoke -`). Decide how the lock file is located when input has no
       filename (require an explicit `--lock` path?). **Slice E — separable from CUE.**

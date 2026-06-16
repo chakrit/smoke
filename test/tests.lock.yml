@@ -690,6 +690,56 @@
         - name: stderr
           data:
             - ""
+- name: test/tests.yml \ Tests \ JSON
+  commands:
+    - command: ./bin/smoke --no-color --list test/jsontests.json
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - test/jsontests.json \ Echo
+            - test/jsontests.json \ Arithmetic
+        - name: stderr
+          data:
+            - ""
+    - command: ./bin/smoke --no-color test/jsontests.json
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - UNCHANGED — output matches test/jsontests.lock.yml (drift-free, not verified correct)
+        - name: stderr
+          data:
+            - ""
+- name: test/tests.yml \ Tests \ JSONL
+  commands:
+    - command: ./bin/smoke --no-color --list test/jsonltests.jsonl
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - test/jsonltests.jsonl \ Echo
+            - test/jsonltests.jsonl \ Arithmetic
+        - name: stderr
+          data:
+            - ""
+    - command: ./bin/smoke --no-color test/jsonltests.jsonl
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - UNCHANGED — output matches test/jsonltests.lock.yml (drift-free, not verified correct)
+        - name: stderr
+          data:
+            - ""
 - name: test/tests.yml \ Tests \ Init \ Writes named file
   commands:
     - command: rm -f test/init-scratch.yml && ./bin/smoke --no-color --init=test/init-scratch.yml && rm test/init-scratch.yml
@@ -769,6 +819,19 @@
           data:
             - 'ERR test/malformedtests.yml: yaml: unmarshal errors:'
             - '  line 3: cannot unmarshal !!seq into testspecs.TestSpec'
+- name: test/tests.yml \ Tests \ States \ Bad leaf
+  commands:
+    - command: ./bin/smoke --no-color test/badleaftests.yml
+      checks:
+        - name: exitcode
+          data:
+            - "65"
+        - name: stdout
+          data:
+            - ""
+        - name: stderr
+          data:
+            - 'ERR test/badleaftests.yml: test `test/badleaftests.yml \ Leaf without commands` is a leaf with no commands'
 - name: test/tests.yml \ Tests \ States \ Timeout
   commands:
     - command: ./bin/smoke --no-color test/timeouttests.yml

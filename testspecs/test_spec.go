@@ -49,6 +49,10 @@ func (t *TestSpec) Resolve(parent *TestSpec) {
 }
 
 func (t *TestSpec) Tests() (tests []*engine.Test, err error) {
+	if len(t.Children) == 0 && len(t.Commands) == 0 {
+		return nil, errors.New("test `" + t.Name + "` is a leaf with no commands")
+	}
+
 	if len(t.Commands) > 0 {
 		var commands []engine.Command
 		for _, cmdstr := range t.Commands {

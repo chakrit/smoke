@@ -1,0 +1,20 @@
+- name: test/jsonltests.jsonl \ Echo
+  commands:
+    - command: echo jsonl-driven smoke test
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - jsonl-driven smoke test
+- name: test/jsonltests.jsonl \ Arithmetic
+  commands:
+    - command: echo $((6 * 7))
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - "42"

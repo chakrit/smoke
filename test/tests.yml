@@ -126,6 +126,14 @@ tests:
         commands:
           - ./bin/smoke --no-color --list test/cuetests.cue # .cue spec loads
           - ./bin/smoke --no-color test/cuetests.cue # and compares UNCHANGED
+      - name: JSON
+        commands:
+          - ./bin/smoke --no-color --list test/jsontests.json # .json spec loads
+          - ./bin/smoke --no-color test/jsontests.json # and compares UNCHANGED
+      - name: JSONL
+        commands:
+          - ./bin/smoke --no-color --list test/jsonltests.jsonl # .jsonl spec loads
+          - ./bin/smoke --no-color test/jsonltests.jsonl # and compares UNCHANGED
       - name: Init
         tests:
           - name: Writes named file
@@ -148,6 +156,9 @@ tests:
           - name: Malformed
             commands:
               - ./bin/smoke --no-color test/malformedtests.yml # bad spec must exit 65
+          - name: Bad leaf
+            commands:
+              - ./bin/smoke --no-color test/badleaftests.yml # command-less leaf must exit 65
           - name: Timeout
             commands:
               - ./bin/smoke --no-color test/timeouttests.yml
