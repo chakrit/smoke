@@ -61,9 +61,15 @@ specs can be generated/validated by CUE tooling. Folds in the old stdin item bel
       `testspecs/testspecs_test.go` + `lockfile_test.go`; smoke self-tests added
       (JSON/JSONL round-trip, Bad-leaf → 65). Load `general-coding`, `go-coding`,
       `cue-coding`.
-* [ ] Read tests from stdin to support piping from other toolings (e.g.
-      `cue export | smoke -`). Decide how the lock file is located when input has no
-      filename (require an explicit `--lock` path?). **Slice E — separable from CUE.**
+* [-] ~~Read tests from stdin (`cue export | smoke -`).~~ **Dropped (2026-06-16).**
+      Piping fights the core premise: drift detection needs a *stable spec identity*
+      for the lock to compare against over time; a piped spec is identity-less, so
+      "where does the lock live?" has no good answer. Slice C made `.cue` a
+      first-class *file* input, which obsoletes the motivating example —
+      `smoke spec.cue` → stable `spec.lock.yml`. Stdin would only serve lockless
+      modes (`--list`/`--print`), i.e. SMOKE as a command runner, not a drift
+      detector. _Revisit only if a concrete tool-generated-spec workflow appears that
+      genuinely can't write a file first._
 * [ ] Ship a CUE schema (`#Test`/`#Config` definitions) so authors get validation and
       editor support when writing `.cue` specs. Lands as the cueLoader's
       format-specific validation step (unify before `Decode`). **Slice D.**
