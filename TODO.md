@@ -33,12 +33,27 @@ specs can be generated/validated by CUE tooling. Folds in the old stdin item bel
       resultspecs layers untouched.
 * [x] Lock-file semantics: `lockFilename` maps `foo.cue` → `foo.lock.yml` (results
       are always YAML). `.yml`/`.yaml` unchanged.
+* [ ] **Loader abstraction + validation.** Replace the extension `switch` in
+      `testspecs.Load` with a thin `Loader interface { Load(io.Reader)
+      (*TestSpec, error) }`, dispatched by extension (map/switch, no registry).
+      Each loader owns format-specific parsing; a shared `validate(*TestSpec)`
+      runs post-`Resolve` for format-agnostic checks (check names resolve, leaves
+      have commands) and takes over timeout-duration parsing so a bad `"5s"` fails
+      at load, not at run. Validation is per-format + shared (not CUE-universal)
+      and **first-error** — all-errors reporting is deferred to vNext, designed
+      alongside partial load/commit/run (see backlog). Adds JSON, JSONC
+      (comment-strip pre-step), JSONL (each line a `TestSpec`; the stream is the
+      children of an implicit empty root — equiv. to a YAML `tests: [...]` with no
+      top-level command). `lockFilename` generalizes: any non-YAML ext →
+      `.lock.yml`. Self-tests: round-trip per new format + one structure-invalid
+      case proving `validate` fires. **Next slice (C).** Load `general-coding`,
+      `go-coding`, `cue-coding`.
 * [ ] Read tests from stdin to support piping from other toolings (e.g.
       `cue export | smoke -`). Decide how the lock file is located when input has no
-      filename (require an explicit `--lock` path?). **Deferred to its own slice —
-      separable from CUE.**
+      filename (require an explicit `--lock` path?). **Slice E — separable from CUE.**
 * [ ] Ship a CUE schema (`#Test`/`#Config` definitions) so authors get validation and
-      editor support when writing `.cue` specs. **Next slice (C).**
+      editor support when writing `.cue` specs. Lands as the cueLoader's
+      format-specific validation step (unify before `Decode`). **Slice D.**
 * [x] Self-tests: a `.cue` spec round-trips (run → commit → stable) under `test/`.
       (`test/cuetests.cue` + `test/tests.yml \ Tests \ CUE`.)
 
@@ -158,6 +173,10 @@ review, not a failing assertion; `UNCHANGED` is drift-free, not verified-correct
 * [ ] Allow partially committing some results but not all.
 * [ ] Allow committing last run results (so we don't have to re-run tests to commit
       again).
+* [ ] All-errors validation reporting — collect every spec error per load, not just
+      the first. Shares the "don't abort on first problem" machinery with partial
+      load/commit/run above; design as one pass, not before. (vNext; the CUE Loader
+      slice ships first-error only.)
 * [x] Reconcile pflag's bad-flag exit code. `pflag.CommandLine` switched to
       `ContinueOnError`; `main` handles the `Parse` error itself (stderr + usage +
       `ExitUsage`), so a bad flag exits `64` instead of pflag's default `2`.
