@@ -150,10 +150,13 @@ only a genuine `Wait()` error aborts as trouble.
 
 `resultspecs.Compare` runs a structural diff (test → command → check → line),
 returning a tree of `*Edit` values tagged `Equal`/`Added`/`Removed`/
-`InnerChanges` plus a `differs` bool. Compare mode prints only non-`Equal` edits
-and exits UNCHANGED or CHANGED accordingly. Commit mode writes results to a temp
-file and atomically renames into place, so a crash mid-write never corrupts an
-existing lock.
+`InnerChanges` plus a `differs` bool. Compare mode renders that tree through a
+`reporter` (`reporter.go`) chosen by output format: `consoleReporter` prints
+only non-`Equal` edits, `jsonReporter` (`--json`) emits the full verdict tree as
+JSON. Both map the outcome to a `status` enum that owns its exit code; the
+no-lock (`NEW`) path routes through the same reporter. Commit mode writes results
+to a temp file and atomically renames into place, so a crash mid-write never
+corrupts an existing lock.
 
 `--include` / `--exclude` filter by test name at both ends (the live test list
 and the loaded lock), so a partial run compares only the named subset. Committing
@@ -165,6 +168,7 @@ tests from the lock.
 | Mode               | Flag              | Effect                                          |
 | ------------------ | ----------------- | ----------------------------------------------- |
 | Compare *(default)*| —                 | diff vs lock → `0`/`1`/`3`                       |
+| Compare (JSON)     | `--json`          | same diff as a machine-readable document        |
 | Commit             | `--commit`/`-c`   | write/overwrite the lock                        |
 | Print              | `--print`/`-p`    | result YAML to stdout (scripting)               |
 | List               | `--list`/`-l`     | discovered test names (`-vv` adds commands)     |

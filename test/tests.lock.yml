@@ -132,6 +132,7 @@
             - '  -h, --help                        Show help on usages.'
             - '  -i, --include strings             Only run tests matching the given pattern'
             - '      --init string[="tests.yml"]   Write a starter tests.yml file; pass a path to write elsewhere.'
+            - '      --json                        Emit the compare result as a machine-readable JSON document.'
             - '  -l, --list                        List all discovered tests and exit.'
             - '      --no-color                    Turns off console coloring.'
             - '  -p, --print                       Print raw test results to stdout for scripting purposes.'
@@ -650,6 +651,7 @@
             - '  -h, --help                        Show help on usages.'
             - '  -i, --include strings             Only run tests matching the given pattern'
             - '      --init string[="tests.yml"]   Write a starter tests.yml file; pass a path to write elsewhere.'
+            - '      --json                        Emit the compare result as a machine-readable JSON document.'
             - '  -l, --list                        List all discovered tests and exit.'
             - '      --no-color                    Turns off console coloring.'
             - '  -p, --print                       Print raw test results to stdout for scripting purposes.'
@@ -740,6 +742,143 @@
         - name: stderr
           data:
             - ""
+- name: test/tests.yml \ Tests \ JSON Output \ Unchanged
+  commands:
+    - command: ./bin/smoke --no-color --json test/stabletests.yml
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - '{'
+            - '  "status": "unchanged",'
+            - '  "exitCode": 0,'
+            - '  "lock": "test/stabletests.lock.yml",'
+            - '  "tests": ['
+            - '    {'
+            - '      "name": "test/stabletests.yml \\ Echo",'
+            - '      "status": "matched",'
+            - '      "commands": []'
+            - '    }'
+            - '  ]'
+            - '}'
+        - name: stderr
+          data:
+            - ""
+- name: test/tests.yml \ Tests \ JSON Output \ Changed
+  commands:
+    - command: ./bin/smoke --no-color --json test/badtests.yml
+      checks:
+        - name: exitcode
+          data:
+            - "1"
+        - name: stdout
+          data:
+            - '{'
+            - '  "status": "changed",'
+            - '  "exitCode": 1,'
+            - '  "lock": "test/badtests.lock.yml",'
+            - '  "tests": ['
+            - '    {'
+            - '      "name": "test/badtests.yml \\ hello",'
+            - '      "status": "changed",'
+            - '      "commands": ['
+            - '        {'
+            - '          "command": "echo extraneous",'
+            - '          "status": "missing",'
+            - '          "checks": ['
+            - '            {'
+            - '              "name": "stdout",'
+            - '              "status": "missing"'
+            - '            }'
+            - '          ]'
+            - '        },'
+            - '        {'
+            - '          "command": "echo hello",'
+            - '          "status": "matched",'
+            - '          "checks": []'
+            - '        },'
+            - '        {'
+            - '          "command": "echo missing",'
+            - '          "status": "changed",'
+            - '          "checks": ['
+            - '            {'
+            - '              "name": "stdout",'
+            - '              "status": "changed"'
+            - '            }'
+            - '          ]'
+            - '        }'
+            - '      ]'
+            - '    },'
+            - '    {'
+            - '      "name": "test/badtests.yml \\ lipsum \\ Head",'
+            - '      "status": "changed",'
+            - '      "commands": ['
+            - '        {'
+            - '          "command": "head -22 test/badtests.txt | tail -9",'
+            - '          "status": "changed",'
+            - '          "checks": ['
+            - '            {'
+            - '              "name": "stdout",'
+            - '              "status": "changed"'
+            - '            }'
+            - '          ]'
+            - '        }'
+            - '      ]'
+            - '    },'
+            - '    {'
+            - '      "name": "test/badtests.yml \\ lipsum \\ Tail",'
+            - '      "status": "changed",'
+            - '      "commands": ['
+            - '        {'
+            - '          "command": "tail -22 test/badtests.txt | head -9",'
+            - '          "status": "changed",'
+            - '          "checks": ['
+            - '            {'
+            - '              "name": "stdout",'
+            - '              "status": "changed"'
+            - '            }'
+            - '          ]'
+            - '        }'
+            - '      ]'
+            - '    }'
+            - '  ]'
+            - '}'
+        - name: stderr
+          data:
+            - ""
+- name: test/tests.yml \ Tests \ JSON Output \ New
+  commands:
+    - command: ./bin/smoke --no-color --json test/newtests.yml
+      checks:
+        - name: exitcode
+          data:
+            - "3"
+        - name: stdout
+          data:
+            - '{'
+            - '  "status": "new",'
+            - '  "exitCode": 3,'
+            - '  "lock": "test/newtests.lock.yml",'
+            - '  "tests": []'
+            - '}'
+        - name: stderr
+          data:
+            - ""
+- name: test/tests.yml \ Tests \ JSON Output \ Bad combo
+  commands:
+    - command: ./bin/smoke --no-color --json --list test/stabletests.yml
+      checks:
+        - name: exitcode
+          data:
+            - "64"
+        - name: stdout
+          data:
+            - ""
+        - name: stderr
+          data:
+            - --json applies to the default compare mode; cannot combine with --list/--print/--commit/--show-expected
 - name: test/tests.yml \ Tests \ Init \ Writes named file
   commands:
     - command: rm -f test/init-scratch.yml && ./bin/smoke --no-color --init=test/init-scratch.yml && rm test/init-scratch.yml

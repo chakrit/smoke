@@ -134,6 +134,20 @@ tests:
         commands:
           - ./bin/smoke --no-color --list test/jsonltests.jsonl # .jsonl spec loads
           - ./bin/smoke --no-color test/jsonltests.jsonl # and compares UNCHANGED
+      - name: JSON Output
+        tests:
+          - name: Unchanged
+            commands:
+              - ./bin/smoke --no-color --json test/stabletests.yml # status unchanged, exit 0
+          - name: Changed
+            commands:
+              - ./bin/smoke --no-color --json test/badtests.yml # status changed, exit 1
+          - name: New
+            commands:
+              - ./bin/smoke --no-color --json test/newtests.yml # status new, exit 3
+          - name: Bad combo
+            commands:
+              - ./bin/smoke --no-color --json --list test/stabletests.yml # mode mix must exit 64
       - name: Init
         tests:
           - name: Writes named file

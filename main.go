@@ -20,6 +20,7 @@ var (
 	shouldList   bool
 	shouldPrint  bool
 	shouldCommit bool
+	shouldJSON   bool
 
 	noColors  bool
 	trackTime bool
@@ -71,6 +72,7 @@ func main() {
 	pflag.BoolVarP(&shouldList, "list", "l", false, "List all discovered tests and exit.")
 	pflag.BoolVarP(&shouldPrint, "print", "p", false, "Print raw test results to stdout for scripting purposes.")
 	pflag.BoolVarP(&shouldCommit, "commit", "c", false, "Commit all test output.")
+	pflag.BoolVar(&shouldJSON, "json", false, "Emit the compare result as a machine-readable JSON document.")
 
 	pflag.BoolVar(&noColors, "no-color", false, "Turns off console coloring.")
 	pflag.BoolVar(&trackTime, "time", false, "Log timestamps.")
@@ -105,6 +107,14 @@ func main() {
 	// partial tests/modifications
 	if shouldCommit && (len(includes) > 0 || len(excludes) > 0) {
 		p.Usage("cannot commit partial results when using --include or --exclude")
+		os.Exit(p.ExitUsage)
+		return
+	}
+
+	// --json renders the compare outcome only; mixing it with another output mode
+	// has no defined meaning, so reject rather than silently ignore it.
+	if shouldJSON && (shouldList || shouldPrint || shouldCommit || shouldShowExpected) {
+		p.Usage("--json applies to the default compare mode; cannot combine with --list/--print/--commit/--show-expected")
 		os.Exit(p.ExitUsage)
 		return
 	}

@@ -117,10 +117,18 @@ Tasks:
       `UNCHANGED`, so an agent knows a human/LLM eyeball is still required before
       the golden can be trusted. (No-lock now reports `NEW` + exit `3` instead of
       hard-erroring.)
-* [ ] Add a machine-readable mode (`--json` or similar) reporting per-check status
+* [x] Add a machine-readable mode (`--json` or similar) reporting per-check status
       with unambiguous fields (`matched`/`changed`/`new`/`missing`) and zero
       pass/fail language — the primary surface for agentic consumers. Dovetails
-      with the CUE/stdin work as the output mirror of structured input.
+      with the CUE/stdin work as the output mirror of structured input. **DONE
+      (2026-06-17):** `--json` (compare-only; mixing with list/print/commit/
+      show-expected → 64). Top-level `status`+`exitCode` (`unchanged`/`changed`/
+      `new` ↔ `0`/`1`/`3`); per-node `matched`/`changed`/`missing`. Output rendered
+      through a `reporter` abstraction (`reporter.go`: `consoleReporter` +
+      `jsonReporter`, `status` enum owning the exit code). Detail localizes to
+      drift (matched subtrees collapse — gendiff behavior). Go units in
+      `report_json_test.go`; smoke self-tests `tests.yml \ Tests \ JSON Output`
+      (unchanged/changed/new + bad-combo→64).
 * [ ] Surface a one-line framing in human output and `--help`: SMOKE is a drift
       detector, not an assertion engine; "UNCHANGED does not mean correct."
 * [ ] Write LLM-facing guidance (a skill or `docs/` note) for SMOKE-in-TDD loops:
@@ -166,8 +174,10 @@ Tasks:
       scattered `os.Exit(1)` literals. (`p.Exit{Unchanged,Changed,Trouble,New,Usage}`
       in `internal/p`. Timeout now drifts as exit `1` via synthetic `checks.Timeout`;
       operational/usage diagnostics route to stderr. Spec status now `accepted`.)
-* [ ] Mirror the exit code in the `--json` output (a `status` field) so agents
-      don't have to shell-inspect `$?`.
+* [x] Mirror the exit code in the `--json` output (a `status` field) so agents
+      don't have to shell-inspect `$?`. **DONE (2026-06-17):** top-level `status`
+      + `exitCode` fields mirror the compare outcome. See the semantics epic's
+      `--json` item.
 * [x] Document the full table in `--help` and README; freeze it as a contract.
       (`usageExitCodes` in `main.go`; table in `README.md`.)
 * [x] Record the chosen scheme in `docs/decisions/` (shared ruling with the

@@ -68,6 +68,13 @@ report stays on stdout. Bad-flag parse errors exit `64`: `pflag.CommandLine`
 runs in `ContinueOnError` mode and `main` handles the error rather than letting
 pflag exit `2`, so no usage path collides with operational trouble.
 
-One surface from the broader exit-code epic remains open and is tracked
-separately: the `--json` `status` field mirroring the code. The contract table
-is documented on both user-facing surfaces (`--help` and README).
+`--json` (compare mode only) emits a machine-readable mirror of this contract: a
+top-level `status` (`unchanged`/`changed`/`new`) and `exitCode` (`0`/`1`/`3`)
+pair, plus the per-node verdict tree. Node `status` uses `matched`/`changed`/
+`missing` (`Removed` → `missing`, `Added`/`InnerChanges` → `changed`, `Equal` →
+`matched`); `new` is whole-run-only. Detail localizes to drift — a `matched`
+subtree carries no children, a `changed` node enumerates to the per-check level.
+The document is the only thing on stdout at default verbosity; `--json -v`
+interleaves progress chatter and is unsupported for machine consumption. The
+contract table is also documented on both user-facing surfaces (`--help` and
+README).

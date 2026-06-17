@@ -179,10 +179,20 @@ func commitResults(filename string, results []engine.TestResult) {
 func compareResults(filename string, results []engine.TestResult) {
 	lockname := lockFilename(filename)
 
+	var out reporter = consoleReporter{}
+	if shouldJSON {
+		out = jsonReporter{w: os.Stdout}
+	}
+	report := func(st status, edits []resultspecs.TestEdit) {
+		if err := out.Report(lockname, st, edits); err != nil {
+			p.Exit(fmt.Errorf("report: %w", err))
+		}
+		os.Exit(st.ExitCode())
+	}
+
 	lockfile, err := os.Open(lockname)
 	if os.IsNotExist(err) {
-		p.New(lockname)
-		os.Exit(p.ExitNew)
+		report(statusNew, nil)
 	} else if err != nil {
 		p.Exit(fmt.Errorf(lockname+": %w", err))
 	} else {
@@ -220,38 +230,12 @@ func compareResults(filename string, results []engine.TestResult) {
 	if err != nil {
 		p.Exit(fmt.Errorf("compare: %w", err))
 	}
-	if !differs {
-		p.Unchanged(lockname)
-		os.Exit(p.ExitUnchanged)
+
+	st := statusUnchanged
+	if differs {
+		st = statusChanged
 	}
-
-	for _, edit := range edits {
-		if edit.Action == resultspecs.Equal {
-			continue
-		}
-
-		p.TestEdit(edit)
-		for _, cmdedit := range edit.Commands {
-			if cmdedit.Action == resultspecs.Equal {
-				continue
-			}
-
-			p.CommandEdit(cmdedit)
-			for _, chkedit := range cmdedit.Checks {
-				if chkedit.Action == resultspecs.Equal {
-					continue
-				}
-
-				p.CheckEdit(chkedit)
-				for _, lineedit := range chkedit.Lines {
-					p.LineEdit(lineedit)
-				}
-			}
-		}
-	}
-
-	p.Changed(lockname)
-	os.Exit(p.ExitChanged)
+	report(st, edits)
 }
 
 func lockFilename(filename string) string {
