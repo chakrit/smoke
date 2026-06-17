@@ -150,22 +150,30 @@
             - '  65              data error — spec or lock file is malformed'
 - name: test/tests.yml \ Sanity \ Loads
   commands:
-    - command: ./bin/smoke --no-color --list tests.yml
+    - command: ./bin/smoke --no-color --list test/testdata/badtests.yml
       checks:
         - name: exitcode
           data:
-            - "2"
+            - "0"
         - name: stdout
           data:
-            - ""
-    - command: ./bin/smoke --no-color --list tests.yml -v
+            - test/testdata/badtests.yml \ hello
+            - test/testdata/badtests.yml \ lipsum \ Head
+            - test/testdata/badtests.yml \ lipsum \ Tail
+    - command: ./bin/smoke --no-color --list test/testdata/badtests.yml -v
       checks:
         - name: exitcode
           data:
-            - "2"
+            - "0"
         - name: stdout
           data:
-            - ""
+            - test/testdata/badtests.yml \ hello
+            - "\techo hello"
+            - "\techo missing"
+            - test/testdata/badtests.yml \ lipsum \ Head
+            - "\thead -22 test/testdata/badtests.txt | tail -9"
+            - test/testdata/badtests.yml \ lipsum \ Tail
+            - "\ttail -22 test/testdata/badtests.txt | head -9"
 - name: test/tests.yml \ Behavior \ Drift diff
   commands:
     - command: ./bin/smoke --no-color test/testdata/badtests.yml

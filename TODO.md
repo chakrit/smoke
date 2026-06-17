@@ -234,8 +234,10 @@ failing assertion; `UNCHANGED` is drift-free, not verified-correct.
   so a bad flag exits `64` instead of pflag's default `2`. Regression-locked by
   `test/tests.yml \ Behavior \ Usage`.
 
-* [] Fix the `Sanity \ Loads` self-test. It runs `--list tests.yml` against a *root*
+* [x] Fix the `Sanity \ Loads` self-test. It ran `--list tests.yml` against a *root*
   `tests.yml` that doesn't exist (the suite lives at `test/tests.yml`), so it silently
-  locks exit `2` + empty stdout instead of exercising `--list` output at all. Point it at
-  `test/tests.yml` (or a fixture) so it actually asserts a discovered-test listing, then
-  re-commit. Latent since before the testdata split; surfaced 2026-06-17.
+  locked exit `2` + empty stdout instead of exercising `--list` output at all. **Done
+  (2026-06-17):** repointed both commands at `test/testdata/badtests.yml` (the canonical
+  nested list fixture, already driven filtered by `Behavior \ Include/Exclude` — Loads is
+  now its unfiltered baseline). Golden regenerated; diff verified isolated to the Loads
+  node (exit `2`/empty → exit `0`/real tree + verbose listing). Gate green.

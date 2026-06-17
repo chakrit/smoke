@@ -67,8 +67,8 @@ tests:
         checks:
           - stdout
         commands:
-          - ./bin/smoke --no-color --list tests.yml
-          - ./bin/smoke --no-color --list tests.yml -v
+          - ./bin/smoke --no-color --list test/testdata/badtests.yml
+          - ./bin/smoke --no-color --list test/testdata/badtests.yml -v
   - name: Behavior
     checks:
       - exitcode
