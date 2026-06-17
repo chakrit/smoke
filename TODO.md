@@ -191,14 +191,21 @@ The headline gotcha is the semantics this project already nailed down: red/green
 means *unmatched/diffed*, NOT test pass/fail. `CHANGED` is expected drift to review, not a
 failing assertion; `UNCHANGED` is drift-free, not verified-correct.
 
-* [] Author a `SKILL.md` (skill-creator conventions) with name/description front-matter so
-  the skill triggers on golden-file / snapshot / smoke-test intents.
-* [] Body: setup (`--init`, writing `tests.yml`, checks), the run→eyeball→commit workflow,
-  exit-code contract, and the drift≠pass/fail framing. Reuse
+* [x] Author a `SKILL.md` (skill-creator conventions) with name/description front-matter
+  so the skill triggers on golden-file / snapshot / smoke-test intents. **Done
+  (2026-06-17):** `SKILL.md` at repo root; folded `description` front-loads the
+  drift≠correctness framing + explicit DO-NOT-TRIGGER on assertion frameworks (go
+  test/pytest/jest).
+* [x] Body: setup (`--init`, writing `tests.yml`, checks), the run→eyeball→commit
+  workflow, exit-code contract, and the drift≠pass/fail framing. Reuse
   `docs/spec/using-smoke-in-tdd.md` and `docs/spec/exit-codes.md` rather than duplicating
-  — link or distill.
-* [] Decide packaging: where `SKILL.md` lives so `ace` /Claude skill loaders find it, and
-  whether supporting `references/` files are needed.
+  — link or distill. **Done:** body distills each surface inline and links the two specs
+  for depth (no duplication); terse imperatives per house style.
+* [x] Decide packaging: where `SKILL.md` lives so `ace` /Claude skill loaders find it, and
+  whether supporting `references/` files are needed. **Decided (2026-06-17):** root
+  `SKILL.md` (the repo *is* the skill — loader finds it at the skill-dir root). No
+  `references/` subtree; the existing `docs/spec/{exit-codes,using-smoke-in-tdd}.md` are
+  in-tree, so SKILL.md links them by relative path instead of duplicating.
 
 ## Backlog (unsorted)
 
