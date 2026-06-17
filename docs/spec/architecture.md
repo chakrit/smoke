@@ -175,6 +175,6 @@ tests from the lock.
 | Show expected      | `--show-expected` | replay the lock without running                 |
 | Init               | `--init[=path]`   | scaffold a starter spec (no-clobber)            |
 
-Exit codes (`internal/p` constants `Exit{Unchanged,Changed,Trouble,New,Usage}`)
+Exit codes (`internal/p` constants `Exit{Unchanged,Changed,Trouble,New,Usage,DataErr}`)
 and the output vocabulary are the frozen contract in
 [`exit-codes.md`](exit-codes.md).

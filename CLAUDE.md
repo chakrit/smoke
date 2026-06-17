@@ -22,7 +22,7 @@ drifts. Not a replacement for proper tests; a fast drift detector.
 | -------------- | -------------------------------------------------------------------------- |
 | `main.go`      | pflag CLI surface (`--init/--list/--print/--commit/--show-expected/--json`).|
 | `process.go`   | Per-file orchestration: load → filter → run → (print \| commit \| compare).|
-| `reporter.go`  | Compare-output `reporter` abstraction: `status` enum, console + JSON impls. |
+| `reporter.go`  | `reporter`: `status` enum + console impl; JSON in `report_json.go`.         |
 | `engine/`      | Runner, `Config`, `Test`/`*Result` types, `RunHooks`.                      |
 | `checks/`      | Pluggable observations: `exitcode`, `stdout`, `stderr`, file globs.        |
 | `testspecs/`   | Spec loader for `tests.yml` / `.cue` (recursively nested test tree).       |
