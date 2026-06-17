@@ -9,11 +9,11 @@ tests:
     commands:
       - go build -o ./bin/smoke -v .
       - ./bin/smoke
-  - name: Basics
+  - name: Sanity
     checks:
       - exitcode
     tests:
-      - name: Checks
+      - name: Imports
         checks:
           - stdout
         commands:
@@ -69,19 +69,19 @@ tests:
         commands:
           - ./bin/smoke --no-color --list tests.yml
           - ./bin/smoke --no-color --list tests.yml -v
-  - name: Tests
+  - name: Behavior
     checks:
       - exitcode
       - stdout
       - stderr
     tests:
-      - name: Diff
+      - name: Drift diff
         commands:
-          - ./bin/smoke --no-color test/badtests.yml
-      - name: Errors
+          - ./bin/smoke --no-color test/testdata/badtests.yml
+      - name: Command error
         commands:
           - unknowncommand_asdfqwerzcxv # should error
-      - name: I/O
+      - name: File checks
         config:
           workdir: ./internal/p
         checks:
@@ -99,12 +99,12 @@ tests:
         tests:
           - name: Just Include
             commands:
-              - ./bin/smoke --no-color -l -i hello test/badtests.yml
-              - ./bin/smoke --no-color -v -i hello test/badtests.yml
+              - ./bin/smoke --no-color -l -i hello test/testdata/badtests.yml
+              - ./bin/smoke --no-color -v -i hello test/testdata/badtests.yml
           - name: Just Exclude
             commands:
-              - ./bin/smoke --no-color -l -x Head -x Tail test/badtests.yml
-              - ./bin/smoke --no-color -v -x Head -x Tail test/badtests.yml
+              - ./bin/smoke --no-color -l -x Head -x Tail test/testdata/badtests.yml
+              - ./bin/smoke --no-color -v -x Head -x Tail test/testdata/badtests.yml
       - name: HTTP
         checks:
           - GET https://raw.githubusercontent.com/chakrit/smoke/master/LICENSE
@@ -124,58 +124,58 @@ tests:
           - ./bin/smoke --no-color --bogus-flag # bad flag must exit 64
       - name: CUE
         commands:
-          - ./bin/smoke --no-color --list test/cuetests.cue # .cue spec loads
-          - ./bin/smoke --no-color test/cuetests.cue # and compares UNCHANGED
+          - ./bin/smoke --no-color --list test/testdata/cuetests.cue # .cue spec loads
+          - ./bin/smoke --no-color test/testdata/cuetests.cue # and compares UNCHANGED
       - name: JSON
         commands:
-          - ./bin/smoke --no-color --list test/jsontests.json # .json spec loads
-          - ./bin/smoke --no-color test/jsontests.json # and compares UNCHANGED
+          - ./bin/smoke --no-color --list test/testdata/jsontests.json # .json spec loads
+          - ./bin/smoke --no-color test/testdata/jsontests.json # and compares UNCHANGED
       - name: JSONL
         commands:
-          - ./bin/smoke --no-color --list test/jsonltests.jsonl # .jsonl spec loads
-          - ./bin/smoke --no-color test/jsonltests.jsonl # and compares UNCHANGED
+          - ./bin/smoke --no-color --list test/testdata/jsonltests.jsonl # .jsonl spec loads
+          - ./bin/smoke --no-color test/testdata/jsonltests.jsonl # and compares UNCHANGED
       - name: JSON Output
         tests:
           - name: Unchanged
             commands:
-              - ./bin/smoke --no-color --json test/stabletests.yml # status unchanged, exit 0
+              - ./bin/smoke --no-color --json test/testdata/stabletests.yml # status unchanged, exit 0
           - name: Changed
             commands:
-              - ./bin/smoke --no-color --json test/badtests.yml # status changed, exit 1
+              - ./bin/smoke --no-color --json test/testdata/badtests.yml # status changed, exit 1
           - name: New
             commands:
-              - ./bin/smoke --no-color --json test/newtests.yml # status new, exit 3
+              - ./bin/smoke --no-color --json test/testdata/newtests.yml # status new, exit 3
           - name: Bad combo
             commands:
-              - ./bin/smoke --no-color --json --list test/stabletests.yml # mode mix must exit 64
+              - ./bin/smoke --no-color --json --list test/testdata/stabletests.yml # mode mix must exit 64
       - name: Init
         tests:
           - name: Writes named file
             commands:
-              - rm -f test/init-scratch.yml && ./bin/smoke --no-color --init=test/init-scratch.yml && rm test/init-scratch.yml
+              - rm -f test/testdata/init-scratch.yml && ./bin/smoke --no-color --init=test/testdata/init-scratch.yml && rm test/testdata/init-scratch.yml
           - name: No clobber
             commands:
               - ./bin/smoke --no-color --init=test/tests.yml
-      - name: States
+      - name: Exit states
         tests:
           - name: New
             commands:
-              - ./bin/smoke --no-color test/newtests.yml
+              - ./bin/smoke --no-color test/testdata/newtests.yml
           - name: Unchanged
             commands:
-              - ./bin/smoke --no-color test/stabletests.yml
+              - ./bin/smoke --no-color test/testdata/stabletests.yml
           - name: Operational
             commands:
-              - ./bin/smoke --no-color test/nonexistent.yml
+              - ./bin/smoke --no-color test/testdata/nonexistent.yml
           - name: Malformed
             commands:
-              - ./bin/smoke --no-color test/malformedtests.yml # bad spec must exit 65
+              - ./bin/smoke --no-color test/testdata/malformedtests.yml # bad spec must exit 65
           - name: Bad leaf
             commands:
-              - ./bin/smoke --no-color test/badleaftests.yml # command-less leaf must exit 65
+              - ./bin/smoke --no-color test/testdata/badleaftests.yml # command-less leaf must exit 65
           - name: Bad CUE
             commands:
-              - ./bin/smoke --no-color test/badcuetests.cue # schema violation must exit 65
+              - ./bin/smoke --no-color test/testdata/badcuetests.cue # schema violation must exit 65
           - name: Timeout
             commands:
-              - ./bin/smoke --no-color test/timeouttests.yml
+              - ./bin/smoke --no-color test/testdata/timeouttests.yml

@@ -13,7 +13,7 @@
 * [x] Don't clobber. `initSpec` opens with `O_CREATE|O_EXCL` and refuses if the file
   exists. (Hard refuse, no `--force` override — by decision.)
 * [x] Report the path actually written (`p.Pass("Wrote " + target)`).
-* [x] Add a self-test in `test/tests.yml` (`Tests \ Init`): writes a named file + the
+* [x] Add a self-test in `test/tests.yml` (`Behavior \ Init`): writes a named file + the
   no-clobber guard.
 
 ## Epic: First-class CUE support
@@ -72,10 +72,10 @@ can be generated/validated by CUE tooling. Folds in the old stdin item below.
   → `Unify` → `Validate(cue.Concrete(false))` → `Decode`. Closedness (recursive) catches
   typo'd/wrong-typed fields that `Decode` silently dropped → exit 65. Go units in
   `testspecs_test.go` (unknown-field rejected naming the field, valid `.cue` loads); smoke
-  self-test `test/badcuetests.cue` + `tests.yml \ Tests \ States \ Bad CUE` (→ exit 65).
+  self-test `test/testdata/badcuetests.cue` + `tests.yml \ Behavior \ Exit states \ Bad CUE` (→ exit 65).
   JSON shares the silent-unknown-field gap — deferred (see backlog).
 * [x] Self-tests: a `.cue` spec round-trips (run → commit → stable) under `test/`.
-  (`test/cuetests.cue` + `test/tests.yml \ Tests \ CUE`.)
+  (`test/testdata/cuetests.cue` + `test/tests.yml \ Behavior \ CUE`.)
 
 ## Epic: Disambiguate semantics for LLM consumers
 
@@ -118,7 +118,7 @@ Tasks:
   Output rendered through a `reporter` abstraction (`reporter.go`: `consoleReporter` +
   `jsonReporter`, `status` enum owning the exit code). Detail localizes to drift (matched
   subtrees collapse — gendiff behavior). Go units in `report_json_test.go`; smoke
-  self-tests `tests.yml \ Tests \ JSON Output` (unchanged/changed/new + bad-combo→64).
+  self-tests `tests.yml \ Behavior \ JSON Output` (unchanged/changed/new + bad-combo→64).
 * [x] Surface a one-line framing in human output and `--help`: SMOKE is a drift detector,
   not an assertion engine; "UNCHANGED does not mean correct." **Verified done
   (2026-06-17):** `--help` via `usageHeader` (`main.go`); human run output via every
@@ -232,4 +232,10 @@ failing assertion; `UNCHANGED` is drift-free, not verified-correct.
 * [x] Reconcile pflag's bad-flag exit code. `pflag.CommandLine` switched to
   `ContinueOnError`; `main` handles the `Parse` error itself (stderr + usage + `ExitUsage`),
   so a bad flag exits `64` instead of pflag's default `2`. Regression-locked by
-  `test/tests.yml \ Tests \ Usage`.
+  `test/tests.yml \ Behavior \ Usage`.
+
+* [] Fix the `Sanity \ Loads` self-test. It runs `--list tests.yml` against a *root*
+  `tests.yml` that doesn't exist (the suite lives at `test/tests.yml`), so it silently
+  locks exit `2` + empty stdout instead of exercising `--list` output at all. Point it at
+  `test/tests.yml` (or a fixture) so it actually asserts a discovered-test listing, then
+  re-commit. Latent since before the testdata split; surfaced 2026-06-17.

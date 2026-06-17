@@ -10,7 +10,7 @@
         - name: exitcode
           data:
             - "64"
-- name: test/tests.yml \ Basics \ Checks
+- name: test/tests.yml \ Sanity \ Imports
   commands:
     - command: goimports -l *.go checks/*.go engine/*.go internal/p/*.go internal/*.go
       checks:
@@ -29,7 +29,7 @@
           data:
             - resultspecs/line_edit.go
             - resultspecs/resultspecs.go
-- name: test/tests.yml \ Basics \ Workdirs \ Current dir
+- name: test/tests.yml \ Sanity \ Workdirs \ Current dir
   commands:
     - command: ls *.mod
       checks:
@@ -42,7 +42,7 @@
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Basics \ Workdirs \ One Dir
+- name: test/tests.yml \ Sanity \ Workdirs \ One Dir
   commands:
     - command: ls ../*.mod
       checks:
@@ -55,7 +55,7 @@
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Basics \ Workdirs \ Two Dirs
+- name: test/tests.yml \ Sanity \ Workdirs \ Two Dirs
   commands:
     - command: ls ../../*.mod
       checks:
@@ -68,7 +68,7 @@
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Basics \ Workdirs \ Reversing \ One Dir
+- name: test/tests.yml \ Sanity \ Workdirs \ Reversing \ One Dir
   commands:
     - command: ls ../*.mod
       checks:
@@ -81,7 +81,7 @@
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Basics \ Workdirs \ Reversing \ Two Dirs
+- name: test/tests.yml \ Sanity \ Workdirs \ Reversing \ Two Dirs
   commands:
     - command: ls *.mod
       checks:
@@ -94,21 +94,21 @@
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Basics \ Unit Tests
+- name: test/tests.yml \ Sanity \ Unit Tests
   commands:
     - command: go test -v ./...
       checks:
         - name: exitcode
           data:
             - "0"
-- name: test/tests.yml \ Basics \ Common Switches
+- name: test/tests.yml \ Sanity \ Common Switches
   commands:
     - command: ./bin/smoke --time -qqqq -vvvv
       checks:
         - name: exitcode
           data:
             - "64"
-- name: test/tests.yml \ Basics \ Help
+- name: test/tests.yml \ Sanity \ Help
   commands:
     - command: ./bin/smoke --help
       checks:
@@ -148,7 +148,7 @@
             - '  3   NEW         no lock yet; first run is unreviewed'
             - '  64              usage error — invalid invocation (bad flags)'
             - '  65              data error — spec or lock file is malformed'
-- name: test/tests.yml \ Basics \ Loads
+- name: test/tests.yml \ Sanity \ Loads
   commands:
     - command: ./bin/smoke --no-color --list tests.yml
       checks:
@@ -166,24 +166,24 @@
         - name: stdout
           data:
             - ""
-- name: test/tests.yml \ Tests \ Diff
+- name: test/tests.yml \ Behavior \ Drift diff
   commands:
-    - command: ./bin/smoke --no-color test/badtests.yml
+    - command: ./bin/smoke --no-color test/testdata/badtests.yml
       checks:
         - name: exitcode
           data:
             - "1"
         - name: stdout
           data:
-            - '    ==> test/badtests.yml \ hello'
+            - '    ==> test/testdata/badtests.yml \ hello'
             - '--- --> echo extraneous'
             - '---   > stdout'
             - '---       extraneous'
             - +++ --> echo missing
             - +++   > stdout
             - +++       missing
-            - '    ==> test/badtests.yml \ lipsum \ Head'
-            - '    --> head -22 test/badtests.txt | tail -9'
+            - '    ==> test/testdata/badtests.yml \ lipsum \ Head'
+            - '    --> head -22 test/testdata/badtests.txt | tail -9'
             - '      > stdout'
             - '---       mixtape bushwick leggings affogato portland la croix direct trade biodiesel DIY readymade'
             - +++       fixie tousled deep v af lomo synth. Bushwick la croix ramps twee put a bird on it.
@@ -194,8 +194,8 @@
             - '          live-edge kitsch meditation offal hella swag lo-fi. Air plant lo-fi green juice mumblecore'
             - '---       fixie tousled deep v af lomo synth. Bushwick la croix ramps twee put a bird on it.'
             - +++       mixtape bushwick leggings affogato portland la croix direct trade biodiesel DIY readymade
-            - '    ==> test/badtests.yml \ lipsum \ Tail'
-            - '    --> tail -22 test/badtests.txt | head -9'
+            - '    ==> test/testdata/badtests.yml \ lipsum \ Tail'
+            - '    --> tail -22 test/testdata/badtests.txt | head -9'
             - '      > stdout'
             - '---       Biodiesel brooklyn pug whatever shaman semiotics bespoke kinfolk, synth blog. Pabst cloud'
             - +++       wolf moon vice aesthetic hot chicken banjo gochujang succulents marfa vape mlkshk forage
@@ -207,11 +207,11 @@
             - '---       wolf moon vice aesthetic hot chicken banjo gochujang succulents marfa vape mlkshk forage'
             - +++       Biodiesel brooklyn pug whatever shaman semiotics bespoke kinfolk, synth blog. Pabst cloud
             - ""
-            - CHANGED — output drifted from test/badtests.lock.yml; review and re-commit if intended
+            - CHANGED — output drifted from test/testdata/badtests.lock.yml; review and re-commit if intended
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Tests \ Errors
+- name: test/tests.yml \ Behavior \ Command error
   commands:
     - command: unknowncommand_asdfqwerzcxv
       checks:
@@ -224,7 +224,7 @@
         - name: stderr
           data:
             - '/bin/sh: line 1: unknowncommand_asdfqwerzcxv: command not found'
-- name: test/tests.yml \ Tests \ I/O
+- name: test/tests.yml \ Behavior \ File checks
   commands:
     - command: ls
       checks:
@@ -465,7 +465,7 @@
             - '}'
             - '-----END print.go-----'
             - ""
-- name: test/tests.yml \ Tests \ Env
+- name: test/tests.yml \ Behavior \ Env
   commands:
     - command: echo $YEAS_ITS
       checks:
@@ -478,20 +478,20 @@
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Tests \ Include/Exclude \ Just Include
+- name: test/tests.yml \ Behavior \ Include/Exclude \ Just Include
   commands:
-    - command: ./bin/smoke --no-color -l -i hello test/badtests.yml
+    - command: ./bin/smoke --no-color -l -i hello test/testdata/badtests.yml
       checks:
         - name: exitcode
           data:
             - "0"
         - name: stdout
           data:
-            - test/badtests.yml \ hello
+            - test/testdata/badtests.yml \ hello
         - name: stderr
           data:
             - ""
-    - command: ./bin/smoke --no-color -v -i hello test/badtests.yml
+    - command: ./bin/smoke --no-color -v -i hello test/testdata/badtests.yml
       checks:
         - name: exitcode
           data:
@@ -499,9 +499,9 @@
         - name: stdout
           data:
             - ≋≋> RUNNING TESTS
-            - ==> test/badtests.yml \ hello
+            - ==> test/testdata/badtests.yml \ hello
             - ≋≋> COMPARING LOCK FILE
-            - '    ==> test/badtests.yml \ hello'
+            - '    ==> test/testdata/badtests.yml \ hello'
             - '--- --> echo extraneous'
             - '---   > stdout'
             - '---       extraneous'
@@ -509,24 +509,24 @@
             - +++   > stdout
             - +++       missing
             - ""
-            - CHANGED — output drifted from test/badtests.lock.yml; review and re-commit if intended
+            - CHANGED — output drifted from test/testdata/badtests.lock.yml; review and re-commit if intended
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Tests \ Include/Exclude \ Just Exclude
+- name: test/tests.yml \ Behavior \ Include/Exclude \ Just Exclude
   commands:
-    - command: ./bin/smoke --no-color -l -x Head -x Tail test/badtests.yml
+    - command: ./bin/smoke --no-color -l -x Head -x Tail test/testdata/badtests.yml
       checks:
         - name: exitcode
           data:
             - "0"
         - name: stdout
           data:
-            - test/badtests.yml \ hello
+            - test/testdata/badtests.yml \ hello
         - name: stderr
           data:
             - ""
-    - command: ./bin/smoke --no-color -v -x Head -x Tail test/badtests.yml
+    - command: ./bin/smoke --no-color -v -x Head -x Tail test/testdata/badtests.yml
       checks:
         - name: exitcode
           data:
@@ -534,9 +534,9 @@
         - name: stdout
           data:
             - ≋≋> RUNNING TESTS
-            - ==> test/badtests.yml \ hello
+            - ==> test/testdata/badtests.yml \ hello
             - ≋≋> COMPARING LOCK FILE
-            - '    ==> test/badtests.yml \ hello'
+            - '    ==> test/testdata/badtests.yml \ hello'
             - '--- --> echo extraneous'
             - '---   > stdout'
             - '---       extraneous'
@@ -544,11 +544,11 @@
             - +++   > stdout
             - +++       missing
             - ""
-            - CHANGED — output drifted from test/badtests.lock.yml; review and re-commit if intended
+            - CHANGED — output drifted from test/testdata/badtests.lock.yml; review and re-commit if intended
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Tests \ HTTP
+- name: test/tests.yml \ Behavior \ HTTP
   commands:
     - command: echo just the checks
       checks:
@@ -583,7 +583,7 @@
             - COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
             - IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
             - CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-- name: test/tests.yml \ Tests \ Subtests
+- name: test/tests.yml \ Behavior \ Subtests
   commands:
     - command: echo "parent command"
       checks:
@@ -596,7 +596,7 @@
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Tests \ Subtests \ Command Inherits
+- name: test/tests.yml \ Behavior \ Subtests \ Command Inherits
   commands:
     - command: echo "parent command"
       checks:
@@ -626,7 +626,7 @@
         - name: stdout
           data:
             - child command
-- name: test/tests.yml \ Tests \ Usage
+- name: test/tests.yml \ Behavior \ Usage
   commands:
     - command: ./bin/smoke --no-color --bogus-flag
       checks:
@@ -667,84 +667,84 @@
             - '  3   NEW         no lock yet; first run is unreviewed'
             - '  64              usage error — invalid invocation (bad flags)'
             - '  65              data error — spec or lock file is malformed'
-- name: test/tests.yml \ Tests \ CUE
+- name: test/tests.yml \ Behavior \ CUE
   commands:
-    - command: ./bin/smoke --no-color --list test/cuetests.cue
+    - command: ./bin/smoke --no-color --list test/testdata/cuetests.cue
       checks:
         - name: exitcode
           data:
             - "0"
         - name: stdout
           data:
-            - test/cuetests.cue \ Echo
-            - test/cuetests.cue \ Arithmetic
+            - test/testdata/cuetests.cue \ Echo
+            - test/testdata/cuetests.cue \ Arithmetic
         - name: stderr
           data:
             - ""
-    - command: ./bin/smoke --no-color test/cuetests.cue
+    - command: ./bin/smoke --no-color test/testdata/cuetests.cue
       checks:
         - name: exitcode
           data:
             - "0"
         - name: stdout
           data:
-            - UNCHANGED — output matches test/cuetests.lock.yml (drift-free, not verified correct)
+            - UNCHANGED — output matches test/testdata/cuetests.lock.yml (drift-free, not verified correct)
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Tests \ JSON
+- name: test/tests.yml \ Behavior \ JSON
   commands:
-    - command: ./bin/smoke --no-color --list test/jsontests.json
+    - command: ./bin/smoke --no-color --list test/testdata/jsontests.json
       checks:
         - name: exitcode
           data:
             - "0"
         - name: stdout
           data:
-            - test/jsontests.json \ Echo
-            - test/jsontests.json \ Arithmetic
+            - test/testdata/jsontests.json \ Echo
+            - test/testdata/jsontests.json \ Arithmetic
         - name: stderr
           data:
             - ""
-    - command: ./bin/smoke --no-color test/jsontests.json
+    - command: ./bin/smoke --no-color test/testdata/jsontests.json
       checks:
         - name: exitcode
           data:
             - "0"
         - name: stdout
           data:
-            - UNCHANGED — output matches test/jsontests.lock.yml (drift-free, not verified correct)
+            - UNCHANGED — output matches test/testdata/jsontests.lock.yml (drift-free, not verified correct)
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Tests \ JSONL
+- name: test/tests.yml \ Behavior \ JSONL
   commands:
-    - command: ./bin/smoke --no-color --list test/jsonltests.jsonl
+    - command: ./bin/smoke --no-color --list test/testdata/jsonltests.jsonl
       checks:
         - name: exitcode
           data:
             - "0"
         - name: stdout
           data:
-            - test/jsonltests.jsonl \ Echo
-            - test/jsonltests.jsonl \ Arithmetic
+            - test/testdata/jsonltests.jsonl \ Echo
+            - test/testdata/jsonltests.jsonl \ Arithmetic
         - name: stderr
           data:
             - ""
-    - command: ./bin/smoke --no-color test/jsonltests.jsonl
+    - command: ./bin/smoke --no-color test/testdata/jsonltests.jsonl
       checks:
         - name: exitcode
           data:
             - "0"
         - name: stdout
           data:
-            - UNCHANGED — output matches test/jsonltests.lock.yml (drift-free, not verified correct)
+            - UNCHANGED — output matches test/testdata/jsonltests.lock.yml (drift-free, not verified correct)
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Tests \ JSON Output \ Unchanged
+- name: test/tests.yml \ Behavior \ JSON Output \ Unchanged
   commands:
-    - command: ./bin/smoke --no-color --json test/stabletests.yml
+    - command: ./bin/smoke --no-color --json test/testdata/stabletests.yml
       checks:
         - name: exitcode
           data:
@@ -754,10 +754,10 @@
             - '{'
             - '  "status": "unchanged",'
             - '  "exitCode": 0,'
-            - '  "lock": "test/stabletests.lock.yml",'
+            - '  "lock": "test/testdata/stabletests.lock.yml",'
             - '  "tests": ['
             - '    {'
-            - '      "name": "test/stabletests.yml \\ Echo",'
+            - '      "name": "test/testdata/stabletests.yml \\ Echo",'
             - '      "status": "matched",'
             - '      "commands": []'
             - '    }'
@@ -766,9 +766,9 @@
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Tests \ JSON Output \ Changed
+- name: test/tests.yml \ Behavior \ JSON Output \ Changed
   commands:
-    - command: ./bin/smoke --no-color --json test/badtests.yml
+    - command: ./bin/smoke --no-color --json test/testdata/badtests.yml
       checks:
         - name: exitcode
           data:
@@ -778,10 +778,10 @@
             - '{'
             - '  "status": "changed",'
             - '  "exitCode": 1,'
-            - '  "lock": "test/badtests.lock.yml",'
+            - '  "lock": "test/testdata/badtests.lock.yml",'
             - '  "tests": ['
             - '    {'
-            - '      "name": "test/badtests.yml \\ hello",'
+            - '      "name": "test/testdata/badtests.yml \\ hello",'
             - '      "status": "changed",'
             - '      "commands": ['
             - '        {'
@@ -812,11 +812,11 @@
             - '      ]'
             - '    },'
             - '    {'
-            - '      "name": "test/badtests.yml \\ lipsum \\ Head",'
+            - '      "name": "test/testdata/badtests.yml \\ lipsum \\ Head",'
             - '      "status": "changed",'
             - '      "commands": ['
             - '        {'
-            - '          "command": "head -22 test/badtests.txt | tail -9",'
+            - '          "command": "head -22 test/testdata/badtests.txt | tail -9",'
             - '          "status": "changed",'
             - '          "checks": ['
             - '            {'
@@ -828,11 +828,11 @@
             - '      ]'
             - '    },'
             - '    {'
-            - '      "name": "test/badtests.yml \\ lipsum \\ Tail",'
+            - '      "name": "test/testdata/badtests.yml \\ lipsum \\ Tail",'
             - '      "status": "changed",'
             - '      "commands": ['
             - '        {'
-            - '          "command": "tail -22 test/badtests.txt | head -9",'
+            - '          "command": "tail -22 test/testdata/badtests.txt | head -9",'
             - '          "status": "changed",'
             - '          "checks": ['
             - '            {'
@@ -848,9 +848,9 @@
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Tests \ JSON Output \ New
+- name: test/tests.yml \ Behavior \ JSON Output \ New
   commands:
-    - command: ./bin/smoke --no-color --json test/newtests.yml
+    - command: ./bin/smoke --no-color --json test/testdata/newtests.yml
       checks:
         - name: exitcode
           data:
@@ -860,15 +860,15 @@
             - '{'
             - '  "status": "new",'
             - '  "exitCode": 3,'
-            - '  "lock": "test/newtests.lock.yml",'
+            - '  "lock": "test/testdata/newtests.lock.yml",'
             - '  "tests": []'
             - '}'
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Tests \ JSON Output \ Bad combo
+- name: test/tests.yml \ Behavior \ JSON Output \ Bad combo
   commands:
-    - command: ./bin/smoke --no-color --json --list test/stabletests.yml
+    - command: ./bin/smoke --no-color --json --list test/testdata/stabletests.yml
       checks:
         - name: exitcode
           data:
@@ -879,20 +879,20 @@
         - name: stderr
           data:
             - --json applies to the default compare mode; cannot combine with --list/--print/--commit/--show-expected
-- name: test/tests.yml \ Tests \ Init \ Writes named file
+- name: test/tests.yml \ Behavior \ Init \ Writes named file
   commands:
-    - command: rm -f test/init-scratch.yml && ./bin/smoke --no-color --init=test/init-scratch.yml && rm test/init-scratch.yml
+    - command: rm -f test/testdata/init-scratch.yml && ./bin/smoke --no-color --init=test/testdata/init-scratch.yml && rm test/testdata/init-scratch.yml
       checks:
         - name: exitcode
           data:
             - "0"
         - name: stdout
           data:
-            - '  ✔ Wrote test/init-scratch.yml'
+            - '  ✔ Wrote test/testdata/init-scratch.yml'
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Tests \ Init \ No clobber
+- name: test/tests.yml \ Behavior \ Init \ No clobber
   commands:
     - command: ./bin/smoke --no-color --init=test/tests.yml
       checks:
@@ -905,35 +905,35 @@
         - name: stderr
           data:
             - ERR test/tests.yml already exists
-- name: test/tests.yml \ Tests \ States \ New
+- name: test/tests.yml \ Behavior \ Exit states \ New
   commands:
-    - command: ./bin/smoke --no-color test/newtests.yml
+    - command: ./bin/smoke --no-color test/testdata/newtests.yml
       checks:
         - name: exitcode
           data:
             - "3"
         - name: stdout
           data:
-            - NEW — no lock at test/newtests.lock.yml; first run unreviewed, --commit to create the golden
+            - NEW — no lock at test/testdata/newtests.lock.yml; first run unreviewed, --commit to create the golden
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Tests \ States \ Unchanged
+- name: test/tests.yml \ Behavior \ Exit states \ Unchanged
   commands:
-    - command: ./bin/smoke --no-color test/stabletests.yml
+    - command: ./bin/smoke --no-color test/testdata/stabletests.yml
       checks:
         - name: exitcode
           data:
             - "0"
         - name: stdout
           data:
-            - UNCHANGED — output matches test/stabletests.lock.yml (drift-free, not verified correct)
+            - UNCHANGED — output matches test/testdata/stabletests.lock.yml (drift-free, not verified correct)
         - name: stderr
           data:
             - ""
-- name: test/tests.yml \ Tests \ States \ Operational
+- name: test/tests.yml \ Behavior \ Exit states \ Operational
   commands:
-    - command: ./bin/smoke --no-color test/nonexistent.yml
+    - command: ./bin/smoke --no-color test/testdata/nonexistent.yml
       checks:
         - name: exitcode
           data:
@@ -943,10 +943,10 @@
             - ""
         - name: stderr
           data:
-            - 'ERR test/nonexistent.yml: open test/nonexistent.yml: no such file or directory'
-- name: test/tests.yml \ Tests \ States \ Malformed
+            - 'ERR test/testdata/nonexistent.yml: open test/testdata/nonexistent.yml: no such file or directory'
+- name: test/tests.yml \ Behavior \ Exit states \ Malformed
   commands:
-    - command: ./bin/smoke --no-color test/malformedtests.yml
+    - command: ./bin/smoke --no-color test/testdata/malformedtests.yml
       checks:
         - name: exitcode
           data:
@@ -956,11 +956,11 @@
             - ""
         - name: stderr
           data:
-            - 'ERR test/malformedtests.yml: yaml: unmarshal errors:'
+            - 'ERR test/testdata/malformedtests.yml: yaml: unmarshal errors:'
             - '  line 3: cannot unmarshal !!seq into testspecs.TestSpec'
-- name: test/tests.yml \ Tests \ States \ Bad leaf
+- name: test/tests.yml \ Behavior \ Exit states \ Bad leaf
   commands:
-    - command: ./bin/smoke --no-color test/badleaftests.yml
+    - command: ./bin/smoke --no-color test/testdata/badleaftests.yml
       checks:
         - name: exitcode
           data:
@@ -970,10 +970,10 @@
             - ""
         - name: stderr
           data:
-            - 'ERR test/badleaftests.yml: test `test/badleaftests.yml \ Leaf without commands` is a leaf with no commands'
-- name: test/tests.yml \ Tests \ States \ Bad CUE
+            - 'ERR test/testdata/badleaftests.yml: test `test/testdata/badleaftests.yml \ Leaf without commands` is a leaf with no commands'
+- name: test/tests.yml \ Behavior \ Exit states \ Bad CUE
   commands:
-    - command: ./bin/smoke --no-color test/badcuetests.cue
+    - command: ./bin/smoke --no-color test/testdata/badcuetests.cue
       checks:
         - name: exitcode
           data:
@@ -983,10 +983,10 @@
             - ""
         - name: stderr
           data:
-            - 'ERR test/badcuetests.cue: chekcs: field not allowed'
-- name: test/tests.yml \ Tests \ States \ Timeout
+            - 'ERR test/testdata/badcuetests.cue: chekcs: field not allowed'
+- name: test/tests.yml \ Behavior \ Exit states \ Timeout
   commands:
-    - command: ./bin/smoke --no-color test/timeouttests.yml
+    - command: ./bin/smoke --no-color test/testdata/timeouttests.yml
       checks:
         - name: timeout
           data:

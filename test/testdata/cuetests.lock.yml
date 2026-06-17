@@ -1,14 +1,14 @@
-- name: test/jsontests.json \ Echo
+- name: test/testdata/cuetests.cue \ Echo
   commands:
-    - command: echo json-driven smoke test
+    - command: echo cue-driven smoke test
       checks:
         - name: exitcode
           data:
             - "0"
         - name: stdout
           data:
-            - json-driven smoke test
-- name: test/jsontests.json \ Arithmetic
+            - cue-driven smoke test
+- name: test/testdata/cuetests.cue \ Arithmetic
   commands:
     - command: echo $((6 * 7))
       checks:
