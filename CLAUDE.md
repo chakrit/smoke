@@ -28,7 +28,8 @@ drifts. Not a replacement for proper tests; a fast drift detector.
 | `testspecs/`   | Spec loader for `tests.yml` / `.cue` (recursively nested test tree).       |
 | `resultspecs/` | Lock-file format + diff/compare engine.                                    |
 | `internal/p`   | Console printing/coloring.                                                 |
-| `test/`        | Self-hosting smoke tests of the `smoke` binary itself.                     |
+| `test/`        | Real self-test suite (`tests.yml`); `test.sh` globs real suites here.       |
+| `test/testdata/`| Fixtures the suite drives (intentionally RED/NEW/malformed) — never run alone.|
 
 Key idioms: the YAML root *is* a "root test"; `tests:` nests arbitrarily and
 subtests inherit parent config/checks/commands. Commands are piped to
