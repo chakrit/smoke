@@ -8,7 +8,7 @@ ceremony, no release branch. Versioning is semver `vMAJOR.MINOR.PATCH`
 
 ## Process
 
-1. **Be on `master`, clean tree, at the commit you want to release.**
+1. **Be on `main`, clean tree, at the commit you want to release.**
 2. **Pass the gate** — both must be green:
    ```sh
    go test ./...              # unit tests
