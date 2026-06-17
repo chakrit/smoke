@@ -58,11 +58,14 @@ Surfaced while scoping stdin format dispatch — go-yaml parses JSON (YAML 1.2 �
 JSON, flow style). Didn't end up mattering (stdin dropped), but it's why a future
 "format override for extensionless files" would be low-value for the JSON case.
 
-## Carried forward (still unexecuted)
+## Resolved this session
 
-- **go-coding skill amendment:** "Go 1.24+ makes non-constant printf format
-  strings a fatal `go vet` error under `go test`." Generic Go gotcha → route via
-  `ace-school` to `go-coding`. Pending several sessions now.
+- **go-coding skill amendment — DONE.** "Go 1.24+ non-constant printf format =
+  fatal `go vet` under `go test`." Routed to the `prod9.school.claude` agent over
+  ace-connect; landed on `gh:prod9/school` `main` as `c807381`
+  (`skills/go-coding/SKILL.md:77`). First DONE report was unverifiable (unpushed in
+  the peer's worktree); NACK'd, peer pushed, re-verified on `origin/main`. Local
+  cache clone picks it up on the next ACE sync / ff-pull.
 
 ## Next
 
