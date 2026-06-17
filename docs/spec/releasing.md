@@ -4,19 +4,20 @@
 
 SMOKE releases are **lightweight git tags** — no build artifacts, no changelog
 ceremony, no release branch. Versioning is semver `vMAJOR.MINOR.PATCH`
-(latest: `v0.2.4`). The tag *is* the release; `go install` resolves it.
+(latest: `v0.3.0`). The tag *is* the release; `go install` resolves it.
 
 ## Process
 
 1. **Be on `master`, clean tree, at the commit you want to release.**
 2. **Pass the gate** — both must be green:
    ```sh
-   go build -o ./bin/smoke .
-   go test ./...                      # unit tests
-   ./bin/smoke --no-color test/tests.yml   # self-hosting suite; exit 0 = UNCHANGED
+   go test ./...              # unit tests
+   ./test.sh --no-color       # builds + runs every real suite under test/; exit 0 = UNCHANGED
    ```
    The smoke suite is the real gate: exit `0` means the binary's own observable
    output still matches its committed golden. Any nonzero — do **not** tag.
+   `test.sh` globs all real suites at the top of `test/` (fixtures it drives live
+   in `test/testdata/` and must never be run directly).
 3. **Tag** (lightweight, matching every prior tag — do not annotate):
    ```sh
    git tag vX.Y.Z
@@ -34,3 +35,10 @@ ceremony, no release branch. Versioning is semver `vMAJOR.MINOR.PATCH`
   uniform history.
 - No version string lives in the source, so a release is purely the tag. Nothing
   to bump in code before tagging.
+- Bump the `latest:` marker at the top of this file as part of the release commit —
+  it's the one human-maintained version pointer.
+- If the release touched the self-test suite (renamed a test, moved/added a fixture),
+  regenerate the golden first: `./bin/smoke --no-color --commit test/tests.yml`, then
+  review the lockfile diff to confirm it's *only* name/path churn — no exit-code or
+  status flips slipping in under the rename. The gate run must be a clean exit `0`
+  afterward.
