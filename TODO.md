@@ -70,9 +70,16 @@ specs can be generated/validated by CUE tooling. Folds in the old stdin item bel
       modes (`--list`/`--print`), i.e. SMOKE as a command runner, not a drift
       detector. _Revisit only if a concrete tool-generated-spec workflow appears that
       genuinely can't write a file first._
-* [ ] Ship a CUE schema (`#Test`/`#Config` definitions) so authors get validation and
+* [x] Ship a CUE schema (`#Test`/`#Config` definitions) so authors get validation and
       editor support when writing `.cue` specs. Lands as the cueLoader's
-      format-specific validation step (unify before `Decode`). **Slice D.**
+      format-specific validation step (unify before `Decode`). **Slice D DONE
+      (2026-06-17):** embedded `testspecs/schema.cue` (closed `#Test`/`#Config`);
+      `cueLoader.Load` now compiles schema → `Unify` → `Validate(cue.Concrete(false))`
+      → `Decode`. Closedness (recursive) catches typo'd/wrong-typed fields that
+      `Decode` silently dropped → exit 65. Go units in `testspecs_test.go`
+      (unknown-field rejected naming the field, valid `.cue` loads); smoke self-test
+      `test/badcuetests.cue` + `tests.yml \ Tests \ States \ Bad CUE` (→ exit 65).
+      JSON shares the silent-unknown-field gap — deferred (see backlog).
 * [x] Self-tests: a `.cue` spec round-trips (run → commit → stable) under `test/`.
       (`test/cuetests.cue` + `test/tests.yml \ Tests \ CUE`.)
 
@@ -202,6 +209,11 @@ review, not a failing assertion; `UNCHANGED` is drift-free, not verified-correct
       a one-line change in the fold. This is also where `Tests()` finally splits
       into a total parse + validate. Don't build the IR before this lands — under
       first-error it's dead weight.
+* [ ] JSON/JSONL silent-unknown-field gap — `json.Decode` ignores unknown fields,
+      so a typo'd field (`chekcs:`) loads silently, same gap the CUE schema (Slice D)
+      now closes for `.cue`. Options: `Decoder.DisallowUnknownFields`, or route JSON
+      through the CUE schema (CUE ⊇ JSON). Low urgency; JSON is the less-authored
+      format. Decide mechanism on its own merits.
 * [ ] JSONC support — deferred out of the Loader slice (Slice C). Needs either a new
       dependency or a hand-rolled string-aware comment-stripper (must skip `//` and
       `/* */` inside string literals — correctness risk on untrusted input). Decide

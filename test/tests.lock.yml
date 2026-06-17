@@ -832,6 +832,19 @@
         - name: stderr
           data:
             - 'ERR test/badleaftests.yml: test `test/badleaftests.yml \ Leaf without commands` is a leaf with no commands'
+- name: test/tests.yml \ Tests \ States \ Bad CUE
+  commands:
+    - command: ./bin/smoke --no-color test/badcuetests.cue
+      checks:
+        - name: exitcode
+          data:
+            - "65"
+        - name: stdout
+          data:
+            - ""
+        - name: stderr
+          data:
+            - 'ERR test/badcuetests.cue: chekcs: field not allowed'
 - name: test/tests.yml \ Tests \ States \ Timeout
   commands:
     - command: ./bin/smoke --no-color test/timeouttests.yml

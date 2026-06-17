@@ -159,6 +159,9 @@ tests:
           - name: Bad leaf
             commands:
               - ./bin/smoke --no-color test/badleaftests.yml # command-less leaf must exit 65
+          - name: Bad CUE
+            commands:
+              - ./bin/smoke --no-color test/badcuetests.cue # schema violation must exit 65
           - name: Timeout
             commands:
               - ./bin/smoke --no-color test/timeouttests.yml

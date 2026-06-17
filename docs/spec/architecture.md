@@ -71,27 +71,31 @@ is confined entirely to `testspecs.Load`.
 
 ## Input parsing and the CUE seam
 
-`testspecs.Load` dispatches on file extension into a single `*TestSpec`:
+`testspecs.Load` dispatches on file extension via `loaderFor` into a per-format
+`loader` (`Load(io.Reader) (*TestSpec, error)`), default-deny:
 
-- `.yml` / `.yaml` / *(none)* → `yaml.NewDecoder`
-- `.cue` → `decodeCUE`: read all bytes, `cuecontext.New().CompileBytes`, then
-  `value.Decode(root)`
-- anything else → rejected (`unsupported spec format`) — default-deny
+- `.yml` / `.yaml` / *(none)* → `yamlLoader` (`yaml.NewDecoder`)
+- `.cue` → `cueLoader` (compile → unify against `#Test` → validate → decode)
+- `.json` → `jsonLoader`; `.jsonl` → `jsonlLoader` (one `TestSpec` per line)
+- anything else → rejected (`unsupported spec format`)
 
-Both formats target the **same `TestSpec` struct**, which carries dual struct
-tags: `yaml:"..."` for the YAML path and `json:"..."` for CUE's decoder. The
-embedded `cuelang.org/go` evaluator is pinned in `go.mod`, keeping `.cue` eval as
-hermetic as YAML parsing — no runtime `cue` binary on PATH.
+All formats target the **same `TestSpec` struct**, which carries dual struct
+tags: `yaml:"..."` for the YAML path and `json:"..."` for the CUE/JSON decoders.
+The embedded `cuelang.org/go` evaluator is pinned in `go.mod`, keeping `.cue`
+eval as hermetic as YAML parsing — no runtime `cue` binary on PATH.
 
 One consequence drives a type choice: CUE has no native duration kind, so
 `ConfigSpec.Timeout` is a `string` ("5s") parsed in `RunConfig` via
 `time.ParseDuration`, shared by both loaders. There is no separate
 `*time.Duration` field.
 
-> **Not yet present:** validation. `decodeCUE` compiles and decodes but does not
-> unify against a `#Test`/`#Config` schema, so a structurally-wrong `.cue` spec
-> fails at `Decode` with a Go-decoder error rather than a clean CUE constraint
-> error. Shipping that schema is Slice C of the CUE epic.
+`cueLoader` unifies the user's file against an embedded (`//go:embed schema.cue`)
+**closed** `#Test`/`#Config` schema before `Decode`. Closedness is recursive, so
+a typo'd or wrong-typed field — even nested under `tests`/`config` — fails as a
+clean CUE constraint error (`chekcs: field not allowed`) routed to exit `65`,
+rather than being silently dropped at `Decode`. This validation is CUE-only;
+JSON shares the silent-unknown-field gap (`json.Decode` ignores extras), left as
+a follow-up. The schema doubles as a reference for `.cue` spec authors.
 
 ## Inheritance resolution
 

@@ -58,3 +58,29 @@ func TestLoadUnsupportedFormat(t *testing.T) {
 		t.Fatal("want error for unsupported format, got nil")
 	}
 }
+
+// A typo'd field on an otherwise-valid CUE node (here `chekcs` for `checks`)
+// must fail closed against the schema, not silently drop the field at Decode.
+func TestLoadCUERejectsUnknownField(t *testing.T) {
+	src := "commands: [\"echo hi\"]\nchekcs: [\"stdout\"]\n"
+
+	_, err := Load(strings.NewReader(src), "spec.cue")
+	if err == nil {
+		t.Fatal("want error for unknown field, got nil")
+	}
+	if !strings.Contains(err.Error(), "chekcs") {
+		t.Errorf("error should name the offending field, got: %v", err)
+	}
+}
+
+func TestLoadCUEValid(t *testing.T) {
+	src := "commands: [\"echo hi\"]\nchecks: [\"stdout\"]\n"
+
+	tests, err := Load(strings.NewReader(src), "spec.cue")
+	if err != nil {
+		t.Fatalf("load cue: %v", err)
+	}
+	if len(tests) != 1 {
+		t.Fatalf("want 1 test, got %d", len(tests))
+	}
+}

@@ -3,11 +3,13 @@ package testspecs
 import (
 	"bufio"
 	"bytes"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
 	"path/filepath"
 
+	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/cuecontext"
 	"gopkg.in/yaml.v3"
 )
@@ -44,9 +46,14 @@ func (yamlLoader) Load(reader io.Reader) (*TestSpec, error) {
 	return root, nil
 }
 
-// cueLoader evaluates a single CUE file into the test tree. The struct's json
-// tags drive the mapping; CUE has no native duration, so timeout stays a string
-// parsed later in ConfigSpec.RunConfig (same path as YAML).
+//go:embed schema.cue
+var cueSchema string
+
+// cueLoader evaluates a single CUE file into the test tree, unifying it against
+// the embedded `#Test` schema first so typo'd fields and wrong types fail closed
+// as CUE constraint errors instead of being silently dropped at Decode. The
+// struct's json tags drive the mapping; CUE has no native duration, so timeout
+// stays a string parsed later in ConfigSpec.RunConfig (same path as YAML).
 type cueLoader struct{}
 
 func (cueLoader) Load(reader io.Reader) (*TestSpec, error) {
@@ -55,13 +62,25 @@ func (cueLoader) Load(reader io.Reader) (*TestSpec, error) {
 		return nil, err
 	}
 
-	value := cuecontext.New().CompileBytes(src)
+	ctx := cuecontext.New()
+	schema := ctx.CompileString(cueSchema)
+	if err := schema.Err(); err != nil {
+		return nil, err
+	}
+	testDef := schema.LookupPath(cue.ParsePath("#Test"))
+
+	value := ctx.CompileBytes(src)
 	if err := value.Err(); err != nil {
 		return nil, err
 	}
 
+	unified := value.Unify(testDef)
+	if err := unified.Validate(cue.Concrete(false)); err != nil {
+		return nil, err
+	}
+
 	root := &TestSpec{}
-	if err := value.Decode(root); err != nil {
+	if err := unified.Decode(root); err != nil {
 		return nil, err
 	}
 	return root, nil
