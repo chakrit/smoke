@@ -73,7 +73,7 @@ correct, not a workaround.
 ## Exit codes
 
 Branch on the exit code — never parse the human text or colors. Full contract:
-[`docs/spec/exit-codes.md`](docs/spec/exit-codes.md).
+[`docs/spec/exit-codes.md`](https://github.com/chakrit/smoke/blob/main/docs/spec/exit-codes.md).
 
 | Code | State       | Meaning                                                        |
 | ---- | ----------- | -------------------------------------------------------------- |
@@ -89,7 +89,7 @@ Branch on the exit code — never parse the human text or colors. Full contract:
 
 ## The three traps (the framing every test-trained consumer gets wrong)
 
-Full guidance: [`docs/spec/using-smoke-in-tdd.md`](docs/spec/using-smoke-in-tdd.md).
+Full guidance: [`docs/spec/using-smoke-in-tdd.md`](https://github.com/chakrit/smoke/blob/main/docs/spec/using-smoke-in-tdd.md).
 
 - **`CHANGED` is not a failing test.** Exit 1 during an intentional change is *expected* —
   eyeball, then re-commit. Never pattern-match it as a red test and edit code to chase the
