@@ -146,6 +146,7 @@ body {
   overflow-x: auto;
   margin: 0 0 20px;
   line-height: 1.5;
+  tab-size: 2;
 }
 .content pre code {
   background: none;

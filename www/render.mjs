@@ -18,15 +18,28 @@ const outPath = join(here, 'src', 'index.html');
 // Highlight at build time: the page ships pre-coloured hljs-* spans, so
 // highlight.js never reaches the browser — only the token theme in styles.css.
 function highlight(code, lang) {
-  const language = hljs.getLanguage(lang) ? lang : null;
+  const resolved = lang === 'jsonl' ? 'json' : lang;   // each JSONL line is JSON
+  const language = hljs.getLanguage(resolved) ? resolved : null;
   const inner = language
     ? hljs.highlight(code, { language }).value
     : md.utils.escapeHtml(code);
   return `<pre><code class="hljs">${inner}</code></pre>`;
 }
 
+// GitHub-compatible heading slugs. The guide is canonical markdown that also
+// renders on GitHub, so site anchors must match GitHub's (strip punctuation),
+// not markdown-it-anchor's default (percent-encode it) — otherwise an intra-doc
+// link like [Advanced](#advanced-cue-json-and-jsonl-specs) resolves on only one.
+function slugify(text) {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-');
+}
+
 const md = new MarkdownIt({ html: true, linkify: true, typographer: false, highlight })
-  .use(anchor, { tabIndex: false });
+  .use(anchor, { tabIndex: false, slugify });
 
 const source = readFileSync(guidePath, 'utf8');
 const tokens = md.parse(source, {});

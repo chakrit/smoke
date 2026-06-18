@@ -56,7 +56,8 @@ teammates run the same command and get the same verdict.
 
 ## Writing a spec
 
-A spec is YAML (CUE, JSON, and JSONL are also accepted). The **root of the document is
+A spec is YAML (CUE, JSON, and JSONL are also accepted — see
+[Advanced](#advanced-cue-json-and-jsonl-specs)). The **root of the document is
 itself a test** — a top-level `commands:` runs. `tests:` nests arbitrarily, and subtests
 **inherit** their parent's config, checks, and commands.
 
@@ -214,6 +215,77 @@ compare verdict as a JSON document (compare mode only).
 
 Driving SMOKE from an agent or a TDD loop has its own playbook — see
 [`using-smoke-in-tdd`](https://github.com/chakrit/smoke/blob/main/docs/spec/using-smoke-in-tdd.md).
+
+## Advanced: CUE, JSON, and JSONL specs
+
+YAML is the default, but the same spec model loads from three other formats, chosen by file
+extension. Dispatch is **default-deny** — an unrecognized extension is rejected outright,
+never guessed — and every format resolves to the identical test tree, so inheritance,
+checks, and the lifecycle behave exactly as they do in YAML.
+
+One difference matters up front: **YAML silently drops an unknown key**, so a typo'd
+`chekcs:` just vanishes. CUE and JSON both **fail closed** — an unknown field is a load
+error (exit `65`), not a silent no-op. Reach for them when a silent drop would bite.
+
+### CUE (`.cue`)
+
+A `.cue` spec is unified against an embedded, **closed** `#Test`/`#Config` schema before it
+decodes, so typo'd fields and wrong types surface as constraint errors — recursively,
+including nested `tests` and `config`. Beyond checking, CUE brings constraints, defaults,
+imports, and comprehensions, so you can *generate* a spec instead of hand-copying it:
+
+```cue
+config: {
+	interpreter: "/bin/bash"
+	timeout:     "5s"   // a string — CUE has no duration type
+}
+checks: ["exitcode", "stdout"]
+
+// One subtest per fixture, no copy-paste.
+tests: [
+	for name in ["alpha", "beta", "gamma"] {
+		"name":   name
+		commands: ["./run.sh \(name)"]
+	},
+]
+```
+
+Reach for CUE when specs grow large or repetitive and you'd rather compute them than
+maintain them by hand — or when you already author config in CUE.
+
+### JSON (`.json`)
+
+One JSON object is the root test, with the same keys as YAML (`config`, `checks`,
+`commands`, `tests`). Decoding **rejects unknown fields**, matching CUE's closed schema:
+
+```json
+{
+  "config": { "interpreter": "/bin/bash" },
+  "checks": ["exitcode", "stdout"],
+  "tests": [
+    { "name": "Greeting", "commands": ["echo hello"] }
+  ]
+}
+```
+
+Reach for JSON when a tool emits the spec — it's the lowest-friction format to generate from
+another program.
+
+### JSONL (`.jsonl`)
+
+One `TestSpec` per non-blank line (blank lines are skipped). The stream is the **children of
+an implicit empty root** — equivalent to a YAML `tests: [...]` with no top-level command.
+Each line decodes independently and fails closed on unknown fields:
+
+```jsonl
+{ "name": "Greeting", "commands": ["echo hello"] }
+{ "name": "Farewell", "commands": ["echo bye"] }
+```
+
+The catch: the implicit root carries no config or checks, so **lines share no parent
+settings** — each stands alone on the defaults. That makes JSONL a fit for a stream of
+independent, self-contained tests (say, appended by a generator) and a poor fit when tests
+need shared config or checks; use YAML, JSON, or CUE for those.
 
 ## Flag reference
 
