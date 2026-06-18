@@ -120,7 +120,7 @@ func main() {
 		os.Exit(p.ExitUsage)
 		return
 	}
-	if shouldCommitLast && (len(includes) > 0 || len(excludes) > 0) {
+	if shouldCommitLast && filtering() {
 		p.Usage("--commit-last replays the previous run's scope; cannot combine with --include/--exclude")
 		os.Exit(p.ExitUsage)
 		return
@@ -138,6 +138,12 @@ func main() {
 	for _, filename := range filenames {
 		processFile(filename)
 	}
+}
+
+// filtering reports whether the run is scoped to a subset of tests, which makes
+// a commit a partial merge rather than a wholesale overwrite.
+func filtering() bool {
+	return len(includes) > 0 || len(excludes) > 0
 }
 
 func initSpec(target string) {

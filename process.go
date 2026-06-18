@@ -174,7 +174,7 @@ func commitResults(filename string, results []engine.TestResult) {
 	// A filtered run observed only a subset, so merge it onto the existing lock
 	// to keep the golden for tests it never ran. An unfiltered run is the whole
 	// truth and replaces the lock wholesale, pruning tests dropped from the spec.
-	if len(includes) > 0 || len(excludes) > 0 {
+	if filtering() {
 		specs = resultspecs.Merge(loadLockSpecs(target), specs)
 	}
 
@@ -263,7 +263,7 @@ func saveRunCache(filename string, content []byte, results []engine.TestResult) 
 	}
 	_ = runcache.Save(filename, runcache.Snapshot{
 		SpecHash: runcache.HashSpec(content),
-		Partial:  len(includes) > 0 || len(excludes) > 0,
+		Partial:  filtering(),
 		Results:  specs,
 	})
 }
