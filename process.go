@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 	"github.com/chakrit/smoke/internal"
 	"github.com/chakrit/smoke/internal/p"
 	"github.com/chakrit/smoke/resultspecs"
+	"github.com/chakrit/smoke/runcache"
 	"github.com/chakrit/smoke/testspecs"
 )
 
@@ -17,14 +19,17 @@ func processFile(filename string) {
 		showResults(filename)
 		return
 	}
+	if shouldCommitLast {
+		commitLast(filename)
+		return
+	}
 
-	file, err := os.Open(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		p.Exit(fmt.Errorf(filename+": %w", err))
 	}
-	defer file.Close()
 
-	tests, err := testspecs.Load(file, filename)
+	tests, err := testspecs.Load(bytes.NewReader(content), filename)
 	if err != nil {
 		p.DataErr(fmt.Errorf(filename+": %w", err))
 	}
@@ -47,6 +52,8 @@ func processFile(filename string) {
 
 	p.Action("Running Tests")
 	results := runTests(tests)
+	saveRunCache(filename, content, results)
+
 	if shouldPrint {
 		p.Action("Printing Result")
 		printResults(results)
@@ -174,6 +181,34 @@ func commitResults(filename string, results []engine.TestResult) {
 	writeLock(target, specs)
 }
 
+// commitLast commits the previous run from cache without re-running, after
+// verifying the cached run still matches the current spec — SMOKE never blesses
+// a golden for a spec that has changed since it was observed.
+func commitLast(filename string) {
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		p.Exit(fmt.Errorf(filename+": %w", err))
+	}
+
+	snap, ok, err := runcache.Load(filename)
+	if err != nil {
+		p.Exit(fmt.Errorf("commit-last: %w", err))
+	}
+	if !ok {
+		p.DataErr(fmt.Errorf("commit-last: no cached run for %s; run it once first", filename))
+	}
+	if snap.SpecHash != runcache.HashSpec(content) {
+		p.DataErr(fmt.Errorf("commit-last: %s changed since the last run; re-run before committing", filename))
+	}
+
+	target := lockFilename(filename)
+	specs := snap.Results
+	if snap.Partial {
+		specs = resultspecs.Merge(loadLockSpecs(target), specs)
+	}
+	writeLock(target, specs)
+}
+
 // loadLockSpecs reads an existing lock, returning nil when none exists yet (a
 // first partial commit has no prior golden to preserve).
 func loadLockSpecs(target string) []resultspecs.TestResultSpec {
@@ -216,6 +251,21 @@ func writeLock(target string, specs []resultspecs.TestResultSpec) {
 	} else {
 		p.Pass("Commit " + target)
 	}
+}
+
+// saveRunCache persists the run so a later --commit-last can bless it without
+// re-running. Best-effort: the cache is a convenience, so a failure here must
+// never fail the run that produced it.
+func saveRunCache(filename string, content []byte, results []engine.TestResult) {
+	specs, err := resultspecs.FromTestResults(results)
+	if err != nil {
+		return
+	}
+	_ = runcache.Save(filename, runcache.Snapshot{
+		SpecHash: runcache.HashSpec(content),
+		Partial:  len(includes) > 0 || len(excludes) > 0,
+		Results:  specs,
+	})
 }
 
 func compareResults(filename string, results []engine.TestResult) {

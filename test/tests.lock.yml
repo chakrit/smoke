@@ -128,6 +128,7 @@
             - ""
             - 'Flags:'
             - '  -c, --commit                      Commit all test output.'
+            - '      --commit-last                 Commit the previous run''s results without re-running; refuses if the spec changed.'
             - '  -x, --exclude strings             Do not run tests matching the given pattern'
             - '  -h, --help                        Show help on usages.'
             - '  -i, --include strings             Only run tests matching the given pattern'
@@ -655,6 +656,7 @@
             - ""
             - 'Flags:'
             - '  -c, --commit                      Commit all test output.'
+            - '      --commit-last                 Commit the previous run''s results without re-running; refuses if the spec changed.'
             - '  -x, --exclude strings             Do not run tests matching the given pattern'
             - '  -h, --help                        Show help on usages.'
             - '  -i, --include strings             Only run tests matching the given pattern'

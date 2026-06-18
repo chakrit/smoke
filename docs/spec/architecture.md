@@ -63,7 +63,8 @@ are a captured artifact we never need to round-trip back through CUE.
 | `testspecs/`   | Input parsing (YAML + CUE), inheritance resolution, tree flattening|
 | `engine/`      | `Runner`, `Test`/`*Result` types, `Config`, `RunHooks`             |
 | `checks/`      | Pluggable observations + the string→check parser                   |
-| `resultspecs/` | Lock serialization + the structural diff engine                    |
+| `resultspecs/` | Lock serialization, the structural diff engine, identity merge     |
+| `runcache/`    | Per-spec run snapshot (provenance-stamped) for `--commit-last`      |
 | `internal/p`   | Console printing, coloring, exit-code constants                     |
 
 `engine` and `resultspecs` have no knowledge of input format — the CUE/YAML split
@@ -192,11 +193,18 @@ rejected at load, so the key is unambiguous.
 | ------------------ | ----------------- | ----------------------------------------------- |
 | Compare *(default)*| —                 | diff vs lock → `0`/`1`/`3`                       |
 | Compare (JSON)     | `--json`          | same diff as a machine-readable document        |
-| Commit             | `--commit`/`-c`   | write/overwrite the lock                        |
+| Commit             | `--commit`/`-c`   | run, then write the lock (merge if filtered)    |
+| Commit last        | `--commit-last`   | write the lock from the cached run, no re-run   |
 | Print              | `--print`/`-p`    | result YAML to stdout (scripting)               |
 | List               | `--list`/`-l`     | discovered test names (`-vv` adds commands)     |
 | Show expected      | `--show-expected` | replay the lock without running                 |
 | Init               | `--init[=path]`   | scaffold a starter spec (no-clobber)            |
+
+Every run persists a provenance-stamped snapshot to a per-spec slot under the
+user cache dir (`runcache`); `--commit-last` blesses that snapshot without
+re-running, refusing (exit `65`) when the spec's content hash no longer matches
+the one recorded at run time. See
+[`../decisions/2026-06-18-run-cache-and-commit-last.md`](../decisions/2026-06-18-run-cache-and-commit-last.md).
 
 Exit codes (`internal/p` constants `Exit{Unchanged,Changed,Trouble,New,Usage,DataErr}`)
 and the output vocabulary are the frozen contract in

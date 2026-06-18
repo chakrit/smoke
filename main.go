@@ -16,11 +16,12 @@ var (
 	shouldShowHelp     bool
 	shouldShowExpected bool
 
-	initFile     string
-	shouldList   bool
-	shouldPrint  bool
-	shouldCommit bool
-	shouldJSON   bool
+	initFile         string
+	shouldList       bool
+	shouldPrint      bool
+	shouldCommit     bool
+	shouldCommitLast bool
+	shouldJSON       bool
 
 	noColors  bool
 	trackTime bool
@@ -72,6 +73,7 @@ func main() {
 	pflag.BoolVarP(&shouldList, "list", "l", false, "List all discovered tests and exit.")
 	pflag.BoolVarP(&shouldPrint, "print", "p", false, "Print raw test results to stdout for scripting purposes.")
 	pflag.BoolVarP(&shouldCommit, "commit", "c", false, "Commit all test output.")
+	pflag.BoolVar(&shouldCommitLast, "commit-last", false, "Commit the previous run's results without re-running; refuses if the spec changed.")
 	pflag.BoolVar(&shouldJSON, "json", false, "Emit the compare result as a machine-readable JSON document.")
 
 	pflag.BoolVar(&noColors, "no-color", false, "Turns off console coloring.")
@@ -107,6 +109,19 @@ func main() {
 	// has no defined meaning, so reject rather than silently ignore it.
 	if shouldJSON && (shouldList || shouldPrint || shouldCommit || shouldShowExpected) {
 		p.Usage("--json applies to the default compare mode; cannot combine with --list/--print/--commit/--show-expected")
+		os.Exit(p.ExitUsage)
+		return
+	}
+
+	// --commit-last is its own mode: it replays the previous run rather than
+	// running, so it owns neither another output mode nor a fresh filter.
+	if shouldCommitLast && (shouldCommit || shouldPrint || shouldList || shouldShowExpected || shouldJSON) {
+		p.Usage("--commit-last commits the previous run; cannot combine with another mode")
+		os.Exit(p.ExitUsage)
+		return
+	}
+	if shouldCommitLast && (len(includes) > 0 || len(excludes) > 0) {
+		p.Usage("--commit-last replays the previous run's scope; cannot combine with --include/--exclude")
 		os.Exit(p.ExitUsage)
 		return
 	}

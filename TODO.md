@@ -11,7 +11,10 @@ see git history and `docs/notes/` session logs for the detail.
   `--commit` merges the observed subset onto the existing lock by identity
   (`resultspecs.Merge`) instead of being refused, preserving unrun tests. Unfiltered
   commit still overwrites wholesale. See `docs/spec/architecture.md` §"Compare and commit".
-* [ ] Allow committing last run results (so we don't have to re-run tests to commit again).
+* [x] Allow committing last run results (so we don't have to re-run tests to commit again).
+  **Done (2026-06-18):** each run persists a provenance-stamped snapshot (`runcache`);
+  `--commit-last` blesses it without re-running, refusing (exit 65) if the spec changed
+  since. See `docs/decisions/2026-06-18-run-cache-and-commit-last.md`.
 * [x] All-errors validation reporting — collect every spec error per load, not just the
   first. **Done (2026-06-18):** "parse don't validate" landed in `testspecs/test_ir.go`.
   `parse` is total (value-or-error `parsed[T]` carriers, command-less leaves become
