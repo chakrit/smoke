@@ -86,11 +86,20 @@ func (cueLoader) Load(reader io.Reader) (*TestSpec, error) {
 	return root, nil
 }
 
+// decodeJSON decodes one JSON value into v, failing closed on unknown fields so a
+// typo'd key (chekcs:) is rejected, not silently dropped — parity with the CUE
+// loader's closed schema. Recurses through nested structs (config, tests[]).
+func decodeJSON(reader io.Reader, v any) error {
+	dec := json.NewDecoder(reader)
+	dec.DisallowUnknownFields()
+	return dec.Decode(v)
+}
+
 type jsonLoader struct{}
 
 func (jsonLoader) Load(reader io.Reader) (*TestSpec, error) {
 	root := &TestSpec{}
-	if err := json.NewDecoder(reader).Decode(root); err != nil {
+	if err := decodeJSON(reader, root); err != nil {
 		return nil, err
 	}
 	return root, nil
@@ -112,7 +121,7 @@ func (jsonlLoader) Load(reader io.Reader) (*TestSpec, error) {
 		}
 
 		child := &TestSpec{}
-		if err := json.Unmarshal(line, child); err != nil {
+		if err := decodeJSON(bytes.NewReader(line), child); err != nil {
 			return nil, err
 		}
 		root.Children = append(root.Children, child)

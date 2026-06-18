@@ -93,9 +93,15 @@ One consequence drives a type choice: CUE has no native duration kind, so
 **closed** `#Test`/`#Config` schema before `Decode`. Closedness is recursive, so
 a typo'd or wrong-typed field — even nested under `tests`/`config` — fails as a
 clean CUE constraint error (`chekcs: field not allowed`) routed to exit `65`,
-rather than being silently dropped at `Decode`. This validation is CUE-only;
-JSON shares the silent-unknown-field gap (`json.Decode` ignores extras), left as
-a follow-up. The schema doubles as a reference for `.cue` spec authors.
+rather than being silently dropped at `Decode`. The schema doubles as a
+reference for `.cue` spec authors.
+
+JSON and JSONL reach the same fail-closed behavior via
+`json.Decoder.DisallowUnknownFields` (shared `decodeJSON` helper): an unknown
+key surfaces as `json: unknown field "chekcs"` — also recursive through
+`config`/`tests`, also routed to exit `65`. The CUE schema additionally
+constrains value types; the JSON decoder catches type mismatches at `Decode`
+the same way.
 
 ## Inheritance resolution
 

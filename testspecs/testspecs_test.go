@@ -24,6 +24,32 @@ func TestLoadJSON(t *testing.T) {
 	}
 }
 
+func TestLoadJSONRejectsUnknownField(t *testing.T) {
+	src := `{"chekcs":["stdout"],"commands":["echo hi"]}`
+
+	_, err := Load(strings.NewReader(src), "spec.json")
+	if err == nil {
+		t.Fatal("want error for unknown field, got nil")
+	}
+	if !strings.Contains(err.Error(), "chekcs") {
+		t.Errorf("error should name the offending field, got: %v", err)
+	}
+}
+
+// DisallowUnknownFields recurses, so a typo nested under tests[] must also fail
+// closed — not just top-level keys.
+func TestLoadJSONRejectsNestedUnknownField(t *testing.T) {
+	src := `{"tests":[{"name":"Echo","commands":["echo hi"],"chekcs":["stdout"]}]}`
+
+	_, err := Load(strings.NewReader(src), "spec.json")
+	if err == nil {
+		t.Fatal("want error for nested unknown field, got nil")
+	}
+	if !strings.Contains(err.Error(), "chekcs") {
+		t.Errorf("error should name the offending field, got: %v", err)
+	}
+}
+
 func TestLoadJSONL(t *testing.T) {
 	src := `{"name":"A","commands":["echo a"]}` + "\n" +
 		`{"name":"B","commands":["echo b"]}` + "\n"
@@ -40,6 +66,18 @@ func TestLoadJSONL(t *testing.T) {
 	}
 	if got := tests[1].Name; got != `spec.jsonl \ B` {
 		t.Errorf("tests[1].Name = %q", got)
+	}
+}
+
+func TestLoadJSONLRejectsUnknownField(t *testing.T) {
+	src := `{"name":"A","chekcs":["stdout"]}` + "\n"
+
+	_, err := Load(strings.NewReader(src), "spec.jsonl")
+	if err == nil {
+		t.Fatal("want error for unknown field, got nil")
+	}
+	if !strings.Contains(err.Error(), "chekcs") {
+		t.Errorf("error should name the offending field, got: %v", err)
 	}
 }
 
