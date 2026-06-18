@@ -1,0 +1,14 @@
+{
+  // JSONC spec: JSON with comments. Comments are stripped before decoding;
+  // string contents are left untouched.
+  "config": {
+    "interpreter": "/bin/sh",
+    "timeout": "5s" /* inline block comment */
+  },
+  "checks": ["exitcode", "stdout"],
+  "tests": [
+    { "name": "Echo", "commands": ["echo jsonc-driven // smoke test"] },
+    /* a block comment between entries */
+    { "name": "Arithmetic", "commands": ["echo $((6 * 7))"] }
+  ]
+}

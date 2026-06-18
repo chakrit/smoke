@@ -752,6 +752,31 @@
         - name: stderr
           data:
             - ""
+- name: test/tests.yml \ Behavior \ JSONC
+  commands:
+    - command: ./bin/smoke --no-color --list test/testdata/jsonctests.jsonc
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - test/testdata/jsonctests.jsonc \ Echo
+            - test/testdata/jsonctests.jsonc \ Arithmetic
+        - name: stderr
+          data:
+            - ""
+    - command: ./bin/smoke --no-color test/testdata/jsonctests.jsonc
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - UNCHANGED — output matches test/testdata/jsonctests.lock.yml (drift-free, not verified correct)
+        - name: stderr
+          data:
+            - ""
 - name: test/tests.yml \ Behavior \ JSON Output \ Unchanged
   commands:
     - command: ./bin/smoke --no-color --json test/testdata/stabletests.yml

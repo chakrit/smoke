@@ -134,6 +134,10 @@ tests:
         commands:
           - ./bin/smoke --no-color --list test/testdata/jsonltests.jsonl # .jsonl spec loads
           - ./bin/smoke --no-color test/testdata/jsonltests.jsonl # and compares UNCHANGED
+      - name: JSONC
+        commands:
+          - ./bin/smoke --no-color --list test/testdata/jsonctests.jsonc # .jsonc spec loads (comments stripped)
+          - ./bin/smoke --no-color test/testdata/jsonctests.jsonc # and compares UNCHANGED
       - name: JSON Output
         tests:
           - name: Unchanged

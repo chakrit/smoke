@@ -56,7 +56,7 @@ function headingText(inline) {
 // Sidebar nav mirrors the H2 headings. A designated H2 renders as a labelled,
 // non-clickable section whose H3 subsections become its nav children, instead
 // of a plain link.
-const NAV_SECTIONS = { 'advanced-cue-json-and-jsonl-specs': 'Advanced' };
+const NAV_SECTIONS = { 'advanced-spec-formats': 'Advanced' };
 
 const nav = [];
 let section = null;

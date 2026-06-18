@@ -78,6 +78,7 @@ is confined entirely to `testspecs.Load`.
 - `.yml` / `.yaml` / *(none)* → `yamlLoader` (`yaml.NewDecoder`)
 - `.cue` → `cueLoader` (compile → unify against `#Test` → validate → decode)
 - `.json` → `jsonLoader`; `.jsonl` → `jsonlLoader` (one `TestSpec` per line)
+- `.jsonc` → `jsoncLoader` (strip `//` `/* */` comments → `jsonLoader` path)
 - anything else → rejected (`unsupported spec format`)
 
 All formats target the **same `TestSpec` struct**, which carries dual struct
@@ -103,6 +104,13 @@ key surfaces as `json: unknown field "chekcs"` — also recursive through
 `config`/`tests`, also routed to exit `65`. The CUE schema additionally
 constrains value types; the JSON decoder catches type mismatches at `Decode`
 the same way.
+
+JSONC is JSON with comments only. `jsoncLoader` runs `stripJSONComments` — a
+string-aware state machine that blanks `//` line and `/* */` block comments to
+spaces (newlines kept, so `json.Decoder` offsets stay accurate) while leaving
+comment-like sequences inside string literals untouched — then decodes through
+the same `decodeJSON`, inheriting its fail-closed behavior. Trailing commas are
+not tolerated; that would be structural editing, not comment stripping.
 
 ## Inheritance resolution
 

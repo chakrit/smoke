@@ -81,6 +81,81 @@ func TestLoadJSONLRejectsUnknownField(t *testing.T) {
 	}
 }
 
+func TestLoadJSONC(t *testing.T) {
+	src := `{
+		// a line comment
+		"config": {"interpreter": "/bin/sh"}, /* an inline block */
+		/*
+		   a multi-line
+		   block comment
+		*/
+		"tests": [
+			{"name": "Echo", "commands": ["echo hi"], "checks": ["stdout"]}
+		]
+	}`
+
+	tests, err := Load(strings.NewReader(src), "spec.jsonc")
+	if err != nil {
+		t.Fatalf("load jsonc: %v", err)
+	}
+	if len(tests) != 1 {
+		t.Fatalf("want 1 test, got %d", len(tests))
+	}
+	if got := tests[0].Name; got != `spec.jsonc \ Echo` {
+		t.Errorf("name = %q", got)
+	}
+	if got := string(tests[0].Commands[0]); got != "echo hi" {
+		t.Errorf("command = %q", got)
+	}
+}
+
+// The stripper is string-aware: comment markers inside string literals are data,
+// not comments, and must survive untouched — including across escaped quotes.
+func TestLoadJSONCPreservesCommentsInStrings(t *testing.T) {
+	src := `{
+		// a real comment
+		"commands": [
+			"echo a // not a comment",
+			"echo /* also kept */ b",
+			"echo \"q\" // still in string"
+		],
+		"checks": ["stdout"]
+	}`
+
+	tests, err := Load(strings.NewReader(src), "spec.jsonc")
+	if err != nil {
+		t.Fatalf("load jsonc: %v", err)
+	}
+
+	want := []string{
+		"echo a // not a comment",
+		"echo /* also kept */ b",
+		`echo "q" // still in string`,
+	}
+	for i, w := range want {
+		if got := string(tests[0].Commands[i]); got != w {
+			t.Errorf("command[%d] = %q, want %q", i, got, w)
+		}
+	}
+}
+
+// Stripping comments must not weaken the closed-decode boundary: a typo'd field
+// still fails closed, same as plain .json.
+func TestLoadJSONCRejectsUnknownField(t *testing.T) {
+	src := `{
+		// comment
+		"chekcs": ["stdout"], "commands": ["echo hi"]
+	}`
+
+	_, err := Load(strings.NewReader(src), "spec.jsonc")
+	if err == nil {
+		t.Fatal("want error for unknown field, got nil")
+	}
+	if !strings.Contains(err.Error(), "chekcs") {
+		t.Errorf("error should name the offending field, got: %v", err)
+	}
+}
+
 // A leaf (no children) with no commands is a malformed spec, not a silent
 // skip — it must surface an error so the loader can exit 65.
 func TestLoadLeafWithoutCommands(t *testing.T) {

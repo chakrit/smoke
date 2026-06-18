@@ -56,8 +56,8 @@ teammates run the same command and get the same verdict.
 
 ## Writing a spec
 
-A spec is YAML (CUE, JSON, and JSONL are also accepted — see
-[Advanced](#advanced-cue-json-and-jsonl-specs)). The **root of the document is
+A spec is YAML (CUE, JSON, JSONL, and JSONC are also accepted — see
+[Advanced](#advanced-spec-formats)). The **root of the document is
 itself a test** — a top-level `commands:` runs. `tests:` nests arbitrarily, and subtests
 **inherit** their parent's config, checks, and commands.
 
@@ -216,16 +216,16 @@ compare verdict as a JSON document (compare mode only).
 Driving SMOKE from an agent or a TDD loop has its own playbook — see
 [`using-smoke-in-tdd`](https://github.com/chakrit/smoke/blob/main/docs/spec/using-smoke-in-tdd.md).
 
-## Advanced: CUE, JSON, and JSONL specs
+## Advanced: spec formats
 
-YAML is the default, but the same spec model loads from three other formats, chosen by file
+YAML is the default, but the same spec model loads from four other formats, chosen by file
 extension. Dispatch is **default-deny** — an unrecognized extension is rejected outright,
 never guessed — and every format resolves to the identical test tree, so inheritance,
 checks, and the lifecycle behave exactly as they do in YAML.
 
 One difference matters up front: **YAML silently drops an unknown key**, so a typo'd
-`chekcs:` just vanishes. CUE and JSON both **fail closed** — an unknown field is a load
-error (exit `65`), not a silent no-op. Reach for them when a silent drop would bite.
+`chekcs:` just vanishes. CUE, JSON, and JSONC all **fail closed** — an unknown field is a
+load error (exit `65`), not a silent no-op. Reach for them when a silent drop would bite.
 
 ### CUE (`.cue`)
 
@@ -286,6 +286,28 @@ The catch: the implicit root carries no config or checks, so **lines share no pa
 settings** — each stands alone on the defaults. That makes JSONL a fit for a stream of
 independent, self-contained tests (say, appended by a generator) and a poor fit when tests
 need shared config or checks; use YAML, JSON, or CUE for those.
+
+### JSONC (`.jsonc`)
+
+Plain JSON with comments — the same object as `.json`, but `//` line and `/* */` block
+comments are stripped before decoding. Comment markers inside string literals are data, not
+comments, so a command like `"echo // here"` is left intact:
+
+```jsonc
+{
+  // shared settings for the whole spec
+  "config": { "interpreter": "/bin/bash" },
+  "checks": ["exitcode", "stdout"],
+  "tests": [
+    { "name": "Greeting", "commands": ["echo hello"] } /* one per behaviour */
+  ]
+}
+```
+
+Comments are stripped to spaces (line numbers preserved), so decode errors still point at
+the right line, and unknown fields fail closed exactly as in `.json`. **Trailing commas are
+not allowed** — JSONC here means comments only. Reach for it when you want a JSON spec you
+can annotate inline.
 
 ## Flag reference
 

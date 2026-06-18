@@ -29,6 +29,8 @@ func loaderFor(filename string) (loader, error) {
 		return cueLoader{}, nil
 	case ".json":
 		return jsonLoader{}, nil
+	case ".jsonc":
+		return jsoncLoader{}, nil
 	case ".jsonl":
 		return jsonlLoader{}, nil
 	default:
@@ -103,6 +105,103 @@ func (jsonLoader) Load(reader io.Reader) (*TestSpec, error) {
 		return nil, err
 	}
 	return root, nil
+}
+
+// jsoncLoader is the JSON loader with comment support: it strips // and /* */
+// comments first, then decodes through the same closed path as plain JSON, so a
+// typo'd field still fails closed. Comments only — trailing commas are not
+// tolerated, same as .json.
+type jsoncLoader struct{}
+
+func (jsoncLoader) Load(reader io.Reader) (*TestSpec, error) {
+	src, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	root := &TestSpec{}
+	if err := decodeJSON(bytes.NewReader(stripJSONComments(src)), root); err != nil {
+		return nil, err
+	}
+	return root, nil
+}
+
+// stripJSONComments blanks out // line and /* */ block comments, leaving string
+// literals untouched (a // or /* inside a string is data, not a comment).
+// Comment bytes become spaces and newlines are preserved, so the byte offsets
+// and line numbers in json.Decoder errors still point at the original source.
+func stripJSONComments(src []byte) []byte {
+	const (
+		normal = iota
+		inString
+		inStringEscape
+		inLineComment
+		inBlockComment
+	)
+
+	out := make([]byte, 0, len(src))
+	state := normal
+
+	for i := 0; i < len(src); i++ {
+		c := src[i]
+		switch state {
+		case inString:
+			out = append(out, c)
+			switch c {
+			case '\\':
+				state = inStringEscape
+			case '"':
+				state = normal
+			}
+
+		case inStringEscape:
+			out = append(out, c)
+			state = inString
+
+		case inLineComment:
+			if c == '\n' {
+				out = append(out, c)
+				state = normal
+			} else {
+				out = append(out, ' ')
+			}
+
+		case inBlockComment:
+			if c == '*' && peekByte(src, i) == '/' {
+				out = append(out, ' ', ' ')
+				state = normal
+				i++
+			} else if c == '\n' {
+				out = append(out, c)
+			} else {
+				out = append(out, ' ')
+			}
+
+		default: // normal
+			if c == '"' {
+				out = append(out, c)
+				state = inString
+			} else if c == '/' && peekByte(src, i) == '/' {
+				out = append(out, ' ', ' ')
+				state = inLineComment
+				i++
+			} else if c == '/' && peekByte(src, i) == '*' {
+				out = append(out, ' ', ' ')
+				state = inBlockComment
+				i++
+			} else {
+				out = append(out, c)
+			}
+		}
+	}
+	return out
+}
+
+func peekByte(src []byte, i int) byte {
+	if i+1 < len(src) {
+		return src[i+1]
+	}
+	return 0
 }
 
 // jsonlLoader reads one TestSpec per non-blank line. The stream is the children

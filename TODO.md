@@ -22,10 +22,13 @@ see git history and `docs/notes/` session logs for the detail.
   order via `errors.Join`, flowing out through `testspecs.Load` → exit `65`. First-error
   vs all-errors is a one-line `continue`→`break` change in the fold. `Tests()` is now just
   `validate(parse(t))`. See `docs/spec/architecture.md` §"Inheritance resolution".
-* [ ] JSONC support — deferred out of the Loader slice. Needs either a new dependency or a
-  hand-rolled string-aware comment-stripper (must skip `//` and `/* */` inside string
-  literals — correctness risk on untrusted input). Decide dep-vs-stripper on its own
-  merits. Weakest-value of the JSON-family formats.
+* [x] JSONC support. **Done (2026-06-18):** `.jsonc` → `jsoncLoader`, which runs a
+  hand-rolled string-aware `stripJSONComments` (no new dependency) then decodes through the
+  same `decodeJSON` path, inheriting `DisallowUnknownFields` fail-closed behavior. Comments
+  blank to spaces (newlines kept) so `json.Decoder` error offsets stay accurate; markers
+  inside string literals are preserved. Comments only — trailing commas deliberately left
+  unsupported (structural editing, not stripping; revisit if someone trips on it). See
+  `docs/spec/architecture.md` §"Format dispatch" and the guide's Advanced section.
 
 ## Docs site (`www/`) — next session
 
