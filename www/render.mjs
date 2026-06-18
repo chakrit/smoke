@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import MarkdownIt from 'markdown-it';
 import anchor from 'markdown-it-anchor';
+import hljs from 'highlight.js';
 
 import { lifecycleSvg, mergeSvg } from './diagrams.mjs';
 
@@ -14,7 +15,17 @@ const guidePath = join(here, '..', 'docs', 'guides', 'index.md');
 const templatePath = join(here, 'template.html');
 const outPath = join(here, 'src', 'index.html');
 
-const md = new MarkdownIt({ html: true, linkify: true, typographer: false })
+// Highlight at build time: the page ships pre-coloured hljs-* spans, so
+// highlight.js never reaches the browser — only the token theme in styles.css.
+function highlight(code, lang) {
+  const language = hljs.getLanguage(lang) ? lang : null;
+  const inner = language
+    ? hljs.highlight(code, { language }).value
+    : md.utils.escapeHtml(code);
+  return `<pre><code class="hljs">${inner}</code></pre>`;
+}
+
+const md = new MarkdownIt({ html: true, linkify: true, typographer: false, highlight })
   .use(anchor, { tabIndex: false });
 
 const source = readFileSync(guidePath, 'utf8');

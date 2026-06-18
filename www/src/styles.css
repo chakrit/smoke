@@ -12,6 +12,12 @@
   --accent: #0F6E56;
   --accent-soft: #E1F5EE;
 
+  --syntax-comment: #8A8980;
+  --syntax-keyword: #0F6E56;
+  --syntax-string: #9A5B2E;
+  --syntax-number: #2E5E8A;
+  --syntax-name: #6B4FA0;
+
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
 
@@ -146,6 +152,19 @@ body {
   border: none;
   padding: 0;
   font-size: 13.5px;
+}
+
+/* highlight.js tokens — coloured at build time, mapped to the site palette. */
+.hljs-comment, .hljs-quote { color: var(--syntax-comment); font-style: italic; }
+.hljs-keyword, .hljs-built_in, .hljs-meta, .hljs-section, .hljs-selector-tag {
+  color: var(--syntax-keyword);
+}
+.hljs-string, .hljs-symbol, .hljs-bullet, .hljs-addition {
+  color: var(--syntax-string);
+}
+.hljs-number, .hljs-literal, .hljs-type { color: var(--syntax-number); }
+.hljs-attr, .hljs-title, .hljs-attribute, .hljs-variable, .hljs-template-variable {
+  color: var(--syntax-name);
 }
 
 /* Tables ------------------------------------------------------------------ */
