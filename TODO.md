@@ -6,7 +6,11 @@ see git history and `docs/notes/` session logs for the detail.
 
 ## Backlog (unsorted)
 
-* [ ] Allow partially committing some results but not all.
+* [x] Allow partially committing some results but not all. **Done (2026-06-18):**
+  `engine.TestID` centralizes test identity (duplicates rejected at load); a filtered
+  `--commit` merges the observed subset onto the existing lock by identity
+  (`resultspecs.Merge`) instead of being refused, preserving unrun tests. Unfiltered
+  commit still overwrites wholesale. See `docs/spec/architecture.md` §"Compare and commit".
 * [ ] Allow committing last run results (so we don't have to re-run tests to commit again).
 * [x] All-errors validation reporting — collect every spec error per load, not just the
   first. **Done (2026-06-18):** "parse don't validate" landed in `testspecs/test_ir.go`.

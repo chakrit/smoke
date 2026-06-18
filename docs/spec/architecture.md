@@ -172,14 +172,19 @@ returning a tree of `*Edit` values tagged `Equal`/`Added`/`Removed`/
 `reporter` (`reporter.go`) chosen by output format: `consoleReporter` prints
 only non-`Equal` edits, `jsonReporter` (`--json`) emits the full verdict tree as
 JSON. Both map the outcome to a `status` enum that owns its exit code; the
-no-lock (`NEW`) path routes through the same reporter. Commit mode writes results
-to a temp file and atomically renames into place, so a crash mid-write never
-corrupts an existing lock.
+no-lock (`NEW`) path routes through the same reporter. Commit mode writes the
+lock to a temp file and atomically renames into place, so a crash mid-write
+never corrupts an existing lock.
 
 `--include` / `--exclude` filter by test name at both ends (the live test list
-and the loaded lock), so a partial run compares only the named subset. Committing
-a partial set is refused — a partial commit would silently drop the unmatched
-tests from the lock.
+and the loaded lock), so a partial run compares only the named subset. A partial
+**commit** is no longer refused: when a filter is active, the observed subset is
+merged onto the existing lock by test identity (`resultspecs.Merge`) — matched
+entries are replaced, unmatched entries preserved — so the tests that didn't run
+keep their golden. An unfiltered commit is the whole truth and still overwrites
+the lock wholesale, pruning tests dropped from the spec. The merge keys on
+`engine.TestID` (derived from the flattened name); duplicate identities are
+rejected at load, so the key is unambiguous.
 
 ## Modes and exit codes
 

@@ -103,14 +103,6 @@ func main() {
 		return
 	}
 
-	// TODO: Make possible? Might need to overhaul test and result collection to allow
-	// partial tests/modifications
-	if shouldCommit && (len(includes) > 0 || len(excludes) > 0) {
-		p.Usage("cannot commit partial results when using --include or --exclude")
-		os.Exit(p.ExitUsage)
-		return
-	}
-
 	// --json renders the compare outcome only; mixing it with another output mode
 	// has no defined meaning, so reject rather than silently ignore it.
 	if shouldJSON && (shouldList || shouldPrint || shouldCommit || shouldShowExpected) {

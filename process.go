@@ -146,13 +146,57 @@ func runTests(tests []*engine.Test) []engine.TestResult {
 }
 
 func printResults(results []engine.TestResult) {
-	if err := resultspecs.Save(os.Stdout, results); err != nil {
+	specs, err := resultspecs.FromTestResults(results)
+	if err != nil {
+		p.Exit(fmt.Errorf("print to stdout: %w", err))
+	}
+	if err := resultspecs.Save(os.Stdout, specs); err != nil {
 		p.Exit(fmt.Errorf("print to stdout: %w", err))
 	}
 	p.Pass("Print")
 }
 
 func commitResults(filename string, results []engine.TestResult) {
+	target := lockFilename(filename)
+
+	specs, err := resultspecs.FromTestResults(results)
+	if err != nil {
+		p.Exit(fmt.Errorf("commit: %w", err))
+	}
+
+	// A filtered run observed only a subset, so merge it onto the existing lock
+	// to keep the golden for tests it never ran. An unfiltered run is the whole
+	// truth and replaces the lock wholesale, pruning tests dropped from the spec.
+	if len(includes) > 0 || len(excludes) > 0 {
+		specs = resultspecs.Merge(loadLockSpecs(target), specs)
+	}
+
+	writeLock(target, specs)
+}
+
+// loadLockSpecs reads an existing lock, returning nil when none exists yet (a
+// first partial commit has no prior golden to preserve).
+func loadLockSpecs(target string) []resultspecs.TestResultSpec {
+	file, err := os.Open(target)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		p.Exit(fmt.Errorf(target+": %w", err))
+		return nil
+	}
+	defer file.Close()
+
+	specs, err := resultspecs.Load(file)
+	if err != nil {
+		p.DataErr(fmt.Errorf(target+": %w", err))
+	}
+	return specs
+}
+
+// writeLock atomically replaces the lock: write a temp file, then rename, so a
+// crash mid-write never corrupts an existing lock.
+func writeLock(target string, specs []resultspecs.TestResultSpec) {
 	tmpfile, err := os.CreateTemp("", "smoke-*.yml")
 	if err != nil {
 		p.Exit(fmt.Errorf("commit: %w", err))
@@ -160,12 +204,10 @@ func commitResults(filename string, results []engine.TestResult) {
 	defer tmpfile.Close()
 
 	p.FileAccess(tmpfile.Name())
-	if err = resultspecs.Save(tmpfile, results); err != nil {
+	if err = resultspecs.Save(tmpfile, specs); err != nil {
 		p.Exit(fmt.Errorf("commit "+tmpfile.Name()+": %w", err))
 	}
 
-	// write successful, move into place
-	target := lockFilename(filename)
 	p.FileAccess(target)
 	tmpfile.Close()
 
@@ -217,13 +259,9 @@ func compareResults(filename string, results []engine.TestResult) {
 		})
 	}
 
-	var newspecs []resultspecs.TestResultSpec
-	for _, result := range results {
-		if spec, err := resultspecs.FromTestResult(result); err != nil {
-			p.Exit(fmt.Errorf("compare: %w", err))
-		} else {
-			newspecs = append(newspecs, spec)
-		}
+	newspecs, err := resultspecs.FromTestResults(results)
+	if err != nil {
+		p.Exit(fmt.Errorf("compare: %w", err))
 	}
 
 	edits, differs, err := resultspecs.Compare(lockspec, newspecs)
