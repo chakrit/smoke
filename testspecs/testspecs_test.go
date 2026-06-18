@@ -1,6 +1,7 @@
 package testspecs
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 )
@@ -153,6 +154,38 @@ func TestLoadJSONCRejectsUnknownField(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "chekcs") {
 		t.Errorf("error should name the offending field, got: %v", err)
+	}
+}
+
+// stripJSONComments must (1) preserve byte length so json.Decoder error offsets
+// and line numbers still point at the original source, and (2) leave comment
+// markers inside string literals untouched. Asserted through decode + the length
+// invariant rather than brittle whitespace counting.
+func TestStripJSONCommentsProperties(t *testing.T) {
+	cases := []struct {
+		name    string
+		jsonc   string
+		wantCmd string
+	}{
+		{"line and block stripped", "{\n// c\n\"commands\": [\"echo hi\"] /* x */\n}", "echo hi"},
+		{"markers inside string kept", `{"commands": ["echo // /* keep */"]}`, "echo // /* keep */"},
+		{"unterminated block after a complete value", `{"commands": ["a"]}/* tail`, "a"},
+	}
+
+	for _, c := range cases {
+		stripped := stripJSONComments([]byte(c.jsonc))
+		if len(stripped) != len(c.jsonc) {
+			t.Errorf("%s: length not preserved (offset fidelity): in=%d out=%d",
+				c.name, len(c.jsonc), len(stripped))
+		}
+
+		root := &TestSpec{}
+		if err := decodeJSON(bytes.NewReader(stripped), root); err != nil {
+			t.Fatalf("%s: decode: %v", c.name, err)
+		}
+		if got := root.Commands[0]; got != c.wantCmd {
+			t.Errorf("%s: command = %q, want %q", c.name, got, c.wantCmd)
+		}
 	}
 }
 
