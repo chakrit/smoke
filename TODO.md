@@ -8,15 +8,13 @@ see git history and `docs/notes/` session logs for the detail.
 
 * [ ] Allow partially committing some results but not all.
 * [ ] Allow committing last run results (so we don't have to re-run tests to commit again).
-* [ ] All-errors validation reporting — collect every spec error per load, not just the
-  first. Shares the "don't abort on first problem" machinery with partial load/commit/run
-  above; design as one pass, not before. (vNext; the CUE Loader slice ships first-error
-  only.) **Intended mechanism (decided 2026-06-16):** "parse don't validate" — parse
-  becomes *total* (never fails), each failable field carries `value-or-Err` as data in a
-  typed IR, and a fold-based `validate` walks the IR collecting errors. First-error vs
-  all-errors is then a one-line change in the fold. This is also where `Tests()` finally
-  splits into a total parse + validate. Don't build the IR before this lands — under
-  first-error it's dead weight.
+* [x] All-errors validation reporting — collect every spec error per load, not just the
+  first. **Done (2026-06-18):** "parse don't validate" landed in `testspecs/test_ir.go`.
+  `parse` is total (value-or-error `parsed[T]` carriers, command-less leaves become
+  `leafError`); `validate` folds the flat IR collecting every error in depth-first spec
+  order via `errors.Join`, flowing out through `testspecs.Load` → exit `65`. First-error
+  vs all-errors is a one-line `continue`→`break` change in the fold. `Tests()` is now just
+  `validate(parse(t))`. See `docs/spec/architecture.md` §"Inheritance resolution".
 * [ ] JSONC support — deferred out of the Loader slice. Needs either a new dependency or a
   hand-rolled string-aware comment-stripper (must skip `//` and `/* */` inside string
   literals — correctness risk on untrusted input). Decide dep-vs-stripper on its own

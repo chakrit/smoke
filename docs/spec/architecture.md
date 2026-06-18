@@ -120,6 +120,18 @@ config is seeded from `engine.DefaultConfig`. `TestSpec.Tests()` then flattens:
 any node with commands becomes one `engine.Test`; children recurse. The YAML root
 *is itself* a test — a top-level `commands:` runs.
 
+Flattening is "parse, don't validate" in two passes (`testspecs/test_ir.go`). A
+**total parse** (`parse`, never fails) walks the resolved tree depth-first into a
+flat IR (`[]testIR`); each failable field — an unknown check name, a bad timeout
+duration — rides along as a value-or-error `parsed[T]` carrier instead of
+aborting, and a command-less leaf becomes a `leafError` node. A fold-based
+`validate` then walks the IR collecting *every* error across the whole tree in
+spec order and returns them aggregated via `errors.Join` — an author with three
+mistakes sees all three in one run, not fix-rerun-fix-rerun. First-error vs
+all-errors is a one-line change in the fold. The aggregated error flows out
+through `testspecs.Load` and routes to exit `65` like any other malformed-spec
+failure.
+
 ## Checks
 
 A check is anything implementing `checks.Interface`
