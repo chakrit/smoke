@@ -1,0 +1,20 @@
+{
+  "name": "smoke-docs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Static documentation site for SMOKE, generated from docs/guides/.",
+  "source": "src/index.html",
+  "browserslist": "> 0.5%, last 2 versions, not dead",
+  "scripts": {
+    "render": "node render.mjs",
+    "predev": "node render.mjs",
+    "dev": "parcel src/index.html --dist-dir dist",
+    "prebuild": "node render.mjs",
+    "build": "parcel build src/index.html --public-url ./ --dist-dir dist --no-source-maps"
+  },
+  "devDependencies": {
+    "markdown-it": "^14.1.0",
+    "markdown-it-anchor": "^9.2.0",
+    "parcel": "^2.12.0"
+  }
+}

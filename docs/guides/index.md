@@ -1,0 +1,235 @@
+# SMOKE — the human guide
+
+SMOKE is a CLI for **snapshot smoke-testing of shell commands**. You capture a command's
+observable output once, lock it into a `*.lock.yml`, and every later run goes **green**
+when the output still matches and **red** when it drifts.
+
+It rests on one assumption: *code that produces the same observably-correct output exhibits
+the same correct behaviour.* That is not true 100% of the time — but it gets you a long way
+for very little effort. SMOKE is a **drift detector, not an assertion engine**: a clean run
+means "the output didn't move," never "the behaviour is correct." It is not a replacement
+for a proper test suite; it is a fast tripwire.
+
+<!--DIAGRAM:lifecycle-->
+
+## Install
+
+```sh
+go install github.com/chakrit/smoke@latest
+```
+
+That drops a `smoke` binary on your `GOBIN`. No runtime dependencies — the YAML and CUE
+parsers are compiled in.
+
+## Quick start
+
+The first-run workflow is five steps:
+
+```sh
+# 1. Write a spec describing what to run and what to observe.
+cat > tests.yml <<'EOF'
+config:
+  interpreter: /bin/bash
+checks:
+  - exitcode
+  - stdout
+tests:
+  - name: Greeting
+    commands:
+      - echo "hello world"
+EOF
+
+# 2. Run it. No lock exists yet, so SMOKE reports NEW (exit 3).
+smoke tests.yml
+
+# 3. Eyeball the output. Does it look right?
+
+# 4. If yes, commit it as the golden.
+smoke -c tests.yml          # writes tests.lock.yml
+
+# 5. Check tests.lock.yml into source control.
+git add tests.yml tests.lock.yml
+```
+
+From then on, `smoke tests.yml` compares fresh output against the locked golden. Your
+teammates run the same command and get the same verdict.
+
+## Writing a spec
+
+A spec is YAML (CUE, JSON, and JSONL are also accepted). The **root of the document is
+itself a test** — a top-level `commands:` runs. `tests:` nests arbitrarily, and subtests
+**inherit** their parent's config, checks, and commands.
+
+```yaml
+name: "Defaults to the filename if omitted"
+config:
+  interpreter: /bin/bash    # interpreter for commands (default /bin/bash)
+  timeout: 5s               # per-command timeout (default 3s)
+  workdir: .                # working directory commands start in
+  env:                      # extra environment for commands
+    - "PATH=./bin:/bin"
+checks:                     # what to observe and record per command
+  - exitcode                # the command's exit status
+  - stdout                  # the whole standard-output stream
+  - stderr                  # the whole standard-error stream
+  - go.mod                  # a file's contents
+  - generated/*.go          # a file glob's contents
+commands:
+  - go install -v .
+tests:
+  - name: Subtest
+    config:
+      workdir: ..           # overrides the parent's workdir
+    commands:               # appended after the inherited commands
+      - smoke
+```
+
+Inheritance rules, briefly:
+
+- **Name** — child names are path-joined: `parent \ child`.
+- **Config** — a missing child config inherits the parent's wholesale; otherwise it merges
+  field-by-field (workdir path-joined, env appended, interpreter/timeout first-set-wins).
+- **Commands and checks** — *appended* parent-first, so a subtest extends rather than
+  replaces.
+
+Commands are piped to `interpreter -s` over **stdin** rather than parsed as argv, so quoting
+and shell features behave exactly as they would in a real shell.
+
+> Test names are identities. Two tests that flatten to the same name (same `name:` under
+> the same parent) are rejected at load — SMOKE can't tell them apart when merging a lock,
+> so it refuses the spec rather than silently mangle it.
+
+## The lifecycle: NEW, UNCHANGED, CHANGED
+
+Every run lands in one of three states, each with its own exit code:
+
+| Run says    | Exit | Meaning                                                          |
+| ----------- | ---- | --------------------------------------------------------------- |
+| `NEW`       | `3`  | No lock yet — the first run is unreviewed.                      |
+| `UNCHANGED` | `0`  | Output matched the lock. *Not* "tests passed."                 |
+| `CHANGED`   | `1`  | Output drifted from the lock.                                  |
+
+The discipline that makes SMOKE trustworthy: **eyeball before you commit.** `UNCHANGED`
+means drift-free, never verified-correct. Re-committing a `CHANGED` result you didn't look
+at just locks in the drift as the new "truth."
+
+## Committing goldens
+
+`smoke -c tests.yml` (or `--commit`) runs the spec and writes the result to
+`tests.lock.yml`, replacing whatever was there. A commit always overwrites the **whole**
+lock, so a test you delete from the spec disappears from the lock too.
+
+Commit mode writes to a temp file and atomically renames it into place — a crash mid-write
+never corrupts an existing lock.
+
+## Partial commits and `--commit-last`
+
+Two flags narrow a run to a subset of tests by name (substring match):
+
+```sh
+smoke --include Greeting tests.yml     # only tests whose name contains "Greeting"
+smoke --exclude Slow tests.yml         # everything except names containing "Slow"
+```
+
+### Partial commit
+
+You can **commit a filtered subset**. When a filter is active, SMOKE merges the observed
+subset onto the existing lock by test identity — matched tests are replaced, everything
+else is preserved:
+
+```sh
+# B drifted and you've confirmed the new output is correct.
+# Re-bless only B without touching A or C:
+smoke --include B --commit tests.yml
+```
+
+<!--DIAGRAM:merge-->
+
+An **unfiltered** commit still overwrites the whole lock (and prunes deleted tests). The
+rule of thumb: *filtered commit merges, full commit replaces.*
+
+### `--commit-last`
+
+Every run quietly caches its results. `--commit-last` blesses that cached run **without
+re-running the commands** — handy when a run was expensive and you've already eyeballed the
+drift:
+
+```sh
+smoke tests.yml                # run, see CHANGED, eyeball it
+smoke --commit-last tests.yml  # commit what you just saw, no re-run
+```
+
+It is **provenance-guarded**: the cache records a hash of the spec it observed, and
+`--commit-last` refuses (exit `65`) if the spec changed since:
+
+```
+commit-last: tests.yml changed since the last run; re-run before committing
+```
+
+So you can never accidentally bless a golden for a spec you've since edited. The cached run
+also remembers whether it was filtered, so `--commit-last` merges a partial run and
+overwrites a full one — same semantics as a live commit.
+
+## Exit codes
+
+SMOKE exits with exactly one of these. Each names a distinct outcome class; the shipped
+codes are a frozen contract.
+
+| Code | State       | Meaning                                                       |
+| ---- | ----------- | ------------------------------------------------------------- |
+| `0`  | `UNCHANGED` | Output matched the lock. *Not* "tests passed."                |
+| `1`  | `CHANGED`   | Drift detected — output moved (includes `MISSING`, timeout).  |
+| `2`  | —           | Operational error: SMOKE itself broke (runner crash, I/O).    |
+| `3`  | `NEW`       | No lock file; first run is unreviewed.                        |
+| `64` | —           | Usage error: invalid invocation (bad flags).                  |
+| `65` | —           | Data error: a spec or lock file is malformed.                 |
+
+A timed-out command is recorded as drift (`1`), not an operational error — a hang is
+observable behaviour change, not a tool failure. A non-zero command exit is likewise normal
+(the `exitcode` check captures it); only SMOKE itself failing is `2`.
+
+## Using SMOKE in CI
+
+The rule is simple: **`0` is the only clean pass; fail the build on any non-zero.** That is
+the default behaviour of most CI runners, so often you just run it:
+
+```sh
+smoke tests.yml    # nonzero exit fails the step
+```
+
+Make sure `tests.lock.yml` is **committed**. Without it, CI gets `NEW` (exit `3`) and fails
+— which is correct: an unreviewed first run should never pass silently.
+
+To check several specs, loop and fail on the first drift:
+
+```sh
+set -e
+for spec in tests/*.yml; do
+  smoke --no-color "$spec"
+done
+```
+
+`--no-color` keeps CI logs clean. For machine-readable output, `--json` emits the full
+compare verdict as a JSON document (compare mode only).
+
+Driving SMOKE from an agent or a TDD loop has its own playbook — see
+[`using-smoke-in-tdd`](https://github.com/chakrit/smoke/blob/main/docs/spec/using-smoke-in-tdd.md).
+
+## Flag reference
+
+| Flag               | Short | Effect                                                     |
+| ------------------ | ----- | ---------------------------------------------------------- |
+| `--commit`         | `-c`  | Run, then write the lock (merges if filtered).             |
+| `--commit-last`    |       | Commit the cached previous run without re-running.         |
+| `--print`          | `-p`  | Print result YAML to stdout (for scripting).               |
+| `--list`           | `-l`  | List discovered test names (`-vv` adds commands).          |
+| `--show-expected`  | `-s`  | Replay the lock without running anything.                  |
+| `--json`           |       | Emit the compare verdict as JSON (compare mode only).      |
+| `--init[=path]`    |       | Scaffold a starter spec (won't clobber an existing file).  |
+| `--include`        | `-i`  | Only run tests whose name contains the pattern.            |
+| `--exclude`        | `-x`  | Skip tests whose name contains the pattern.                |
+| `--no-color`       |       | Disable console colouring.                                 |
+| `--time`           |       | Log timestamps.                                            |
+| `--verbose`        | `-v`  | More output (repeatable: `-vv`).                           |
+| `--quiet`          | `-q`  | Less output (repeatable).                                  |
+| `--help`           | `-h`  | Show usage.                                                |

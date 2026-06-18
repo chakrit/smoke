@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SMOKE — snapshot smoke-testing for shell commands. Lock a command's output, detect drift on every run.">
+  <title>SMOKE — the human guide</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <input type="checkbox" id="nav-toggle" hidden>
+  <header class="topbar">
+    <label for="nav-toggle" class="nav-button" aria-label="Toggle navigation">&#9776;</label>
+    <span class="brand">SMOKE</span>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" aria-label="Sections">
+      <a class="sidebar-brand" href="#">SMOKE</a>
+      <ul class="nav">{{NAV}}</ul>
+    </nav>
+    <main class="content">{{CONTENT}}</main>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

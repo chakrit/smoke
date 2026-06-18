@@ -16,6 +16,10 @@ observably correct output will exhibits the same correct behavior.**
 This, of course, is not 100% true all the time but you can get pretty far with reliability
 just by writing a small smoke testing file and using SMOKE to help you.
 
+> 📖 **New here? Read the [full guide](docs/guides/index.md)** — setup, the
+> NEW/UNCHANGED/CHANGED workflow, partial commits, `--commit-last`, exit codes, and CI.
+> It also builds into a static site (`scripts/build-docs.sh` → `www/dist/`).
+
 > :warning: *WARNING:* :warning: This is not a replacement for proper testing regiment. Use your own
 > judgement and discretion if you are dealing with mission-critical software.
 
