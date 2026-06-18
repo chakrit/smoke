@@ -53,17 +53,47 @@ function headingText(inline) {
     .join('');
 }
 
-// Sidebar nav is the list of H2 sections, kept in sync with the headings.
-const sections = [];
+// Sidebar nav mirrors the H2 headings. A designated H2 renders as a labelled,
+// non-clickable section whose H3 subsections become its nav children, instead
+// of a plain link.
+const NAV_SECTIONS = { 'advanced-cue-json-and-jsonl-specs': 'Advanced' };
+
+const nav = [];
+let section = null;
 for (let i = 0; i < tokens.length; i++) {
   const open = tokens[i];
-  if (open.type === 'heading_open' && open.tag === 'h2') {
-    sections.push({ id: open.attrGet('id'), title: headingText(tokens[i + 1]) });
+  if (open.type !== 'heading_open') continue;
+
+  const id = open.attrGet('id');
+  const title = headingText(tokens[i + 1]);
+
+  if (open.tag === 'h2' && id in NAV_SECTIONS) {
+    section = { label: NAV_SECTIONS[id], children: [] };
+    nav.push({ section });
+  } else if (open.tag === 'h2') {
+    section = null;
+    nav.push({ item: { id, title } });
+  } else if (open.tag === 'h3' && section) {
+    section.children.push({ id, title: title.replace(/ \(.*\)$/, '') });
   }
 }
-const navHtml = sections
-  .map((s) => `<li><a href="#${s.id}">${s.title}</a></li>`)
-  .join('\n      ');
+
+function navLink({ id, title }) {
+  return `<li><a href="#${id}">${title}</a></li>`;
+}
+
+function navEntry(entry) {
+  if (entry.item) return navLink(entry.item);
+  const subs = entry.section.children.map(navLink).join('\n          ');
+  return `<li class="nav-section">
+        <span class="nav-section-label">${entry.section.label}</span>
+        <ul class="nav-sub">
+          ${subs}
+        </ul>
+      </li>`;
+}
+
+const navHtml = nav.map(navEntry).join('\n      ');
 
 const contentHtml = md.renderer
   .render(tokens, md.options, {})
@@ -75,4 +105,4 @@ const page = readFileSync(templatePath, 'utf8')
   .replace('{{CONTENT}}', contentHtml);
 
 writeFileSync(outPath, page);
-console.log(`rendered ${sections.length} sections -> ${outPath}`);
+console.log(`rendered ${nav.length} nav entries -> ${outPath}`);

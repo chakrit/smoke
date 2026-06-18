@@ -83,6 +83,21 @@ body {
   border-left-color: var(--accent);
 }
 
+.nav-section { margin-top: 18px; }
+.nav-section-label {
+  display: block;
+  margin: 0 0 6px;
+  padding: 0 10px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border);
+}
+.nav-sub { list-style: none; margin: 0; padding: 0; }
+.nav-sub a { padding-left: 20px; }
+
 .content {
   flex: 1 1 auto;
   min-width: 0;
