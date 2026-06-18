@@ -91,6 +91,27 @@ func TestLoadLeafWithoutCommands(t *testing.T) {
 	}
 }
 
+// Test identity is the flattened name; two siblings sharing a name collide on
+// the same TestID. That ambiguity must be a load error — a name-keyed lock
+// merge cannot tell the two apart, so the spec is rejected up front.
+func TestLoadRejectsDuplicateNames(t *testing.T) {
+	src := strings.Join([]string{
+		"tests:",
+		"  - name: Echo",
+		"    commands: [\"echo a\"]",
+		"  - name: Echo",
+		"    commands: [\"echo b\"]",
+	}, "\n")
+
+	_, err := Load(strings.NewReader(src), "spec.yml")
+	if err == nil {
+		t.Fatal("want error for duplicate test name, got nil")
+	}
+	if !strings.Contains(err.Error(), "duplicate") || !strings.Contains(err.Error(), "Echo") {
+		t.Errorf("error should flag the duplicate name, got: %v", err)
+	}
+}
+
 func TestLoadUnsupportedFormat(t *testing.T) {
 	if _, err := Load(strings.NewReader(""), "spec.txt"); err == nil {
 		t.Fatal("want error for unsupported format, got nil")

@@ -26,6 +26,10 @@ func parseErr[T any](e error) parsed[T] { return parsed[T]{err: e} }
 type testIR interface {
 	// errs returns every parse error this node carries, in field order.
 	errs() []error
+	// id returns the node's test identity and true for identity-bearing nodes;
+	// command-less leaves contribute no test and return false. Independent of
+	// errs, so a collision is caught even when the node also fails to parse.
+	id() (engine.TestID, bool)
 	// build materializes the engine.Test, or false when this node contributes
 	// none (a command-less leaf). Only called after validation finds no errors.
 	build() (*engine.Test, bool)
@@ -53,6 +57,8 @@ func (b buildableTest) errs() []error {
 	return out
 }
 
+func (b buildableTest) id() (engine.TestID, bool) { return engine.TestID(b.name), true }
+
 func (b buildableTest) build() (*engine.Test, bool) {
 	allchecks := make([]checks.Interface, len(b.checks))
 	for i, c := range b.checks {
@@ -72,6 +78,7 @@ type leafError struct {
 }
 
 func (l leafError) errs() []error               { return []error{l.err} }
+func (l leafError) id() (engine.TestID, bool)   { return "", false }
 func (l leafError) build() (*engine.Test, bool) { return nil, false }
 
 // parse is the total pass: it never fails. It walks the resolved TestSpec tree
@@ -141,8 +148,29 @@ func validate(ir []testIR) ([]*engine.Test, error) {
 		}
 	}
 
+	errs = append(errs, duplicateIDErrors(ir)...)
+
 	if len(errs) > 0 {
 		return nil, errors.Join(errs...)
 	}
 	return tests, nil
+}
+
+// duplicateIDErrors reports one error per colliding identity, at the second and
+// later occurrences in spec order. Two tests sharing a TestID are ambiguous to
+// a name-keyed lock merge, so the spec is rejected rather than silently merged.
+func duplicateIDErrors(ir []testIR) []error {
+	seen := map[engine.TestID]bool{}
+	var errs []error
+	for _, node := range ir {
+		id, ok := node.id()
+		if !ok {
+			continue
+		}
+		if seen[id] {
+			errs = append(errs, errors.New("duplicate test `"+string(id)+"`"))
+		}
+		seen[id] = true
+	}
+	return errs
 }

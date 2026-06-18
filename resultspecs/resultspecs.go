@@ -32,6 +32,11 @@ type (
 	}
 )
 
+// ID is the test's identity for diffing and lock merges — derived from the
+// stored name, so the on-disk format stays a bare `name`. Mirrors
+// engine.Test's identity on the result side of the run/lock boundary.
+func (s TestResultSpec) ID() engine.TestID { return engine.TestID(s.Name) }
+
 func FromTestResult(result engine.TestResult) (TestResultSpec, error) {
 	var commands []CommandResultSpec
 	for _, cmd := range result.Commands {
