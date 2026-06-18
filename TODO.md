@@ -26,3 +26,21 @@ see git history and `docs/notes/` session logs for the detail.
   hand-rolled string-aware comment-stripper (must skip `//` and `/* */` inside string
   literals — correctness risk on untrusted input). Decide dep-vs-stripper on its own
   merits. Weakest-value of the JSON-family formats.
+
+## Docs site (`www/`) — next session
+
+* [ ] **Deploy to GitHub Pages via gh-pages branch.** Build output (`www/dist`) is
+  gitignored, so a plain `git subtree push --prefix www/dist` won't work (subtree needs the
+  prefix tracked on the source branch). Write `scripts/deploy-docs.sh`: build, then push
+  `www/dist` to `gh-pages` via a throwaway `git worktree` on that branch (or `git subtree
+  split` of a temporarily-committed dist) and force-push. Then enable Pages on `gh-pages`.
+  No GitHub Actions. Confirm relative asset paths work on the Pages sub-path (`--public-url
+  ./` already set).
+* [ ] **Syntax highlighting** for the code blocks. Prefer build-time over a runtime CDN
+  script: a markdown-it highlighter (e.g. `markdown-it`'s `highlight` option backed by
+  highlight.js or Shiki) so the HTML ships pre-coloured. Add the theme CSS to
+  `www/src/styles.css`. Plain JS only, no TypeScript.
+* [ ] **Advanced section in the guide** (`docs/guides/index.md`): authoring specs in CUE
+  (`.cue` — the embedded `#Test`/`#Config` schema, closedness/fail-closed behaviour) and in
+  JSON/JSONL (`.jsonl` = one `TestSpec` per line; `DisallowUnknownFields`). Show a worked
+  example of each and when to reach for them over YAML. Rebuild the site after.

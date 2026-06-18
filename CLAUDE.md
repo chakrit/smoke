@@ -41,3 +41,7 @@ subtests inherit parent config/checks/commands. Commands are piped to
 `docs/{notes,decisions,spec}/` — sorted by permanence (impermanent /
 point-in-time / current). Default to `notes/`. See `docs/README.md` and
 per-dir READMEs for picker details.
+
+`docs/guides/index.md` is the canonical human guide (usage docs, GitHub-rendered).
+`www/` is a Parcel project that generates a static site from it (`scripts/build-docs.sh`
+→ `www/dist/`, gitignored). Edit the markdown, not the generated HTML.
