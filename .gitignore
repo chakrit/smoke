@@ -3,6 +3,7 @@ bin
 vendor
 .tasks.md
 .inbox.log
+.afk.log
 
 # ACE-managed — do not edit this block.
 # Managed by ACE. See https://github.com/ace-rs/ace

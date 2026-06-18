@@ -30,20 +30,19 @@ see git history and `docs/notes/` session logs for the detail.
   unsupported (structural editing, not stripping; revisit if someone trips on it). See
   `docs/spec/architecture.md` §"Format dispatch" and the guide's Advanced section.
 
-## Docs site (`www/`) — next session
+## Docs site (`www/`)
 
-* [ ] **Deploy to GitHub Pages via gh-pages branch.** Build output (`www/dist`) is
-  gitignored, so a plain `git subtree push --prefix www/dist` won't work (subtree needs the
-  prefix tracked on the source branch). Write `scripts/deploy-docs.sh`: build, then push
-  `www/dist` to `gh-pages` via a throwaway `git worktree` on that branch (or `git subtree
-  split` of a temporarily-committed dist) and force-push. Then enable Pages on `gh-pages`.
-  No GitHub Actions. Confirm relative asset paths work on the Pages sub-path (`--public-url
-  ./` already set).
-* [ ] **Syntax highlighting** for the code blocks. Prefer build-time over a runtime CDN
-  script: a markdown-it highlighter (e.g. `markdown-it`'s `highlight` option backed by
-  highlight.js or Shiki) so the HTML ships pre-coloured. Add the theme CSS to
-  `www/src/styles.css`. Plain JS only, no TypeScript.
-* [ ] **Advanced section in the guide** (`docs/guides/index.md`): authoring specs in CUE
-  (`.cue` — the embedded `#Test`/`#Config` schema, closedness/fail-closed behaviour) and in
-  JSON/JSONL (`.jsonl` = one `TestSpec` per line; `DisallowUnknownFields`). Show a worked
-  example of each and when to reach for them over YAML. Rebuild the site after.
+* [~] **Deploy to GitHub Pages via gh-pages branch.** Script **done** (`0663c5e`):
+  `scripts/deploy-docs.sh` builds, then force-pushes `www/dist` to `gh-pages` via a
+  throwaway `git worktree` (dist is gitignored), `.nojekyll` included, `--dry-run` for local
+  testing — dry-run verified. **Remaining (human-gated):** the actual `push --force` to
+  `gh-pages` and the one-time Pages enablement (`gh api repos/chakrit/smoke/pages …`) are
+  outward-facing, so they wait for a go.
+* [x] **Syntax highlighting** for the code blocks. **Done (`e461b71`):** build-time
+  highlight.js via markdown-it's `highlight` option, pre-coloured `hljs-*` spans, token theme
+  mapped to the site palette in `styles.css`. highlight.js is a devDependency only — JS
+  bundle unchanged. `jsonl`→`json` aliased; CUE stays plain (no hljs grammar).
+* [x] **Advanced section in the guide** (`docs/guides/index.md`). **Done (`46c918d`, plus
+  JSONC in `eb7f2f4`):** CUE / JSON / JSONL / JSONC authoring with worked examples and
+  when-to-use, surfaced as an "Advanced" sidebar section (`0958fbb`). Also fixed heading
+  slugs to be GitHub-compatible so intra-doc anchors resolve on both GitHub and the site.
