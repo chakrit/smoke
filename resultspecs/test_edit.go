@@ -17,7 +17,7 @@ var _ gendiff.Interface = testDiff{}
 
 func (d testDiff) LeftLen() int        { return len(d.oldSpecs) }
 func (d testDiff) RightLen() int       { return len(d.newSpecs) }
-func (d testDiff) Equal(l, r int) bool { return d.oldSpecs[l].ID() == d.newSpecs[r].ID() }
+func (d testDiff) Equal(l, r int) bool { return d.oldSpecs[l].Name == d.newSpecs[r].Name }
 
 func compareTests(oldspecs []TestResultSpec, newspecs []TestResultSpec) (edits []TestEdit, differs bool, err error) {
 	diffs := gendiff.Make(testDiff{oldspecs, newspecs})

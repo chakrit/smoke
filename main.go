@@ -16,12 +16,11 @@ var (
 	shouldShowHelp     bool
 	shouldShowExpected bool
 
-	initFile         string
-	shouldList       bool
-	shouldPrint      bool
-	shouldCommit     bool
-	shouldCommitLast bool
-	shouldJSON       bool
+	initFile     string
+	shouldList   bool
+	shouldPrint  bool
+	shouldCommit bool
+	shouldJSON   bool
 
 	noColors  bool
 	trackTime bool
@@ -73,7 +72,6 @@ func main() {
 	pflag.BoolVarP(&shouldList, "list", "l", false, "List all discovered tests and exit.")
 	pflag.BoolVarP(&shouldPrint, "print", "p", false, "Print raw test results to stdout for scripting purposes.")
 	pflag.BoolVarP(&shouldCommit, "commit", "c", false, "Commit all test output.")
-	pflag.BoolVar(&shouldCommitLast, "commit-last", false, "Commit the previous run's results without re-running; refuses if the spec changed.")
 	pflag.BoolVar(&shouldJSON, "json", false, "Emit the compare result as a machine-readable JSON document.")
 
 	pflag.BoolVar(&noColors, "no-color", false, "Turns off console coloring.")
@@ -113,15 +111,10 @@ func main() {
 		return
 	}
 
-	// --commit-last is its own mode: it replays the previous run rather than
-	// running, so it owns neither another output mode nor a fresh filter.
-	if shouldCommitLast && (shouldCommit || shouldPrint || shouldList || shouldShowExpected || shouldJSON) {
-		p.Usage("--commit-last commits the previous run; cannot combine with another mode")
-		os.Exit(p.ExitUsage)
-		return
-	}
-	if shouldCommitLast && filtering() {
-		p.Usage("--commit-last replays the previous run's scope; cannot combine with --include/--exclude")
+	// A commit writes the whole lock, so a filtered run (--include/--exclude)
+	// would prune the tests it didn't run. Refuse rather than corrupt the lock.
+	if shouldCommit && (len(includes) > 0 || len(excludes) > 0) {
+		p.Usage("cannot commit partial results when using --include or --exclude")
 		os.Exit(p.ExitUsage)
 		return
 	}
@@ -152,12 +145,6 @@ func main() {
 
 	p.Bye()
 	os.Exit(verdict.ExitCode())
-}
-
-// filtering reports whether the run is scoped to a subset of tests, which makes
-// a commit a partial merge rather than a wholesale overwrite.
-func filtering() bool {
-	return len(includes) > 0 || len(excludes) > 0
 }
 
 func initSpec(target string) {

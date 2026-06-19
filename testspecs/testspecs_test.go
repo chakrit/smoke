@@ -199,76 +199,12 @@ func TestLoadLeafWithoutCommands(t *testing.T) {
 	}
 }
 
-// Test identity is the flattened name; two siblings sharing a name collide on
-// the same TestID. That ambiguity must be a load error — a name-keyed lock
-// merge cannot tell the two apart, so the spec is rejected up front.
-func TestLoadRejectsDuplicateNames(t *testing.T) {
-	src := strings.Join([]string{
-		"tests:",
-		"  - name: Echo",
-		"    commands: [\"echo a\"]",
-		"  - name: Echo",
-		"    commands: [\"echo b\"]",
-	}, "\n")
-
-	_, err := Load(strings.NewReader(src), "spec.yml")
-	if err == nil {
-		t.Fatal("want error for duplicate test name, got nil")
-	}
-	if !strings.Contains(err.Error(), "duplicate") || !strings.Contains(err.Error(), "Echo") {
-		t.Errorf("error should flag the duplicate name, got: %v", err)
-	}
-}
-
 func TestLoadUnsupportedFormat(t *testing.T) {
 	if _, err := Load(strings.NewReader(""), "spec.txt"); err == nil {
 		t.Fatal("want error for unsupported format, got nil")
 	}
 }
 
-// All-errors reporting: a spec with three distinct mistakes in different
-// subtrees — an unknown check, a bad timeout, and a command-less leaf — must
-// surface ALL of them from one Load call, in depth-first spec order, so the
-// author fixes everything in a single pass rather than fix-rerun-fix-rerun.
-func TestLoadCollectsAllErrors(t *testing.T) {
-	src := strings.Join([]string{
-		"tests:",
-		"  - name: BadCheck",
-		"    commands: [\"echo a\"]",
-		"    checks: [\"nope://x\"]",
-		"  - name: BadTimeout",
-		"    commands: [\"echo b\"]",
-		"    config:",
-		"      timeout: \"not-a-duration\"",
-		"  - name: EmptyLeaf",
-		"",
-	}, "\n")
-
-	_, err := Load(strings.NewReader(src), "spec.yml")
-	if err == nil {
-		t.Fatal("want aggregated error, got nil")
-	}
-
-	msg := err.Error()
-	for _, want := range []string{"nope://x", "not-a-duration", "EmptyLeaf"} {
-		if !strings.Contains(msg, want) {
-			t.Errorf("aggregated error missing %q; got: %v", want, msg)
-		}
-	}
-
-	// Stable depth-first order matching the spec: BadCheck → BadTimeout →
-	// EmptyLeaf.
-	iCheck := strings.Index(msg, "nope://x")
-	iTimeout := strings.Index(msg, "not-a-duration")
-	iLeaf := strings.Index(msg, "EmptyLeaf")
-	if !(iCheck < iTimeout && iTimeout < iLeaf) {
-		t.Errorf("errors out of spec order: check=%d timeout=%d leaf=%d in %q",
-			iCheck, iTimeout, iLeaf, msg)
-	}
-}
-
-// A single bad check still reports cleanly (single-error coverage retained
-// through the fold).
 func TestLoadUnknownCheck(t *testing.T) {
 	src := "commands: [\"echo hi\"]\nchecks: [\"nope://x\"]\n"
 

@@ -32,11 +32,6 @@ type (
 	}
 )
 
-// ID is the test's identity for diffing and lock merges — derived from the
-// stored name, so the on-disk format stays a bare `name`. Mirrors
-// engine.Test's identity on the result side of the run/lock boundary.
-func (s TestResultSpec) ID() engine.TestID { return engine.TestID(s.Name) }
-
 func FromTestResult(result engine.TestResult) (TestResultSpec, error) {
 	var commands []CommandResultSpec
 	for _, cmd := range result.Commands {
@@ -91,32 +86,4 @@ func Save(w io.Writer, specs []TestResultSpec) error {
 
 func Compare(oldspecs []TestResultSpec, newspecs []TestResultSpec) (edits []TestEdit, differs bool, err error) {
 	return compareTests(oldspecs, newspecs)
-}
-
-// Merge overlays a (possibly partial) set of results onto a base lock by test
-// identity: matched entries are replaced in their base position, unmatched base
-// entries are preserved, and genuinely new entries append in overlay order.
-func Merge(base, overlay []TestResultSpec) []TestResultSpec {
-	replacement := make(map[engine.TestID]TestResultSpec, len(overlay))
-	for _, spec := range overlay {
-		replacement[spec.ID()] = spec
-	}
-
-	merged := make([]TestResultSpec, 0, len(base)+len(overlay))
-	consumed := make(map[engine.TestID]bool, len(overlay))
-	for _, spec := range base {
-		if repl, ok := replacement[spec.ID()]; ok {
-			merged = append(merged, repl)
-			consumed[repl.ID()] = true
-		} else {
-			merged = append(merged, spec)
-		}
-	}
-
-	for _, spec := range overlay {
-		if !consumed[spec.ID()] {
-			merged = append(merged, spec)
-		}
-	}
-	return merged
 }

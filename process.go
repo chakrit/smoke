@@ -10,7 +10,6 @@ import (
 	"github.com/chakrit/smoke/internal"
 	"github.com/chakrit/smoke/internal/p"
 	"github.com/chakrit/smoke/resultspecs"
-	"github.com/chakrit/smoke/runcache"
 	"github.com/chakrit/smoke/testspecs"
 )
 
@@ -23,9 +22,6 @@ import (
 func processFile(filename string) (status, error) {
 	if shouldShowExpected {
 		return statusUnchanged, showResults(filename)
-	}
-	if shouldCommitLast {
-		return statusUnchanged, commitLast(filename)
 	}
 
 	content, err := os.ReadFile(filename)
@@ -59,7 +55,6 @@ func processFile(filename string) (status, error) {
 	if err != nil {
 		return statusUnchanged, err
 	}
-	saveRunCache(filename, content, results)
 
 	switch {
 	case shouldPrint:
@@ -162,6 +157,9 @@ func printResults(results []engine.TestResult) error {
 	return nil
 }
 
+// commitResults runs the spec and writes the result as the new lock, wholesale —
+// a commit always replaces the whole lock, so a test dropped from the spec
+// disappears from the lock too.
 func commitResults(filename string, results []engine.TestResult) error {
 	target := lockFilename(filename)
 
@@ -170,69 +168,7 @@ func commitResults(filename string, results []engine.TestResult) error {
 		return fmt.Errorf("commit: %w", err)
 	}
 
-	// A filtered run observed only a subset, so merge it onto the existing lock
-	// to keep the golden for tests it never ran. An unfiltered run is the whole
-	// truth and replaces the lock wholesale, pruning tests dropped from the spec.
-	if filtering() {
-		base, err := loadLockSpecs(target)
-		if err != nil {
-			return err
-		}
-		specs = resultspecs.Merge(base, specs)
-	}
-
 	return writeLock(target, specs)
-}
-
-// commitLast commits the previous run from cache without re-running, after
-// verifying the cached run still matches the current spec — SMOKE never blesses
-// a golden for a spec that has changed since it was observed.
-func commitLast(filename string) error {
-	content, err := os.ReadFile(filename)
-	if err != nil {
-		return fmt.Errorf(filename+": %w", err)
-	}
-
-	snap, ok, err := runcache.Load(filename)
-	if err != nil {
-		return fmt.Errorf("commit-last: %w", err)
-	}
-	if !ok {
-		return dataErr(fmt.Errorf("commit-last: no cached run for %s; run it once first", filename))
-	}
-	if snap.SpecHash != runcache.HashSpec(content) {
-		return dataErr(fmt.Errorf("commit-last: %s changed since the last run; re-run before committing", filename))
-	}
-
-	target := lockFilename(filename)
-	specs := snap.Results
-	if snap.Partial {
-		base, err := loadLockSpecs(target)
-		if err != nil {
-			return err
-		}
-		specs = resultspecs.Merge(base, specs)
-	}
-	return writeLock(target, specs)
-}
-
-// loadLockSpecs reads an existing lock, returning nil when none exists yet (a
-// first partial commit has no prior golden to preserve).
-func loadLockSpecs(target string) ([]resultspecs.TestResultSpec, error) {
-	file, err := os.Open(target)
-	if os.IsNotExist(err) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf(target+": %w", err)
-	}
-	defer file.Close()
-
-	specs, err := resultspecs.Load(file)
-	if err != nil {
-		return nil, dataErr(fmt.Errorf(target+": %w", err))
-	}
-	return specs, nil
 }
 
 // writeLock atomically replaces the lock: write a temp file, then rename, so a
@@ -257,21 +193,6 @@ func writeLock(target string, specs []resultspecs.TestResultSpec) error {
 	}
 	p.Pass("Commit " + target)
 	return nil
-}
-
-// saveRunCache persists the run so a later --commit-last can bless it without
-// re-running. Best-effort: the cache is a convenience, so a failure here must
-// never fail the run that produced it.
-func saveRunCache(filename string, content []byte, results []engine.TestResult) {
-	specs, err := resultspecs.FromTestResults(results)
-	if err != nil {
-		return
-	}
-	_ = runcache.Save(filename, runcache.Snapshot{
-		SpecHash: runcache.HashSpec(content),
-		Partial:  filtering(),
-		Results:  specs,
-	})
 }
 
 func compareResults(filename string, results []engine.TestResult) (status, error) {
