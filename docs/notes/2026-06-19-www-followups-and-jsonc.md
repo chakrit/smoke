@@ -47,10 +47,16 @@ All green: `go test ./...`, `go vet`, `./test.sh` (UNCHANGED, exit 0). Docs site
   is for re-blessing existing drift. No code change. Captured in
   `docs/spec/architecture.md` §"Compare and commit".
 
-## Open decisions for the human
+## Resolved (2026-06-19, user present)
 
-- **Push** — `main` is **13 commits** ahead of `gh/main`, plus the local `v0.3.1` tag. All held.
-- **gh-pages deploy** — script ready + dry-run-tested; the `push --force` to `gh-pages` and the
-  one-time Pages enablement (`gh api repos/chakrit/smoke/pages …`) are outward-facing, awaiting go.
-- **Cut v0.4.0** — the prior batch plus this session's new `.jsonc` format strengthen the
-  minor-bump case; decide whether to push `v0.3.1` first or supersede it.
+- **Push** — DONE. `main` pushed to `gh/main`. The local `v0.3.1` tag was **held** (release
+  versioning deferred — see below).
+- **gh-pages deploy** — DONE & live at **http://gh.chakrit.net/smoke/** (Pages already
+  enabled; project site under the user custom domain, no per-repo CNAME). Re-run
+  `scripts/deploy-docs.sh` after guide edits.
+
+## Still open
+
+- **Cut v0.4.0** — user said *not yet*. The batch (duplicate-name rejection, partial-commit
+  semantics, `.jsonc`, and the multi-spec exit fix) is a strong minor-bump candidate when
+  ready; decide whether to push `v0.3.1` first or supersede it.

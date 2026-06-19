@@ -32,12 +32,12 @@ see git history and `docs/notes/` session logs for the detail.
 
 ## Docs site (`www/`)
 
-* [~] **Deploy to GitHub Pages via gh-pages branch.** Script **done** (`0663c5e`):
+* [x] **Deploy to GitHub Pages via gh-pages branch. Done & live (2026-06-19).**
   `scripts/deploy-docs.sh` builds, then force-pushes `www/dist` to `gh-pages` via a
   throwaway `git worktree` (dist is gitignored), `.nojekyll` included, `--dry-run` for local
-  testing — dry-run verified. **Remaining (human-gated):** the actual `push --force` to
-  `gh-pages` and the one-time Pages enablement (`gh api repos/chakrit/smoke/pages …`) are
-  outward-facing, so they wait for a go.
+  testing. Deployed; Pages serves at **http://gh.chakrit.net/smoke/** (project site under the
+  user custom domain — no per-repo CNAME needed). Re-run the script after any guide change to
+  refresh.
 * [x] **Syntax highlighting** for the code blocks. **Done (`e461b71`):** build-time
   highlight.js via markdown-it's `highlight` option, pre-coloured `hljs-*` spans, token theme
   mapped to the site palette in `styles.css`. highlight.js is a devDependency only — JS
