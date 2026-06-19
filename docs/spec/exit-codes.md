@@ -37,6 +37,22 @@ against `2` is whether SMOKE got usable bytes: *read but malformed* → `65`;
 `2`. A missing or unreadable file stays `2` — there is no `EX_NOINPUT` (66) in
 the scheme; minting one would split file failures for no consumer benefit.
 
+## Multiple specs
+
+`smoke a b c` processes every spec in argument order and exits once:
+
+- **Each spec reports separately** — its own stdout verdict line (console), or one
+  compact JSON object per spec under `--json` (a JSONL stream; a single spec still
+  emits exactly one object).
+- **Verdicts aggregate**: the run exits non-zero if *any* spec drifted. `UNCHANGED`
+  is the identity — a clean spec never clears an earlier `CHANGED`/`NEW`, so drift in
+  spec N can't hide behind a clean spec N+1. Among non-clean specs the last one's code
+  wins (the specific `1`-vs-`3` value is not contractual; "non-zero on any drift" is).
+- **Fatals fail-fast**: a malformed spec (`65`) or operational error (`2`) aborts the
+  run at that spec — later specs do not run. Specs execute in order and may carry side
+  effects the next depends on (setups/teardowns are modelled as test ordering), so a
+  broken spec means the chain is no longer trustworthy.
+
 ## Streams
 
 - Drift / match report → **stdout**.
@@ -74,7 +90,9 @@ pair, plus the per-node verdict tree. Node `status` uses `matched`/`changed`/
 `missing` (`Removed` → `missing`, `Added`/`InnerChanges` → `changed`, `Equal` →
 `matched`); `new` is whole-run-only. Detail localizes to drift — a `matched`
 subtree carries no children, a `changed` node enumerates to the per-check level.
-The document is the only thing on stdout at default verbosity; `--json -v`
-interleaves progress chatter and is unsupported for machine consumption. The
+Output is one **compact** object per spec, newline-terminated (JSONL): a single
+spec is one object, a multi-spec run is a stream of them. The objects are the
+only thing on stdout at default verbosity; `--json -v` interleaves progress
+chatter and is unsupported for machine consumption. The
 contract table is also documented on both user-facing surfaces (`--help` and
 README).

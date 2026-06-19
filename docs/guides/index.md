@@ -201,17 +201,22 @@ smoke tests.yml    # nonzero exit fails the step
 Make sure `tests.lock.yml` is **committed**. Without it, CI gets `NEW` (exit `3`) and fails
 — which is correct: an unreviewed first run should never pass silently.
 
-To check several specs, loop and fail on the first drift:
+To check several specs, pass them all in one invocation:
 
 ```sh
-set -e
-for spec in tests/*.yml; do
-  smoke --no-color "$spec"
-done
+smoke --no-color tests/*.yml
 ```
 
-`--no-color` keeps CI logs clean. For machine-readable output, `--json` emits the full
-compare verdict as a JSON document (compare mode only).
+Each spec is reported separately and the run exits once: `0` only if every spec is clean,
+non-zero if **any** spec drifted (a clean spec never hides an earlier drift). A malformed
+spec or a runner failure (`65`/`2`) stops the run there — specs run in order and may set up
+state the next depends on, so a broken one means the rest can't be trusted. Drift never
+stops the run, so you see every spec's verdict. (Prefer a `for` loop only if you need each
+spec in its own process.)
+
+`--no-color` keeps CI logs clean. For machine-readable output, `--json` emits one compact
+JSON object per spec (a JSONL stream for multiple specs; one object for a single spec),
+compare mode only.
 
 Driving SMOKE from an agent or a TDD loop has its own playbook — see
 [`using-smoke-in-tdd`](https://github.com/chakrit/smoke/blob/main/docs/spec/using-smoke-in-tdd.md).

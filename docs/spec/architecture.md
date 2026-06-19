@@ -223,6 +223,14 @@ re-running, refusing (exit `65`) when the spec's content hash no longer matches
 the one recorded at run time. See
 [`../decisions/2026-06-18-run-cache-and-commit-last.md`](../decisions/2026-06-18-run-cache-and-commit-last.md).
 
+A run takes one or more specs. `main` is the **single exit authority**:
+`processFile` returns `(status, error)` per spec, `main` folds the verdicts
+(`status.Merge` — `UNCHANGED` is the identity, so a clean spec never masks an
+earlier drift) and fail-fasts on a fatal (typed in `outcome.go`: `dataError` →
+`65`, else operational → `2`). Each spec reports separately; `--json` is one
+compact object per spec (JSONL). See
+[`exit-codes.md`](exit-codes.md) §"Multiple specs".
+
 Exit codes (`internal/p` constants `Exit{Unchanged,Changed,Trouble,New,Usage,DataErr}`)
 and the output vocabulary are the frozen contract in
 [`exit-codes.md`](exit-codes.md).

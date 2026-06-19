@@ -83,6 +83,41 @@ JSON field).
 Frozen on the same terms as the codes: a new state gets a new word *and* a new code, never
 a re-used one.
 
+## Amendment — 2026-06-19: the contract is per-run, not per-spec
+
+The original contract said "SMOKE exits with one of six codes" but only ever
+defined them for a *single* spec. `smoke a b c` accepts many specs, and compare
+mode called `os.Exit` after the first — so specs 2..N were silently skipped and
+their drift never reached the exit code. The contract was unsound for the
+supported multi-spec shape; it should have been pinned down when the codes were
+first frozen. This amendment closes that gap.
+
+**Aggregation.** A run over many specs processes every spec in order and exits
+once. Verdicts fold with `UNCHANGED` as the identity: a clean spec never lowers
+the aggregate, so drift in any spec keeps the run non-zero (no masking). Among
+non-clean specs the last one's code wins — the precise `1`-vs-`3` choice is
+deliberately *not* contractual; only "non-zero if any spec drifted" is. A severity
+ranking was considered and rejected as over-definition for a distinction no
+consumer needs (CI branches on zero/non-zero; an agent reads the per-spec
+reports).
+
+**Fail-fast on fatals.** A malformed spec (`65`) or operational error (`2`)
+aborts the run at that spec; later specs do not run. Specs are an ordered
+sequence with cross-spec side effects (setups/teardowns are modelled as test
+ordering, the same load-bearing-order principle as within a spec), so a broken
+spec means the remaining chain can't be trusted. Drift never fail-fasts — the run
+completed cleanly, so every spec is reported.
+
+**Reporting.** Per-spec results report separately (one console section / one
+compact JSON object per spec). `--json` is therefore a JSONL stream for multi-spec
+and one object for single-spec — no wrapping envelope, so single-spec consumers
+are unaffected.
+
+**Structure.** The fix made `main` the single exit authority: `processFile`
+returns `(status, error)` and the scattered `os.Exit`/`p.DataErr` calls became
+typed returns (`dataError` → 65, else 2). The codes live in exactly one place now,
+which is what made the per-spec-vs-per-run gap visible in the first place.
+
 ## Rationale
 
 SMOKE is conceptually a `diff` between observed output and a committed golden, so the
