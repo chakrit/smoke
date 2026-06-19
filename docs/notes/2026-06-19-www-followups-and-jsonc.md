@@ -36,19 +36,16 @@ All green: `go test ./...`, `go vet`, `./test.sh` (UNCHANGED, exit 0). Docs site
   small). **Trailing commas deliberately out of scope** — that's structural editing, not
   stripping; revisit if someone trips on it.
 
-## Findings / follow-ups (need a human; not bugs in landed code)
+## Findings (resolved)
 
-- **Partial-commit of a *brand-new* test mis-orders the lock.** `compareTests` is an
-  order-sensitive LCS diff (`gendiff`, keyed on `ID()`), and `Merge` appends genuinely-new
-  tests to the lock end (documented: "append in overlay order"). In a *partial* commit the
-  overlay is only the filtered subset, so Merge structurally can't know a new test's spec
-  position → it lands at the end → the next full run reports CHANGED purely on ordering
-  (identical content). **Not a bug:** partial commit is for re-blessing *existing* drift; a
-  **full commit** is correct for adding a test (what I did for the JSONC self-test).
-  Possible polish (design call): warn when a partial commit introduces a new test, or have the
-  live commit path (which *does* have full run order) insert in order rather than append.
-- **ace-school export-path amendment** still pending from the prior session (skill lives
-  outside the project tree → can't touch unattended).
+- **Partial-commit of a brand-new test mis-orders the lock — working as intended.**
+  `compareTests` is an order-sensitive LCS diff (`gendiff`, keyed on `ID()`); `Merge`
+  appends genuinely-new tests to the lock end, and in a partial commit the filtered overlay
+  can't know a new test's spec position. Confirmed by the user: **test order is load-bearing**
+  — tests are not isolated; setups and teardowns are modelled via sibling ordering — so the
+  order-sensitivity is correct by design. Adding a test is a **full commit**; partial commit
+  is for re-blessing existing drift. No code change. Captured in
+  `docs/spec/architecture.md` §"Compare and commit".
 
 ## Open decisions for the human
 

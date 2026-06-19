@@ -185,6 +185,15 @@ no-lock (`NEW`) path routes through the same reporter. Commit mode writes the
 lock to a temp file and atomically renames into place, so a crash mid-write
 never corrupts an existing lock.
 
+The diff is **order-sensitive by design**. Tests are not isolated: order is
+load-bearing — setups and teardowns are modelled as the ordering of sibling
+tests, and a run executes them top-to-bottom. So `compareTests` is an LCS
+sequence diff (`gendiff`) keyed on identity, not a set match; a reordered or
+out-of-place test surfaces as a real change. One consequence: a *partial* commit
+of a brand-new test appends it to the lock end (the filtered overlay can't know
+its spec position), which then reads as drift on the next full run. Add new tests
+with a full commit; reserve partial commit for re-blessing existing ones.
+
 `--include` / `--exclude` filter by test name at both ends (the live test list
 and the loaded lock), so a partial run compares only the named subset. A partial
 **commit** is no longer refused: when a filter is active, the observed subset is
