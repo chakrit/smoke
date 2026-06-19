@@ -1,4 +1,4 @@
-![](https://raw.githubusercontent.com/chakrit/smoke/master/smoke.jpg)
+![](https://raw.githubusercontent.com/chakrit/smoke/main/smoke.jpg)
 
 :warning: *WARNING:* :warning: Smoking is seriously bad for your health. Be [smoke-free][1].
 

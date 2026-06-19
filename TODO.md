@@ -28,7 +28,7 @@ see git history and `docs/notes/` session logs for the detail.
   blank to spaces (newlines kept) so `json.Decoder` error offsets stay accurate; markers
   inside string literals are preserved. Comments only — trailing commas deliberately left
   unsupported (structural editing, not stripping; revisit if someone trips on it). See
-  `docs/spec/architecture.md` §"Format dispatch" and the guide's Advanced section.
+  `docs/spec/architecture.md` §"Input parsing and the CUE seam" and the guide's Advanced section.
 
 ## Docs site (`www/`)
 

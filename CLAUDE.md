@@ -13,24 +13,23 @@ when ready. Run `ace config` or `ace paths` to debug configuration issues.
 
 SMOKE — a Go CLI for snapshot / golden-file smoke testing of arbitrary shell
 commands. Capture a command's observable output once, lock it into a
-`*.lock.yml`, and later runs go GREEN when output matches and RED when it
-drifts. Not a replacement for proper tests; a fast drift detector.
+`*.lock.yml`, and later runs report UNCHANGED when output matches and CHANGED when
+it drifts. Not a replacement for proper tests; a fast drift detector.
 
 ## Repo layout
 
 | Path           | Role                                                                       |
 | -------------- | -------------------------------------------------------------------------- |
-| `main.go`      | pflag CLI surface (`--init/--list/--print/--commit/--commit-last/--show-expected/--json`).|
+| `main.go`      | pflag CLI surface (`--init/--list/--print/--commit/--show-expected/--json`).|
 | `process.go`   | Per-file orchestration: load → filter → run → (print \| commit \| compare).|
 | `reporter.go`  | `reporter`: `status` enum + console impl; JSON in `report_json.go`.         |
 | `engine/`      | Runner, `Config`, `Test`/`*Result` types, `RunHooks`.                      |
 | `checks/`      | Pluggable observations: `exitcode`, `stdout`, `stderr`, file globs.        |
 | `testspecs/`   | Spec loader for `tests.yml` / `.cue` (recursively nested test tree).       |
-| `resultspecs/` | Lock-file format + diff/compare engine + identity merge.                    |
-| `runcache/`    | Per-spec run snapshot (provenance-stamped) backing `--commit-last`.          |
+| `resultspecs/` | Lock-file format + diff/compare engine (name-keyed, order-sensitive).       |
 | `internal/p`   | Console printing/coloring.                                                 |
 | `test/`        | Real self-test suite (`tests.yml`); `test.sh` globs real suites here.       |
-| `test/testdata/`| Fixtures the suite drives (intentionally RED/NEW/malformed) — never run alone.|
+| `test/testdata/`| Fixtures the suite drives (intentionally CHANGED/NEW/malformed) — never run alone.|
 
 Key idioms: the YAML root *is* a "root test"; `tests:` nests arbitrarily and
 subtests inherit parent config/checks/commands. Commands are piped to

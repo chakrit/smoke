@@ -1,8 +1,8 @@
 # SMOKE — the human guide
 
 SMOKE is a CLI for **snapshot smoke-testing of shell commands**. You capture a command's
-observable output once, lock it into a `*.lock.yml`, and every later run goes **green**
-when the output still matches and **red** when it drifts.
+observable output once, lock it into a `*.lock.yml`, and every later run reports
+**UNCHANGED** when the output still matches and **CHANGED** when it drifts.
 
 It rests on one assumption: *code that produces the same observably-correct output exhibits
 the same correct behaviour.* That is not true 100% of the time — but it gets you a long way
@@ -95,10 +95,6 @@ Inheritance rules, briefly:
 
 Commands are piped to `interpreter -s` over **stdin** rather than parsed as argv, so quoting
 and shell features behave exactly as they would in a real shell.
-
-> Test names are identities. Two tests that flatten to the same name (same `name:` under
-> the same parent) are rejected at load — SMOKE can't tell them apart when merging a lock,
-> so it refuses the spec rather than silently mangle it.
 
 ## The lifecycle: NEW, UNCHANGED, CHANGED
 
