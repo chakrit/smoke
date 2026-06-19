@@ -15,6 +15,10 @@ if [ ! -d node_modules ]; then
   npm install
 fi
 
+# Parcel doesn't clean dist/ between builds, so stale hash-named assets pile up
+# and ship to gh-pages. Start from empty so the output is exactly this build.
+rm -rf dist
+
 npm run build
 
 echo
