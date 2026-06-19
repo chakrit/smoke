@@ -38,6 +38,18 @@ func (s status) ExitCode() int {
 	}
 }
 
+// Merge folds the next spec's verdict into the running aggregate for a multi-spec
+// run. UNCHANGED is the identity: a clean spec never clears an earlier drift —
+// that would re-mask it, the exact bug aggregation exists to prevent. Among
+// non-clean specs the later verdict wins (last-write-win), so the run exits
+// non-zero whenever any spec drifted. See docs/spec/exit-codes.md.
+func (s status) Merge(next status) status {
+	if next == statusUnchanged {
+		return s
+	}
+	return next
+}
+
 // A reporter renders one compare outcome. compareResults selects an
 // implementation by output format, then exits with status.ExitCode().
 type reporter interface {

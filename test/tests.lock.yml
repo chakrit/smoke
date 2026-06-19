@@ -786,18 +786,7 @@
             - "0"
         - name: stdout
           data:
-            - '{'
-            - '  "status": "unchanged",'
-            - '  "exitCode": 0,'
-            - '  "lock": "test/testdata/stabletests.lock.yml",'
-            - '  "tests": ['
-            - '    {'
-            - '      "name": "test/testdata/stabletests.yml \\ Echo",'
-            - '      "status": "matched",'
-            - '      "commands": []'
-            - '    }'
-            - '  ]'
-            - '}'
+            - '{"status":"unchanged","exitCode":0,"lock":"test/testdata/stabletests.lock.yml","tests":[{"name":"test/testdata/stabletests.yml \\ Echo","status":"matched","commands":[]}]}'
         - name: stderr
           data:
             - ""
@@ -810,76 +799,7 @@
             - "1"
         - name: stdout
           data:
-            - '{'
-            - '  "status": "changed",'
-            - '  "exitCode": 1,'
-            - '  "lock": "test/testdata/badtests.lock.yml",'
-            - '  "tests": ['
-            - '    {'
-            - '      "name": "test/testdata/badtests.yml \\ hello",'
-            - '      "status": "changed",'
-            - '      "commands": ['
-            - '        {'
-            - '          "command": "echo extraneous",'
-            - '          "status": "missing",'
-            - '          "checks": ['
-            - '            {'
-            - '              "name": "stdout",'
-            - '              "status": "missing"'
-            - '            }'
-            - '          ]'
-            - '        },'
-            - '        {'
-            - '          "command": "echo hello",'
-            - '          "status": "matched",'
-            - '          "checks": []'
-            - '        },'
-            - '        {'
-            - '          "command": "echo missing",'
-            - '          "status": "changed",'
-            - '          "checks": ['
-            - '            {'
-            - '              "name": "stdout",'
-            - '              "status": "changed"'
-            - '            }'
-            - '          ]'
-            - '        }'
-            - '      ]'
-            - '    },'
-            - '    {'
-            - '      "name": "test/testdata/badtests.yml \\ lipsum \\ Head",'
-            - '      "status": "changed",'
-            - '      "commands": ['
-            - '        {'
-            - '          "command": "head -22 test/testdata/badtests.txt | tail -9",'
-            - '          "status": "changed",'
-            - '          "checks": ['
-            - '            {'
-            - '              "name": "stdout",'
-            - '              "status": "changed"'
-            - '            }'
-            - '          ]'
-            - '        }'
-            - '      ]'
-            - '    },'
-            - '    {'
-            - '      "name": "test/testdata/badtests.yml \\ lipsum \\ Tail",'
-            - '      "status": "changed",'
-            - '      "commands": ['
-            - '        {'
-            - '          "command": "tail -22 test/testdata/badtests.txt | head -9",'
-            - '          "status": "changed",'
-            - '          "checks": ['
-            - '            {'
-            - '              "name": "stdout",'
-            - '              "status": "changed"'
-            - '            }'
-            - '          ]'
-            - '        }'
-            - '      ]'
-            - '    }'
-            - '  ]'
-            - '}'
+            - '{"status":"changed","exitCode":1,"lock":"test/testdata/badtests.lock.yml","tests":[{"name":"test/testdata/badtests.yml \\ hello","status":"changed","commands":[{"command":"echo extraneous","status":"missing","checks":[{"name":"stdout","status":"missing"}]},{"command":"echo hello","status":"matched","checks":[]},{"command":"echo missing","status":"changed","checks":[{"name":"stdout","status":"changed"}]}]},{"name":"test/testdata/badtests.yml \\ lipsum \\ Head","status":"changed","commands":[{"command":"head -22 test/testdata/badtests.txt | tail -9","status":"changed","checks":[{"name":"stdout","status":"changed"}]}]},{"name":"test/testdata/badtests.yml \\ lipsum \\ Tail","status":"changed","commands":[{"command":"tail -22 test/testdata/badtests.txt | head -9","status":"changed","checks":[{"name":"stdout","status":"changed"}]}]}]}'
         - name: stderr
           data:
             - ""
@@ -892,12 +812,7 @@
             - "3"
         - name: stdout
           data:
-            - '{'
-            - '  "status": "new",'
-            - '  "exitCode": 3,'
-            - '  "lock": "test/testdata/newtests.lock.yml",'
-            - '  "tests": []'
-            - '}'
+            - '{"status":"new","exitCode":3,"lock":"test/testdata/newtests.lock.yml","tests":[]}'
         - name: stderr
           data:
             - ""
@@ -914,6 +829,83 @@
         - name: stderr
           data:
             - --json applies to the default compare mode; cannot combine with --list/--print/--commit/--show-expected
+- name: test/tests.yml \ Behavior \ Multi-spec \ All clean
+  commands:
+    - command: ./bin/smoke --no-color test/testdata/stabletests.yml test/testdata/jsontests.json
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - UNCHANGED — output matches test/testdata/stabletests.lock.yml (drift-free, not verified correct)
+            - ""
+            - ""
+            - UNCHANGED — output matches test/testdata/jsontests.lock.yml (drift-free, not verified correct)
+        - name: stderr
+          data:
+            - ""
+- name: test/tests.yml \ Behavior \ Multi-spec \ Drift in second
+  commands:
+    - command: ./bin/smoke --no-color test/testdata/stabletests.yml test/testdata/badtests.yml
+      checks:
+        - name: exitcode
+          data:
+            - "1"
+        - name: stdout
+          data:
+            - UNCHANGED — output matches test/testdata/stabletests.lock.yml (drift-free, not verified correct)
+            - ""
+            - '    ==> test/testdata/badtests.yml \ hello'
+            - '--- --> echo extraneous'
+            - '---   > stdout'
+            - '---       extraneous'
+            - +++ --> echo missing
+            - +++   > stdout
+            - +++       missing
+            - '    ==> test/testdata/badtests.yml \ lipsum \ Head'
+            - '    --> head -22 test/testdata/badtests.txt | tail -9'
+            - '      > stdout'
+            - '---       mixtape bushwick leggings affogato portland la croix direct trade biodiesel DIY readymade'
+            - +++       fixie tousled deep v af lomo synth. Bushwick la croix ramps twee put a bird on it.
+            - '          '
+            - '          Man braid vinyl disrupt drinking vinegar cold-pressed knausgaard hashtag keytar pabst'
+            - '           ... 3 line(s) skipped ...'
+            - '          a bird on it. Ramps fanny pack humblebrag, leggings gochujang vexillologist echo park'
+            - '          live-edge kitsch meditation offal hella swag lo-fi. Air plant lo-fi green juice mumblecore'
+            - '---       fixie tousled deep v af lomo synth. Bushwick la croix ramps twee put a bird on it.'
+            - +++       mixtape bushwick leggings affogato portland la croix direct trade biodiesel DIY readymade
+            - '    ==> test/testdata/badtests.yml \ lipsum \ Tail'
+            - '    --> tail -22 test/testdata/badtests.txt | head -9'
+            - '      > stdout'
+            - '---       Biodiesel brooklyn pug whatever shaman semiotics bespoke kinfolk, synth blog. Pabst cloud'
+            - +++       wolf moon vice aesthetic hot chicken banjo gochujang succulents marfa vape mlkshk forage
+            - '          snackwave. Squid vaporware affogato, you probably haven''t heard of them snackwave raclette'
+            - '          before they sold out roof party normcore hammock. Mustache meh man braid, tbh pug raclette'
+            - '           ... 3 line(s) skipped ...'
+            - '          keffiyeh blue bottle gochujang dreamcatcher.'
+            - '          '
+            - '---       wolf moon vice aesthetic hot chicken banjo gochujang succulents marfa vape mlkshk forage'
+            - +++       Biodiesel brooklyn pug whatever shaman semiotics bespoke kinfolk, synth blog. Pabst cloud
+            - ""
+            - CHANGED — output drifted from test/testdata/badtests.lock.yml; review and re-commit if intended
+        - name: stderr
+          data:
+            - ""
+- name: test/tests.yml \ Behavior \ Multi-spec \ Fail-fast on malformed
+  commands:
+    - command: ./bin/smoke --no-color test/testdata/stabletests.yml test/testdata/malformedtests.yml
+      checks:
+        - name: exitcode
+          data:
+            - "65"
+        - name: stdout
+          data:
+            - UNCHANGED — output matches test/testdata/stabletests.lock.yml (drift-free, not verified correct)
+        - name: stderr
+          data:
+            - 'ERR test/testdata/malformedtests.yml: yaml: unmarshal errors:'
+            - '  line 3: cannot unmarshal !!seq into testspecs.TestSpec'
 - name: test/tests.yml \ Behavior \ Init \ Writes named file
   commands:
     - command: rm -f test/testdata/init-scratch.yml && ./bin/smoke --no-color --init=test/testdata/init-scratch.yml && rm test/testdata/init-scratch.yml

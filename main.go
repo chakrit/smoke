@@ -133,11 +133,25 @@ func main() {
 		return
 	}
 
-	defer p.Bye()
-
+	// Single exit authority: every spec is processed (drift in spec N never hides
+	// behind spec N-1), each verdict folds into one exit (any drift → non-zero),
+	// and a fatal (malformed spec → 65, operational → 2) fail-fasts the run
+	// because each spec may carry side effects the next depends on. See
+	// docs/spec/exit-codes.md.
+	verdict := statusUnchanged
 	for _, filename := range filenames {
-		processFile(filename)
+		st, err := processFile(filename)
+		if err != nil {
+			if !wasReported(err) {
+				p.Error(err)
+			}
+			os.Exit(exitCode(err))
+		}
+		verdict = verdict.Merge(st)
 	}
+
+	p.Bye()
+	os.Exit(verdict.ExitCode())
 }
 
 // filtering reports whether the run is scoped to a subset of tests, which makes

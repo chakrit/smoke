@@ -152,6 +152,17 @@ tests:
           - name: Bad combo
             commands:
               - ./bin/smoke --no-color --json --list test/testdata/stabletests.yml # mode mix must exit 64
+      - name: Multi-spec
+        tests:
+          - name: All clean
+            commands:
+              - ./bin/smoke --no-color test/testdata/stabletests.yml test/testdata/jsontests.json # both UNCHANGED, exit 0
+          - name: Drift in second
+            commands:
+              - ./bin/smoke --no-color test/testdata/stabletests.yml test/testdata/badtests.yml # 2nd drifts — must NOT hide behind clean 1st, exit 1
+          - name: Fail-fast on malformed
+            commands:
+              - ./bin/smoke --no-color test/testdata/stabletests.yml test/testdata/malformedtests.yml # malformed 2nd fail-fasts, exit 65
       - name: Init
         tests:
           - name: Writes named file

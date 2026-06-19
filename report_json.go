@@ -39,6 +39,10 @@ type jsonCheck struct {
 // tree Compare produces — equal subtrees stay collapsed. Output is
 // struct/slice-only (no maps), so field order is deterministic and the lock
 // stays stable.
+//
+// One compact object per line (JSONL): a single spec emits one object, a
+// multi-spec run emits one per spec as a stream. Each object carries its own
+// per-spec exitCode; the process exit is the aggregate (see main).
 type jsonReporter struct {
 	w io.Writer
 }
@@ -51,7 +55,7 @@ func (r jsonReporter) Report(lock string, st status, edits []resultspecs.TestEdi
 		Tests:    jsonTests(edits),
 	}
 
-	encoded, err := json.MarshalIndent(report, "", "  ")
+	encoded, err := json.Marshal(report)
 	if err != nil {
 		return err
 	}

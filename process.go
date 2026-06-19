@@ -14,24 +14,28 @@ import (
 	"github.com/chakrit/smoke/testspecs"
 )
 
-func processFile(filename string) {
+// processFile runs one spec and returns its compare verdict plus any fatal.
+// main is the single exit authority: it fail-fasts on a fatal (dataError → 65,
+// any other error → 2) and otherwise folds the verdict into the aggregate exit.
+// Non-compare modes (list/print/commit/show) report at the site and return
+// statusUnchanged on success. Diagnostics surface here or live via the run
+// hooks; main maps the error to its code without re-printing.
+func processFile(filename string) (status, error) {
 	if shouldShowExpected {
-		showResults(filename)
-		return
+		return statusUnchanged, showResults(filename)
 	}
 	if shouldCommitLast {
-		commitLast(filename)
-		return
+		return statusUnchanged, commitLast(filename)
 	}
 
 	content, err := os.ReadFile(filename)
 	if err != nil {
-		p.Exit(fmt.Errorf(filename+": %w", err))
+		return statusUnchanged, fmt.Errorf(filename+": %w", err)
 	}
 
 	tests, err := testspecs.Load(bytes.NewReader(content), filename)
 	if err != nil {
-		p.DataErr(fmt.Errorf(filename+": %w", err))
+		return statusUnchanged, dataErr(fmt.Errorf(filename+": %w", err))
 	}
 
 	if len(includes) > 0 {
@@ -47,22 +51,26 @@ func processFile(filename string) {
 
 	if shouldList {
 		listTests(tests)
-		return
+		return statusUnchanged, nil
 	}
 
 	p.Action("Running Tests")
-	results := runTests(tests)
+	results, err := runTests(tests)
+	if err != nil {
+		return statusUnchanged, err
+	}
 	saveRunCache(filename, content, results)
 
-	if shouldPrint {
+	switch {
+	case shouldPrint:
 		p.Action("Printing Result")
-		printResults(results)
-	} else if shouldCommit {
+		return statusUnchanged, printResults(results)
+	case shouldCommit:
 		p.Action("Writing Lock File")
-		commitResults(filename, results)
-	} else {
+		return statusUnchanged, commitResults(filename, results)
+	default:
 		p.Action("Comparing Lock File")
-		compareResults(filename, results)
+		return compareResults(filename, results)
 	}
 }
 
@@ -79,20 +87,19 @@ func listTests(tests []*engine.Test) {
 	}
 }
 
-func showResults(filename string) {
+func showResults(filename string) error {
 	target := lockFilename(filename)
 	p.FileAccess(target)
 
 	file, err := os.Open(target)
 	if err != nil {
-		p.Exit(err)
-		return
+		return fmt.Errorf(target+": %w", err)
 	}
 	defer file.Close()
 
 	results, err := resultspecs.Load(file)
 	if err != nil {
-		p.DataErr(fmt.Errorf(target+": %w", err))
+		return dataErr(fmt.Errorf(target+": %w", err))
 	}
 
 	if len(includes) > 0 {
@@ -118,139 +125,138 @@ func showResults(filename string) {
 			}
 		}
 	}
+	return nil
 }
 
-func runTests(tests []*engine.Test) []engine.TestResult {
-	var (
-		failed = false
-		hooks  = Hooks{
-			WrapErr: func(t *engine.Test, err error) error {
-				return fmt.Errorf(t.Name+": %w", err)
-			},
-		}
+// runTests runs each test in order, stopping at the first failure. The run hooks
+// already surface the error live, so it comes back wrapped in reported{} — main
+// fail-fasts (exit 2) without printing it again.
+func runTests(tests []*engine.Test) ([]engine.TestResult, error) {
+	hooks := Hooks{
+		WrapErr: func(t *engine.Test, err error) error {
+			return fmt.Errorf(t.Name+": %w", err)
+		},
+	}
+	run := engine.DefaultRunner{Hooks: hooks}
 
-		run     engine.Runner = engine.DefaultRunner{Hooks: hooks}
-		results []engine.TestResult
-	)
-
+	var results []engine.TestResult
 	for _, test := range tests {
-		if result, err := run.Test(test); err != nil {
-			// error already printed by Hooks{}
-			failed = true
-			break
-		} else {
-			results = append(results, result)
+		result, err := run.Test(test)
+		if err != nil {
+			return nil, reportedErr(err)
 		}
+		results = append(results, result)
 	}
-
-	if failed {
-		// TODO: Also fail, if testresult.any(:failed?)
-		os.Exit(p.ExitTrouble)
-		return nil
-	}
-
-	return results
+	return results, nil
 }
 
-func printResults(results []engine.TestResult) {
+func printResults(results []engine.TestResult) error {
 	specs, err := resultspecs.FromTestResults(results)
 	if err != nil {
-		p.Exit(fmt.Errorf("print to stdout: %w", err))
+		return fmt.Errorf("print to stdout: %w", err)
 	}
 	if err := resultspecs.Save(os.Stdout, specs); err != nil {
-		p.Exit(fmt.Errorf("print to stdout: %w", err))
+		return fmt.Errorf("print to stdout: %w", err)
 	}
 	p.Pass("Print")
+	return nil
 }
 
-func commitResults(filename string, results []engine.TestResult) {
+func commitResults(filename string, results []engine.TestResult) error {
 	target := lockFilename(filename)
 
 	specs, err := resultspecs.FromTestResults(results)
 	if err != nil {
-		p.Exit(fmt.Errorf("commit: %w", err))
+		return fmt.Errorf("commit: %w", err)
 	}
 
 	// A filtered run observed only a subset, so merge it onto the existing lock
 	// to keep the golden for tests it never ran. An unfiltered run is the whole
 	// truth and replaces the lock wholesale, pruning tests dropped from the spec.
 	if filtering() {
-		specs = resultspecs.Merge(loadLockSpecs(target), specs)
+		base, err := loadLockSpecs(target)
+		if err != nil {
+			return err
+		}
+		specs = resultspecs.Merge(base, specs)
 	}
 
-	writeLock(target, specs)
+	return writeLock(target, specs)
 }
 
 // commitLast commits the previous run from cache without re-running, after
 // verifying the cached run still matches the current spec — SMOKE never blesses
 // a golden for a spec that has changed since it was observed.
-func commitLast(filename string) {
+func commitLast(filename string) error {
 	content, err := os.ReadFile(filename)
 	if err != nil {
-		p.Exit(fmt.Errorf(filename+": %w", err))
+		return fmt.Errorf(filename+": %w", err)
 	}
 
 	snap, ok, err := runcache.Load(filename)
 	if err != nil {
-		p.Exit(fmt.Errorf("commit-last: %w", err))
+		return fmt.Errorf("commit-last: %w", err)
 	}
 	if !ok {
-		p.DataErr(fmt.Errorf("commit-last: no cached run for %s; run it once first", filename))
+		return dataErr(fmt.Errorf("commit-last: no cached run for %s; run it once first", filename))
 	}
 	if snap.SpecHash != runcache.HashSpec(content) {
-		p.DataErr(fmt.Errorf("commit-last: %s changed since the last run; re-run before committing", filename))
+		return dataErr(fmt.Errorf("commit-last: %s changed since the last run; re-run before committing", filename))
 	}
 
 	target := lockFilename(filename)
 	specs := snap.Results
 	if snap.Partial {
-		specs = resultspecs.Merge(loadLockSpecs(target), specs)
+		base, err := loadLockSpecs(target)
+		if err != nil {
+			return err
+		}
+		specs = resultspecs.Merge(base, specs)
 	}
-	writeLock(target, specs)
+	return writeLock(target, specs)
 }
 
 // loadLockSpecs reads an existing lock, returning nil when none exists yet (a
 // first partial commit has no prior golden to preserve).
-func loadLockSpecs(target string) []resultspecs.TestResultSpec {
+func loadLockSpecs(target string) ([]resultspecs.TestResultSpec, error) {
 	file, err := os.Open(target)
 	if os.IsNotExist(err) {
-		return nil
+		return nil, nil
 	}
 	if err != nil {
-		p.Exit(fmt.Errorf(target+": %w", err))
-		return nil
+		return nil, fmt.Errorf(target+": %w", err)
 	}
 	defer file.Close()
 
 	specs, err := resultspecs.Load(file)
 	if err != nil {
-		p.DataErr(fmt.Errorf(target+": %w", err))
+		return nil, dataErr(fmt.Errorf(target+": %w", err))
 	}
-	return specs
+	return specs, nil
 }
 
 // writeLock atomically replaces the lock: write a temp file, then rename, so a
 // crash mid-write never corrupts an existing lock.
-func writeLock(target string, specs []resultspecs.TestResultSpec) {
+func writeLock(target string, specs []resultspecs.TestResultSpec) error {
 	tmpfile, err := os.CreateTemp("", "smoke-*.yml")
 	if err != nil {
-		p.Exit(fmt.Errorf("commit: %w", err))
+		return fmt.Errorf("commit: %w", err)
 	}
 	defer tmpfile.Close()
 
 	p.FileAccess(tmpfile.Name())
-	if err = resultspecs.Save(tmpfile, specs); err != nil {
-		p.Exit(fmt.Errorf("commit "+tmpfile.Name()+": %w", err))
+	if err := resultspecs.Save(tmpfile, specs); err != nil {
+		return fmt.Errorf("commit "+tmpfile.Name()+": %w", err)
 	}
 
 	p.FileAccess(target)
 	tmpfile.Close()
 
-	if err = os.Rename(tmpfile.Name(), target); err != nil {
-		p.Exit(fmt.Errorf("commit "+target+": %w", err))
-	} else {
-		p.Pass("Commit " + target)
+	if err := os.Rename(tmpfile.Name(), target); err != nil {
+		return fmt.Errorf("commit "+target+": %w", err)
 	}
+	p.Pass("Commit " + target)
+	return nil
 }
 
 // saveRunCache persists the run so a later --commit-last can bless it without
@@ -268,32 +274,31 @@ func saveRunCache(filename string, content []byte, results []engine.TestResult) 
 	})
 }
 
-func compareResults(filename string, results []engine.TestResult) {
+func compareResults(filename string, results []engine.TestResult) (status, error) {
 	lockname := lockFilename(filename)
 
 	var out reporter = consoleReporter{}
 	if shouldJSON {
 		out = jsonReporter{w: os.Stdout}
 	}
-	report := func(st status, edits []resultspecs.TestEdit) {
+	report := func(st status, edits []resultspecs.TestEdit) (status, error) {
 		if err := out.Report(lockname, st, edits); err != nil {
-			p.Exit(fmt.Errorf("report: %w", err))
+			return st, fmt.Errorf("report: %w", err)
 		}
-		os.Exit(st.ExitCode())
+		return st, nil
 	}
 
 	lockfile, err := os.Open(lockname)
 	if os.IsNotExist(err) {
-		report(statusNew, nil)
+		return report(statusNew, nil)
 	} else if err != nil {
-		p.Exit(fmt.Errorf(lockname+": %w", err))
-	} else {
-		defer lockfile.Close()
+		return statusUnchanged, fmt.Errorf(lockname+": %w", err)
 	}
+	defer lockfile.Close()
 
 	lockspec, err := resultspecs.Load(lockfile)
 	if err != nil {
-		p.DataErr(fmt.Errorf(lockname+": %w", err))
+		return statusUnchanged, dataErr(fmt.Errorf(lockname+": %w", err))
 	}
 
 	// if includes/excludes are set, only compare those, otherwise the excluded/included
@@ -311,19 +316,19 @@ func compareResults(filename string, results []engine.TestResult) {
 
 	newspecs, err := resultspecs.FromTestResults(results)
 	if err != nil {
-		p.Exit(fmt.Errorf("compare: %w", err))
+		return statusUnchanged, fmt.Errorf("compare: %w", err)
 	}
 
 	edits, differs, err := resultspecs.Compare(lockspec, newspecs)
 	if err != nil {
-		p.Exit(fmt.Errorf("compare: %w", err))
+		return statusUnchanged, fmt.Errorf("compare: %w", err)
 	}
 
 	st := statusUnchanged
 	if differs {
 		st = statusChanged
 	}
-	report(st, edits)
+	return report(st, edits)
 }
 
 func lockFilename(filename string) string {
