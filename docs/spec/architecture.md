@@ -63,8 +63,7 @@ are a captured artifact we never need to round-trip back through CUE.
 | `testspecs/`   | Input parsing (YAML + CUE), inheritance resolution, tree flattening|
 | `engine/`      | `Runner`, `Test`/`*Result` types, `Config`, `RunHooks`             |
 | `checks/`      | Pluggable observations + the string→check parser                   |
-| `resultspecs/` | Lock serialization, the structural diff engine, identity merge     |
-| `runcache/`    | Per-spec run snapshot (provenance-stamped) for `--commit-last`      |
+| `resultspecs/` | Lock serialization and the structural (name-keyed) diff engine     |
 | `internal/p`   | Console printing, coloring, exit-code constants                     |
 
 `engine` and `resultspecs` have no knowledge of input format — the CUE/YAML split
@@ -129,17 +128,11 @@ config is seeded from `engine.DefaultConfig`. `TestSpec.Tests()` then flattens:
 any node with commands becomes one `engine.Test`; children recurse. The YAML root
 *is itself* a test — a top-level `commands:` runs.
 
-Flattening is "parse, don't validate" in two passes (`testspecs/test_ir.go`). A
-**total parse** (`parse`, never fails) walks the resolved tree depth-first into a
-flat IR (`[]testIR`); each failable field — an unknown check name, a bad timeout
-duration — rides along as a value-or-error `parsed[T]` carrier instead of
-aborting, and a command-less leaf becomes a `leafError` node. A fold-based
-`validate` then walks the IR collecting *every* error across the whole tree in
-spec order and returns them aggregated via `errors.Join` — an author with three
-mistakes sees all three in one run, not fix-rerun-fix-rerun. First-error vs
-all-errors is a one-line change in the fold. The aggregated error flows out
-through `testspecs.Load` and routes to exit `65` like any other malformed-spec
-failure.
+`Tests()` walks the resolved tree depth-first: a node with commands becomes one
+`engine.Test`, a command-less leaf is a malformed-spec error, and each failable
+field (an unknown check name, a bad timeout duration) is checked as it's visited.
+The first error stops the walk and flows out through `testspecs.Load`, routing to
+exit `65` like any other malformed-spec failure.
 
 ## Checks
 
@@ -188,21 +181,14 @@ never corrupts an existing lock.
 The diff is **order-sensitive by design**. Tests are not isolated: order is
 load-bearing — setups and teardowns are modelled as the ordering of sibling
 tests, and a run executes them top-to-bottom. So `compareTests` is an LCS
-sequence diff (`gendiff`) keyed on identity, not a set match; a reordered or
-out-of-place test surfaces as a real change. One consequence: a *partial* commit
-of a brand-new test appends it to the lock end (the filtered overlay can't know
-its spec position), which then reads as drift on the next full run. Add new tests
-with a full commit; reserve partial commit for re-blessing existing ones.
+sequence diff (`gendiff`) keyed on the test name; a reordered or out-of-place
+test surfaces as a real change, not a false match.
 
 `--include` / `--exclude` filter by test name at both ends (the live test list
-and the loaded lock), so a partial run compares only the named subset. A partial
-**commit** is no longer refused: when a filter is active, the observed subset is
-merged onto the existing lock by test identity (`resultspecs.Merge`) — matched
-entries are replaced, unmatched entries preserved — so the tests that didn't run
-keep their golden. An unfiltered commit is the whole truth and still overwrites
-the lock wholesale, pruning tests dropped from the spec. The merge keys on
-`engine.TestID` (derived from the flattened name); duplicate identities are
-rejected at load, so the key is unambiguous.
+and the loaded lock), so a partial run compares only the named subset. A
+**commit** always writes the whole lock, so combining it with a filter is refused
+(exit `64`) — merging a partial run would risk dropping the tests it never
+observed. Filter to run a subset; commit the whole spec.
 
 ## Modes and exit codes
 
@@ -210,18 +196,11 @@ rejected at load, so the key is unambiguous.
 | ------------------ | ----------------- | ----------------------------------------------- |
 | Compare *(default)*| —                 | diff vs lock → `0`/`1`/`3`                       |
 | Compare (JSON)     | `--json`          | same diff as a machine-readable document        |
-| Commit             | `--commit`/`-c`   | run, then write the lock (merge if filtered)    |
-| Commit last        | `--commit-last`   | write the lock from the cached run, no re-run   |
+| Commit             | `--commit`/`-c`   | run, then write the whole lock (no filter)      |
 | Print              | `--print`/`-p`    | result YAML to stdout (scripting)               |
 | List               | `--list`/`-l`     | discovered test names (`-vv` adds commands)     |
 | Show expected      | `--show-expected` | replay the lock without running                 |
 | Init               | `--init[=path]`   | scaffold a starter spec (no-clobber)            |
-
-Every run persists a provenance-stamped snapshot to a per-spec slot under the
-user cache dir (`runcache`); `--commit-last` blesses that snapshot without
-re-running, refusing (exit `65`) when the spec's content hash no longer matches
-the one recorded at run time. See
-[`../decisions/2026-06-18-run-cache-and-commit-last.md`](../decisions/2026-06-18-run-cache-and-commit-last.md).
 
 A run takes one or more specs. `main` is the **single exit authority**:
 `processFile` returns `(status, error)` per spec, `main` folds the verdicts

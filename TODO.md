@@ -6,22 +6,22 @@ see git history and `docs/notes/` session logs for the detail.
 
 ## Backlog (unsorted)
 
-* [x] Allow partially committing some results but not all. **Done (2026-06-18):**
-  `engine.TestID` centralizes test identity (duplicates rejected at load); a filtered
-  `--commit` merges the observed subset onto the existing lock by identity
-  (`resultspecs.Merge`) instead of being refused, preserving unrun tests. Unfiltered
-  commit still overwrites wholesale. See `docs/spec/architecture.md` §"Compare and commit".
-* [x] Allow committing last run results (so we don't have to re-run tests to commit again).
-  **Done (2026-06-18):** each run persists a provenance-stamped snapshot (`runcache`);
-  `--commit-last` blesses it without re-running, refusing (exit 65) if the spec changed
-  since. See `docs/decisions/2026-06-18-run-cache-and-commit-last.md`.
-* [x] All-errors validation reporting — collect every spec error per load, not just the
-  first. **Done (2026-06-18):** "parse don't validate" landed in `testspecs/test_ir.go`.
-  `parse` is total (value-or-error `parsed[T]` carriers, command-less leaves become
-  `leafError`); `validate` folds the flat IR collecting every error in depth-first spec
-  order via `errors.Join`, flowing out through `testspecs.Load` → exit `65`. First-error
-  vs all-errors is a one-line `continue`→`break` change in the fold. `Tests()` is now just
-  `validate(parse(t))`. See `docs/spec/architecture.md` §"Inheritance resolution".
+> **Reverted 2026-06-19.** The partial-commit / `--commit-last` / `engine.TestID` /
+> "parse-don't-validate" IR work (all 2026-06-18) was ripped out as over-engineering — see
+> `docs/notes/2026-06-19-revert-loader-overbuild.md`. The items below are the *reopened*
+> goals, to be redone simply on the restored baseline if/when actually needed.
+
+* [ ] **Test identity as a real field (do first).** If identity is needed beyond the display
+  name, bake `ID` as a field assigned once where the flattened name is built, carried
+  `engine.Test` → `TestResult` → `TestResultSpec` — not a `TestID(name)` getter. Until then,
+  compare matches by `Name` (current, restored). This is the foundation for any merge work.
+* [ ] **Partial commit** — let a filtered `--commit` merge onto the lock instead of being
+  refused. Needs identity-keyed merge that *inserts new tests in spec order* (compare is
+  order-sensitive). Blocked on the identity-field work above. Decide if it's worth it first.
+* [ ] **Commit last run** — bless the previous run without re-running. Was a whole `runcache`
+  package; only build it back if the re-run cost is actually a problem in practice.
+* [ ] **All-errors validation** — collect every spec error per load, not just the first.
+  Do it as a plain error-accumulating tree walk in `Tests()` (no IR), if anyone asks for it.
 * [x] JSONC support. **Done (2026-06-18):** `.jsonc` → `jsoncLoader`, which runs a
   hand-rolled string-aware `stripJSONComments` (no new dependency) then decodes through the
   same `decodeJSON` path, inheriting `DisallowUnknownFields` fail-closed behavior. Comments

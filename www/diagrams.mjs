@@ -58,29 +58,3 @@ export const lifecycleSvg = `<figure class="diagram">
 </svg>
 </figure>`;
 
-function row(yc, leftFill, leftStroke, rightFill, rightStroke, leftText, rightText, leftLabel, rightLabel, arrowColor, arrowLabel) {
-  const top = yc - 17;
-  return `
-  ${box(46, top, 150, 34, leftFill, leftStroke)}
-  ${box(484, top, 150, 34, rightFill, rightStroke)}
-  <text x="121" y="${yc + 4}" text-anchor="middle" font-size="14" font-weight="500" fill="${leftText}">${leftLabel}</text>
-  <text x="559" y="${yc + 4}" text-anchor="middle" font-size="14" font-weight="500" fill="${rightText}">${rightLabel}</text>
-  <line x1="200" y1="${yc}" x2="480" y2="${yc}" stroke="${arrowColor}" stroke-width="1" marker-end="url(#arrow)"/>
-  <text x="340" y="${yc - 8}" text-anchor="middle" font-size="12" fill="${arrowColor}">${arrowLabel}</text>`;
-}
-
-export const mergeSvg = `<figure class="diagram">
-<svg width="100%" viewBox="0 0 680 210" role="img"
-  aria-label="Partial commit merges only the filtered test onto the lock: tests A and C are kept, test B is replaced by its new output."
-  style="${FONT}">
-  ${ARROW}
-  <text x="340" y="24" text-anchor="middle" font-size="12" fill="${C.teal.text}"
-    style="font-family: ui-monospace, monospace">smoke --include B --commit</text>
-  <text x="121" y="50" text-anchor="middle" font-size="12" fill="${LABEL}">existing lock</text>
-  <text x="559" y="50" text-anchor="middle" font-size="12" fill="${LABEL}">after the commit</text>
-
-  ${row(82, C.gray.fill, C.gray.stroke, C.gray.fill, C.gray.stroke, C.gray.text, C.gray.text, 'A', 'A', C.gray.stroke, 'kept')}
-  ${row(124, C.gray.fill, C.gray.stroke, C.teal.fill, C.teal.stroke, C.gray.text, C.teal.text, 'B', 'B′', C.teal.stroke, 'replaced')}
-  ${row(166, C.gray.fill, C.gray.stroke, C.gray.fill, C.gray.stroke, C.gray.text, C.gray.text, 'C', 'C', C.gray.stroke, 'kept')}
-</svg>
-</figure>`;

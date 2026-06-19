@@ -123,7 +123,7 @@ lock, so a test you delete from the spec disappears from the lock too.
 Commit mode writes to a temp file and atomically renames it into place — a crash mid-write
 never corrupts an existing lock.
 
-## Partial commits and `--commit-last`
+## Filtering which tests run
 
 Two flags narrow a run to a subset of tests by name (substring match):
 
@@ -132,44 +132,9 @@ smoke --include Greeting tests.yml     # only tests whose name contains "Greetin
 smoke --exclude Slow tests.yml         # everything except names containing "Slow"
 ```
 
-### Partial commit
-
-You can **commit a filtered subset**. When a filter is active, SMOKE merges the observed
-subset onto the existing lock by test identity — matched tests are replaced, everything
-else is preserved:
-
-```sh
-# B drifted and you've confirmed the new output is correct.
-# Re-bless only B without touching A or C:
-smoke --include B --commit tests.yml
-```
-
-<!--DIAGRAM:merge-->
-
-An **unfiltered** commit still overwrites the whole lock (and prunes deleted tests). The
-rule of thumb: *filtered commit merges, full commit replaces.*
-
-### `--commit-last`
-
-Every run quietly caches its results. `--commit-last` blesses that cached run **without
-re-running the commands** — handy when a run was expensive and you've already eyeballed the
-drift:
-
-```sh
-smoke tests.yml                # run, see CHANGED, eyeball it
-smoke --commit-last tests.yml  # commit what you just saw, no re-run
-```
-
-It is **provenance-guarded**: the cache records a hash of the spec it observed, and
-`--commit-last` refuses (exit `65`) if the spec changed since:
-
-```
-commit-last: tests.yml changed since the last run; re-run before committing
-```
-
-So you can never accidentally bless a golden for a spec you've since edited. The cached run
-also remembers whether it was filtered, so `--commit-last` merges a partial run and
-overwrites a full one — same semantics as a live commit.
+A commit writes the **whole** lock, so committing a filtered run would prune the tests it
+never observed. SMOKE refuses that — `--commit` together with `--include`/`--exclude` is a
+usage error (exit `64`). Filter to *run* a subset; commit the whole spec.
 
 ## Exit codes
 
@@ -318,8 +283,7 @@ can annotate inline.
 
 | Flag               | Short | Effect                                                     |
 | ------------------ | ----- | ---------------------------------------------------------- |
-| `--commit`         | `-c`  | Run, then write the lock (merges if filtered).             |
-| `--commit-last`    |       | Commit the cached previous run without re-running.         |
+| `--commit`         | `-c`  | Run, then write the whole lock (refused with a filter).    |
 | `--print`          | `-p`  | Print result YAML to stdout (for scripting).               |
 | `--list`           | `-l`  | List discovered test names (`-vv` adds commands).          |
 | `--show-expected`  | `-s`  | Replay the lock without running anything.                  |

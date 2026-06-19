@@ -2,7 +2,12 @@
 
 - **Date:** 2026-06-18
 - **PR:** manual
-- **Status:** accepted
+- **Status:** **superseded (reverted 2026-06-19)**
+
+> **Reverted.** `--commit-last` and the `runcache` package were ripped out on
+> 2026-06-19 along with the partial-commit / TestID / IR work — over-engineering
+> for the tool's needs. This record is kept for history; the feature no longer
+> exists. See `docs/notes/2026-06-19-revert-loader-overbuild.md`.
 
 ## Decision
 

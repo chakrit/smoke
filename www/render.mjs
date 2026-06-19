@@ -8,7 +8,7 @@ import MarkdownIt from 'markdown-it';
 import anchor from 'markdown-it-anchor';
 import hljs from 'highlight.js';
 
-import { lifecycleSvg, mergeSvg } from './diagrams.mjs';
+import { lifecycleSvg } from './diagrams.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const guidePath = join(here, '..', 'docs', 'guides', 'index.md');
@@ -97,8 +97,7 @@ const navHtml = nav.map(navEntry).join('\n      ');
 
 const contentHtml = md.renderer
   .render(tokens, md.options, {})
-  .replace('<!--DIAGRAM:lifecycle-->', lifecycleSvg)
-  .replace('<!--DIAGRAM:merge-->', mergeSvg);
+  .replace('<!--DIAGRAM:lifecycle-->', lifecycleSvg);
 
 const page = readFileSync(templatePath, 'utf8')
   .replace('{{NAV}}', navHtml)
