@@ -47,6 +47,27 @@ symptoms of over-abstraction added across the 2026-06-18 sessions:
   where the flattened name is built, threaded to the result. That's the prerequisite for any
   future merge/partial-commit work. See `TODO.md`.
 
+## Next session — TestID-as-a-real-field design seeds
+
+Starting points so we don't re-derive them:
+
+- **First decide whether identity even needs to diverge from the display name.** If
+  identity *is* the flattened name forever, the honest answer may be "there is no `TestID` —
+  just `Name`"; don't add a field for ceremony. A field earns its place only if identity must
+  be stable across a rename, or be a path/key independent of display.
+- **If a field is warranted:** assign it *once*, where the flattened name is built (the
+  `Resolve`/`Tests()` walk), and carry it `engine.Test` → `engine.TestResult` →
+  `resultspecs.TestResultSpec`. No `TestID(name)` cast at use sites.
+- **Lock serialization:** persist `id` only if it can diverge from `name`; otherwise keep the
+  bare `name` as the key and say so plainly.
+- **Compare stays order-sensitive** (`gendiff`), keyed on whatever identity is. Settled.
+- **Watch this:** the flattened name currently embeds the spec *filename* (root name =
+  filename). So identity is path-dependent — `smoke ./x.yml` vs `smoke x.yml` yields
+  different identities. Decide whether that's intended or identity should be
+  filename-independent before building anything on top.
+- Only rebuild partial-commit/merge if actually needed; if so, merge must *insert* new tests
+  in spec order (not append), since compare is order-sensitive.
+
 ## Verification
 
 `go build`/`vet`/`test` and `./test.sh` all green. Behaviors confirmed: dup names → NEW
