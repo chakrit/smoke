@@ -33,6 +33,9 @@ func processFile(filename string) (status, error) {
 		return statusUnchanged, dataErr(fmt.Errorf(filename+": %w", err))
 	}
 
+	// capture the full spec order before filtering — a partial commit merges the
+	// run's results into the lock in spec position, not the filtered subset's order
+	order := testOrder(tests)
 	tests = engine.Select(filter, tests, func(t *engine.Test) engine.TestName {
 		return t.Name
 	})
@@ -54,7 +57,7 @@ func processFile(filename string) (status, error) {
 		return statusUnchanged, printResults(results)
 	case shouldCommit:
 		p.Action("Writing Lock File")
-		return statusUnchanged, commitResults(filename, results)
+		return statusUnchanged, commitResults(filename, order, results)
 	default:
 		p.Action("Comparing Lock File")
 		return compareResults(filename, results)
@@ -142,18 +145,53 @@ func printResults(results []engine.TestResult) error {
 	return nil
 }
 
-// commitResults runs the spec and writes the result as the new lock, wholesale —
-// a commit always replaces the whole lock, so a test dropped from the spec
-// disappears from the lock too.
-func commitResults(filename string, results []engine.TestResult) error {
+// commitResults writes the run's results as the new lock. A whole-suite commit
+// replaces the lock outright. A partial commit (--include/--exclude) merges
+// instead: the run's results land in spec order, and tests that weren't run keep
+// their existing lock entries rather than being pruned.
+func commitResults(filename string, order []engine.TestName, results []engine.TestResult) error {
 	target := lockFilename(filename)
 
-	specs, err := resultspecs.FromTestResults(results)
+	fresh, err := resultspecs.FromTestResults(results)
 	if err != nil {
 		return fmt.Errorf("commit: %w", err)
 	}
 
-	return writeLock(target, specs)
+	if !filter.Active() {
+		return writeLock(target, fresh)
+	}
+
+	existing, err := loadLock(target)
+	if err != nil {
+		return err
+	}
+	return writeLock(target, resultspecs.Merge(order, fresh, existing))
+}
+
+// loadLock reads the lock to carry entries forward on a partial commit. A missing
+// lock yields nil — nothing to carry — not an error.
+func loadLock(target string) ([]resultspecs.TestResultSpec, error) {
+	file, err := os.Open(target)
+	if os.IsNotExist(err) {
+		return nil, nil
+	} else if err != nil {
+		return nil, fmt.Errorf(target+": %w", err)
+	}
+	defer file.Close()
+
+	specs, err := resultspecs.Load(file)
+	if err != nil {
+		return nil, dataErr(fmt.Errorf(target+": %w", err))
+	}
+	return specs, nil
+}
+
+func testOrder(tests []*engine.Test) []engine.TestName {
+	order := make([]engine.TestName, len(tests))
+	for i, test := range tests {
+		order[i] = test.Name
+	}
+	return order
 }
 
 // writeLock atomically replaces the lock: write a temp file, then rename, so a

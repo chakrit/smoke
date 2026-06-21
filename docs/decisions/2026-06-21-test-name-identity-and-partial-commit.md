@@ -2,7 +2,7 @@
 
 - **Date:** 2026-06-21
 - **PR:** manual
-- **Status:** accepted
+- **Status:** accepted — implemented (`da03525` types + dup-name; merge slice follows)
 
 ## Decision
 
@@ -23,6 +23,11 @@
    the rest.
 5. **Deferred:** `--commit-last` / `runcache` (own pass, vNext); the spec-filename
    path-dependence of the root name (logged as a bug).
+6. **Selection is a domain type too.** `--include`/`--exclude` became `engine.Pattern` /
+   `engine.Filter` (`Selects(TestName)`), retiring the stringly `internal.Whitelist`/
+   `Blacklist`. Emerged while typing `TestName`: once the name is a type, the filter that
+   matches it should be one as well rather than a `func(T) string` adapter. Substring match
+   semantics unchanged.
 
 ## Rationale
 

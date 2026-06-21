@@ -131,8 +131,13 @@ any node with commands becomes one `engine.Test`; children recurse. The YAML roo
 `Tests()` walks the resolved tree depth-first: a node with commands becomes one
 `engine.Test`, a command-less leaf is a malformed-spec error, and each failable
 field (an unknown check name, a bad timeout duration) is checked as it's visited.
-The first error stops the walk and flows out through `testspecs.Load`, routing to
-exit `65` like any other malformed-spec failure.
+Identity is composed here, not in `Resolve`: each node's `engine.TestName` is its
+parent's name extended by its own segment (`TestName.Child`), so the flattened
+name is minted exactly at this gate. After the walk, `testspecs.Load` asserts the
+flattened names are **unique** — two tests that flatten to the same name make the
+name-keyed lock ambiguous, so a duplicate is a malformed spec. The first error
+stops the walk (or the uniqueness pass) and flows out through `testspecs.Load`,
+routing to exit `65` like any other malformed-spec failure.
 
 ## Checks
 
@@ -186,9 +191,13 @@ test surfaces as a real change, not a false match.
 
 `--include` / `--exclude` filter by test name at both ends (the live test list
 and the loaded lock), so a partial run compares only the named subset. A
-**commit** always writes the whole lock, so combining it with a filter is refused
-(exit `64`) — merging a partial run would risk dropping the tests it never
-observed. Filter to run a subset; commit the whole spec.
+whole-suite **commit** writes the lock outright; a *filtered* commit **merges**
+instead (`resultspecs.Merge`): the run's results land in spec order and tests
+that weren't run keep their existing lock entries, so a partial commit never
+prunes what it didn't observe. The merge walks the spec (not the lock or the
+filter), so a test deleted from the spec drops and a newly committed one lands in
+its spec position — order-sensitivity preserved. The merge keys on the test name,
+which the loader guarantees unique.
 
 ## Modes and exit codes
 
@@ -196,7 +205,7 @@ observed. Filter to run a subset; commit the whole spec.
 | ------------------ | ----------------- | ----------------------------------------------- |
 | Compare *(default)*| —                 | diff vs lock → `0`/`1`/`3`                       |
 | Compare (JSON)     | `--json`          | same diff as a machine-readable document        |
-| Commit             | `--commit`/`-c`   | run, then write the whole lock (no filter)      |
+| Commit             | `--commit`/`-c`   | run, then write the lock (merges if filtered)   |
 | Print              | `--print`/`-p`    | result YAML to stdout (scripting)               |
 | List               | `--list`/`-l`     | discovered test names (`-vv` adds commands)     |
 | Show expected      | `--show-expected` | replay the lock without running                 |

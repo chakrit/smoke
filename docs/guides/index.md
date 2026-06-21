@@ -128,9 +128,11 @@ smoke --include Greeting tests.yml     # only tests whose name contains "Greetin
 smoke --exclude Slow tests.yml         # everything except names containing "Slow"
 ```
 
-A commit writes the **whole** lock, so committing a filtered run would prune the tests it
-never observed. SMOKE refuses that — `--commit` together with `--include`/`--exclude` is a
-usage error (exit `64`). Filter to *run* a subset; commit the whole spec.
+Committing a filtered run is a **partial commit**: SMOKE merges the run's results into the
+existing lock instead of overwriting it, so the tests you didn't run keep their locked
+output. The merged tests land in spec order, so the lock stays consistent with the spec.
+This lets you eyeball one drifting test and re-commit just it — `smoke -i Greeting -c
+tests.yml` — without disturbing the rest of the lock.
 
 ## Exit codes
 
@@ -279,7 +281,7 @@ can annotate inline.
 
 | Flag               | Short | Effect                                                     |
 | ------------------ | ----- | ---------------------------------------------------------- |
-| `--commit`         | `-c`  | Run, then write the whole lock (refused with a filter).    |
+| `--commit`         | `-c`  | Run, then write the lock; merges if filtered (partial).    |
 | `--print`          | `-p`  | Print result YAML to stdout (for scripting).               |
 | `--list`           | `-l`  | List discovered test names (`-vv` adds commands).          |
 | `--show-expected`  | `-s`  | Replay the lock without running anything.                  |

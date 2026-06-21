@@ -117,14 +117,6 @@ func main() {
 		return
 	}
 
-	// A commit writes the whole lock, so a filtered run (--include/--exclude)
-	// would prune the tests it didn't run. Refuse rather than corrupt the lock.
-	if shouldCommit && (len(includes) > 0 || len(excludes) > 0) {
-		p.Usage("cannot commit partial results when using --include or --exclude")
-		os.Exit(p.ExitUsage)
-		return
-	}
-
 	filenames := pflag.Args()
 	if len(filenames) < 1 {
 		p.Usage("requires a spec filename.")

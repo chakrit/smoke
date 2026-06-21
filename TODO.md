@@ -11,18 +11,19 @@ see git history and `docs/notes/` session logs for the detail.
 > `docs/notes/2026-06-19-revert-loader-overbuild.md`. The items below are the *reopened*
 > goals, to be redone simply on the restored baseline if/when actually needed.
 
-> **Design settled 2026-06-21** — see `docs/decisions/2026-06-21-test-name-identity-and-partial-commit.md`
-> for the `TestName`/dup-name/merge rulings the next two items implement.
+> **Implemented 2026-06-21** — see `docs/decisions/2026-06-21-test-name-identity-and-partial-commit.md`.
+> The `TestName`/dup-name and partial-commit items below landed (`da03525` + the merge slice).
 
-* [ ] **`TestName` identity field + dup-name fail.** `type TestName string`, value-equal to
-  the flattened name, minted once in `testspecs.Tests()` and carried `engine.Test` →
-  `TestResult` → `resultspecs.TestResultSpec`; received, never re-minted, at call sites.
-  Flatten indexes into `map[TestName]…`; a colliding insert is a load error → exit `65`
-  naming both tests. Foundation for the merge below.
-* [ ] **Partial commit** — drop the exit-64 refusal; a filtered `--commit` rewrites the lock
-  by walking the *spec* in order, fresh result for filtered tests, carry-forward by `TestName`
-  for the rest. Gone-from-spec entries drop (spec-walk), never-committed tests stay `NEW`.
-  Depends on the `TestName` item.
+* [x] **`TestName` identity field + dup-name fail.** **Done (`da03525`).** `type TestName
+  string`, minted at the flatten gate and carried `engine.Test` → `TestResult` →
+  `resultspecs.TestResultSpec`; composition via `TestName.Child`, never re-minted at call
+  sites. `testspecs.Load` asserts uniqueness via `map[TestName]struct{}` → duplicate is a
+  load error (exit `65`). Also added `engine.Pattern`/`Filter`, retiring `internal.Whitelist`/
+  `Blacklist`.
+* [x] **Partial commit.** **Done.** Filtered `--commit` merges via `resultspecs.Merge`,
+  walking the *spec* in order: fresh result for run tests, carry-forward by `TestName` for the
+  rest. Gone-from-spec entries drop; never-committed tests stay absent (`NEW` next compare).
+  The exit-64 refusal is gone.
 * [ ] **Spec-filename path-dependence (bug).** The flattened root name embeds the spec
   filename, so `smoke ./x.yml` vs `smoke x.yml` yield different `TestName`s and thus different
   lock keys — cross-invocation lock-key instability. Pre-existing; partial-commit makes it more
