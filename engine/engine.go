@@ -8,7 +8,7 @@ type (
 	Command string
 
 	Test struct {
-		Name      string
+		Name      TestName
 		RunConfig *Config
 
 		Commands []Command

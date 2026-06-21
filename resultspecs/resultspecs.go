@@ -19,7 +19,7 @@ type (
 	Action int
 
 	TestResultSpec struct {
-		Name     string              `yaml:"name"`
+		Name     engine.TestName     `yaml:"name"`
 		Commands []CommandResultSpec `yaml:"commands"`
 	}
 	CommandResultSpec struct {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/chakrit/smoke/engine"
 	"github.com/chakrit/smoke/internal/p"
 	"github.com/spf13/pflag"
 )
@@ -29,6 +30,10 @@ var (
 
 	includes []string
 	excludes []string
+
+	// filter is built from includes/excludes once after flag parsing; the rest of
+	// the program selects tests through it rather than the raw flag slices.
+	filter engine.Filter
 )
 
 // usageHeader frames SMOKE as a drift detector, not a pass/fail test runner —
@@ -93,6 +98,7 @@ func main() {
 	}
 
 	p.Configure(!noColors, trackTime, verbosity, quietness)
+	filter = engine.NewFilter(includes, excludes)
 
 	if initFile != "" {
 		if args := pflag.Args(); len(args) > 0 {

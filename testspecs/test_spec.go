@@ -1,7 +1,7 @@
 package testspecs
 
 import (
-	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/chakrit/smoke/checks"
@@ -21,9 +21,6 @@ type TestSpec struct {
 // Resolve() applies parent-child value overriding and extension logic.
 func (t *TestSpec) Resolve(parent *TestSpec) {
 	if parent != nil {
-		if parent.Name != "" {
-			t.Name = parent.Name + ` \ ` + t.Name
-		}
 		t.Filename = parent.Filename
 		if t.Config == nil {
 			t.Config = parent.Config
@@ -48,9 +45,18 @@ func (t *TestSpec) Resolve(parent *TestSpec) {
 	}
 }
 
-func (t *TestSpec) Tests() (tests []*engine.Test, err error) {
+// Tests flattens the spec tree into the runnable test list. Identity is composed
+// here — each node's TestName is its parent's name extended by its own segment —
+// so name composition lives at the flatten gate, not in Resolve.
+func (t *TestSpec) Tests() ([]*engine.Test, error) {
+	return t.tests("")
+}
+
+func (t *TestSpec) tests(parent engine.TestName) (tests []*engine.Test, err error) {
+	name := parent.Child(t.Name)
+
 	if len(t.Children) == 0 && len(t.Commands) == 0 {
-		return nil, errors.New("test `" + t.Name + "` is a leaf with no commands")
+		return nil, fmt.Errorf("test `%s` is a leaf with no commands", name)
 	}
 
 	if len(t.Commands) > 0 {
@@ -61,9 +67,9 @@ func (t *TestSpec) Tests() (tests []*engine.Test, err error) {
 		}
 
 		var allchecks []checks.Interface
-		for _, name := range t.Checks {
-			if check := checks.Parse(name); check == nil {
-				return nil, errors.New("unknown check `" + name + "`")
+		for _, checkname := range t.Checks {
+			if check := checks.Parse(checkname); check == nil {
+				return nil, fmt.Errorf("unknown check `%s`", checkname)
 			} else {
 				allchecks = append(allchecks, check)
 			}
@@ -75,7 +81,7 @@ func (t *TestSpec) Tests() (tests []*engine.Test, err error) {
 		}
 
 		tests = append(tests, &engine.Test{
-			Name:      t.Name,
+			Name:      name,
 			RunConfig: runcfg,
 			Commands:  commands,
 			Checks:    allchecks,
@@ -83,7 +89,7 @@ func (t *TestSpec) Tests() (tests []*engine.Test, err error) {
 	}
 
 	for _, subt := range t.Children {
-		if subtests, err := subt.Tests(); err != nil {
+		if subtests, err := subt.tests(name); err != nil {
 			return nil, err
 		} else {
 			tests = append(tests, subtests...)

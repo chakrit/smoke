@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/chakrit/smoke/engine"
 	"github.com/chakrit/smoke/resultspecs"
 )
 
@@ -16,9 +17,9 @@ type jsonReport struct {
 }
 
 type jsonTest struct {
-	Name     string        `json:"name"`
-	Status   string        `json:"status"`
-	Commands []jsonCommand `json:"commands"`
+	Name     engine.TestName `json:"name"`
+	Status   string          `json:"status"`
+	Commands []jsonCommand   `json:"commands"`
 }
 
 type jsonCommand struct {

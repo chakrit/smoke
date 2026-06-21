@@ -39,7 +39,7 @@ func DataErr(err error) {
 }
 
 // testing flow
-func Test(t *engine.Test)                                          { output(1, cTitle+"==> "+cTitleEm+t.Name+cReset) }
+func Test(t *engine.Test)                                          { output(1, fmt.Sprintf("%s==> %s%s%s", cTitle, cTitleEm, t.Name, cReset)) }
 func Command(_ *engine.Test, cmd engine.Command)                   { output(2, cSubtitle+"--> "+string(cmd)+cReset) }
 func Check(_ *engine.Test, _ engine.Command, chk checks.Interface) { /* no-op */ }
 
@@ -86,7 +86,7 @@ func New(lock string) {
 // diff flow
 func TestEdit(edit resultspecs.TestEdit) {
 	c, prefix := colorByAction(edit.Action)
-	output(0, c+prefix+" ==> "+edit.Name+cReset)
+	output(0, fmt.Sprintf("%s%s ==> %s%s", c, prefix, edit.Name, cReset))
 }
 
 func CommandEdit(edit resultspecs.CommandEdit) {

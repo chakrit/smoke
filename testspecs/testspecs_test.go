@@ -199,6 +199,25 @@ func TestLoadLeafWithoutCommands(t *testing.T) {
 	}
 }
 
+// Two tests that flatten to the same name make the lock ambiguous — a lock entry
+// can't be resolved to one of them — so the loader rejects it as a malformed spec
+// (exit 65), naming the duplicate.
+func TestLoadRejectsDuplicateNames(t *testing.T) {
+	src := "tests:\n" +
+		"  - name: dup\n" +
+		"    commands: [\"echo a\"]\n" +
+		"  - name: dup\n" +
+		"    commands: [\"echo b\"]\n"
+
+	_, err := Load(strings.NewReader(src), "spec.yml")
+	if err == nil {
+		t.Fatal("want error for duplicate test name, got nil")
+	}
+	if !strings.Contains(err.Error(), "dup") {
+		t.Errorf("error should name the duplicate, got: %v", err)
+	}
+}
+
 func TestLoadUnsupportedFormat(t *testing.T) {
 	if _, err := Load(strings.NewReader(""), "spec.txt"); err == nil {
 		t.Fatal("want error for unsupported format, got nil")

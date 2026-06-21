@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/chakrit/smoke/engine"
-	"github.com/chakrit/smoke/internal"
 	"github.com/chakrit/smoke/internal/p"
 	"github.com/chakrit/smoke/resultspecs"
 	"github.com/chakrit/smoke/testspecs"
@@ -34,16 +33,9 @@ func processFile(filename string) (status, error) {
 		return statusUnchanged, dataErr(fmt.Errorf(filename+": %w", err))
 	}
 
-	if len(includes) > 0 {
-		tests = internal.Whitelist(tests, includes, func(t *engine.Test) string {
-			return t.Name
-		})
-	}
-	if len(excludes) > 0 {
-		tests = internal.Blacklist(tests, excludes, func(t *engine.Test) string {
-			return t.Name
-		})
-	}
+	tests = engine.Select(filter, tests, func(t *engine.Test) engine.TestName {
+		return t.Name
+	})
 
 	if shouldList {
 		listTests(tests)
@@ -97,16 +89,9 @@ func showResults(filename string) error {
 		return dataErr(fmt.Errorf(target+": %w", err))
 	}
 
-	if len(includes) > 0 {
-		results = internal.Whitelist(results, includes, func(r resultspecs.TestResultSpec) string {
-			return r.Name
-		})
-	}
-	if len(excludes) > 0 {
-		results = internal.Blacklist(results, excludes, func(r resultspecs.TestResultSpec) string {
-			return r.Name
-		})
-	}
+	results = engine.Select(filter, results, func(r resultspecs.TestResultSpec) engine.TestName {
+		return r.Name
+	})
 
 	for _, test := range results {
 		p.TestEdit(resultspecs.TestEdit{Name: test.Name, Action: resultspecs.NoOp})
@@ -129,7 +114,7 @@ func showResults(filename string) error {
 func runTests(tests []*engine.Test) ([]engine.TestResult, error) {
 	hooks := Hooks{
 		WrapErr: func(t *engine.Test, err error) error {
-			return fmt.Errorf(t.Name+": %w", err)
+			return fmt.Errorf("%s: %w", t.Name, err)
 		},
 	}
 	run := engine.DefaultRunner{Hooks: hooks}
@@ -222,18 +207,11 @@ func compareResults(filename string, results []engine.TestResult) (status, error
 		return statusUnchanged, dataErr(fmt.Errorf(lockname+": %w", err))
 	}
 
-	// if includes/excludes are set, only compare those, otherwise the excluded/included
-	// tests are also compared even though they havn't been ran
-	if len(includes) > 0 {
-		lockspec = internal.Whitelist(lockspec, includes, func(s resultspecs.TestResultSpec) string {
-			return s.Name
-		})
-	}
-	if len(excludes) > 0 {
-		lockspec = internal.Blacklist(lockspec, excludes, func(s resultspecs.TestResultSpec) string {
-			return s.Name
-		})
-	}
+	// when filtered, only compare the selected tests; otherwise the whole lock is
+	// compared even though the unselected tests weren't run this pass
+	lockspec = engine.Select(filter, lockspec, func(s resultspecs.TestResultSpec) engine.TestName {
+		return s.Name
+	})
 
 	newspecs, err := resultspecs.FromTestResults(results)
 	if err != nil {

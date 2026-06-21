@@ -1,9 +1,13 @@
 package resultspecs
 
-import "github.com/chakrit/gendiff"
+import (
+	"github.com/chakrit/gendiff"
+
+	"github.com/chakrit/smoke/engine"
+)
 
 type TestEdit struct {
-	Name     string
+	Name     engine.TestName
 	Action   Action
 	Commands []CommandEdit
 }
