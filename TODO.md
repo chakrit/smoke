@@ -11,15 +11,26 @@ see git history and `docs/notes/` session logs for the detail.
 > `docs/notes/2026-06-19-revert-loader-overbuild.md`. The items below are the *reopened*
 > goals, to be redone simply on the restored baseline if/when actually needed.
 
-* [ ] **Test identity as a real field (do first).** If identity is needed beyond the display
-  name, bake `ID` as a field assigned once where the flattened name is built, carried
-  `engine.Test` → `TestResult` → `TestResultSpec` — not a `TestID(name)` getter. Until then,
-  compare matches by `Name` (current, restored). This is the foundation for any merge work.
-* [ ] **Partial commit** — let a filtered `--commit` merge onto the lock instead of being
-  refused. Needs identity-keyed merge that *inserts new tests in spec order* (compare is
-  order-sensitive). Blocked on the identity-field work above. Decide if it's worth it first.
+> **Design settled 2026-06-21** — see `docs/decisions/2026-06-21-test-name-identity-and-partial-commit.md`
+> for the `TestName`/dup-name/merge rulings the next two items implement.
+
+* [ ] **`TestName` identity field + dup-name fail.** `type TestName string`, value-equal to
+  the flattened name, minted once in `testspecs.Tests()` and carried `engine.Test` →
+  `TestResult` → `resultspecs.TestResultSpec`; received, never re-minted, at call sites.
+  Flatten indexes into `map[TestName]…`; a colliding insert is a load error → exit `65`
+  naming both tests. Foundation for the merge below.
+* [ ] **Partial commit** — drop the exit-64 refusal; a filtered `--commit` rewrites the lock
+  by walking the *spec* in order, fresh result for filtered tests, carry-forward by `TestName`
+  for the rest. Gone-from-spec entries drop (spec-walk), never-committed tests stay `NEW`.
+  Depends on the `TestName` item.
+* [ ] **Spec-filename path-dependence (bug).** The flattened root name embeds the spec
+  filename, so `smoke ./x.yml` vs `smoke x.yml` yield different `TestName`s and thus different
+  lock keys — cross-invocation lock-key instability. Pre-existing; partial-commit makes it more
+  load-bearing (incremental lock updates). Rule on filename-independent identity before merge
+  ships, or accept and document.
 * [ ] **Commit last run** — bless the previous run without re-running. Was a whole `runcache`
-  package; only build it back if the re-run cost is actually a problem in practice.
+  package; only build it back if the re-run cost is actually a problem in practice. vNext;
+  its own design pass.
 * [ ] **All-errors validation** — collect every spec error per load, not just the first.
   Do it as a plain error-accumulating tree walk in `Tests()` (no IR), if anyone asks for it.
 * [x] JSONC support. **Done (2026-06-18):** `.jsonc` → `jsoncLoader`, which runs a
