@@ -1,4 +1,4 @@
-- name: test/testdata/stabletests.yml \ Echo
+- name: stabletests.yml \ Echo
   commands:
     - command: echo unchanged-fixture
       checks:

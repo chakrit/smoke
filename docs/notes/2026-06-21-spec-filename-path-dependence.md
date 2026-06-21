@@ -1,9 +1,9 @@
-# Spec-filename path-dependence — analysis pending a ruling
+# Spec-filename path-dependence — analysis + resolution
 
-- **Date:** 2026-06-21 (unattended audit; no code shipped — the fix is a reserved
-  design ruling)
-- **Status:** open bug, ruling required. Tracked in `TODO.md` ("Spec-filename
-  path-dependence").
+- **Date:** 2026-06-21 (analysis), resolved same night (unattended).
+- **Status:** **Resolved — Option A (basename), framed as "relative to the root spec
+  file."** Shipped. See the Resolution section at the bottom; the analysis below is
+  retained as the reasoning of record.
 
 ## The bug
 
@@ -80,3 +80,35 @@ tests as NEW until re-committed).
 
 > The ruling (A / B / C / D) is the user's. This note is the legwork so a one-word
 > reply unblocks it.
+
+## Resolution — A (basename), framed as "relative to the root spec file"
+
+The user ruled: identity should be the spec path **relative to the root spec file**. For
+a single root spec that *is* its basename, so the implementation is Option A's one-liner —
+but the framing is the general rule, and it's the one the import/include feature will
+extend (an imported spec's tests get prefixed by that file's path relative to the **root
+spec's directory**; the root itself, relative to its own directory, is the basename).
+
+- **Locus:** `testspecs/test_spec.go` — the unnamed-root name default became
+  `t.Name = filepath.Base(t.Filename)`. Normalized the **name**, not `Filename`: the raw
+  path stays available for lock colocation (`process.lockFilename`) and for resolving
+  relative imports later. Red test `TestLoadRootNameIsBasename` pins `x.yml` / `./x.yml` /
+  `dir/x.yml` / `../x.yml` / `/abs/dir/x.yml` to one `x.yml \ …` root.
+
+- **Migration was larger than this note first assumed.** It cascades to **every** lock in
+  the repo, not just `test/tests.lock.yml`: the self-test drives fixtures under
+  `test/testdata/`, each with its **own** colocated lock keyed under the old typed path
+  (`test/testdata/X.yml \ …`). The basename fix re-keys the fixtures too, so every fixture
+  lock lookup missed until re-keyed — stable fixtures flipped UNCHANGED→CHANGED and drift
+  fixtures reported a name-mismatch shape instead of their intended content drift.
+  - **5 stable fixtures** (`stabletests`, `cuetests`, `jsontests`, `jsonltests`,
+    `jsonctests`) → re-committed (`smoke --commit`); pure re-key, still UNCHANGED.
+  - **2 intentional-drift fixtures** (`badtests`, `timeouttests`) → **key-line-only**
+    rename. Re-committing would have erased the baseline drift the self-test asserts.
+    A global substitution was unsafe: `badtests.lock.yml` carries `test/testdata/badtests.txt`
+    in *command values*, which must stay verbatim — only the `- name:` keys were edited.
+  - **`test/tests.lock.yml`** regenerated last, snapshotting the now-consistent fixture
+    outputs.
+  - **Acceptance gate:** `normalize(old) == normalize(new)` where `normalize` collapses the
+    known path prefixes — empty residual proved the *only* change repo-wide was the basename
+    collapse (no network/timing/toolchain noise), and `smoke test/tests.yml` exits 0.

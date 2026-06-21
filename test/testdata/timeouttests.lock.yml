@@ -1,4 +1,4 @@
-- name: test/testdata/timeouttests.yml \ Hangs
+- name: timeouttests.yml \ Hangs
   commands:
     - command: sleep 5; echo done
       checks:

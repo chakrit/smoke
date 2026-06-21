@@ -218,6 +218,25 @@ func TestLoadRejectsDuplicateNames(t *testing.T) {
 	}
 }
 
+// The root test name must be the spec's basename, not the path as typed on the
+// command line — so the same spec yields the same TestName (and thus the same
+// lock keys) regardless of cwd, a leading `./`, or absolute-vs-relative paths.
+// For a single root spec, the basename is its path "relative to the root spec
+// file"; imported specs extend that rule against the root's directory.
+func TestLoadRootNameIsBasename(t *testing.T) {
+	src := "tests:\n  - name: Echo\n    commands: [\"echo hi\"]\n"
+
+	for _, filename := range []string{"x.yml", "./x.yml", "dir/x.yml", "../x.yml", "/abs/dir/x.yml"} {
+		tests, err := Load(strings.NewReader(src), filename)
+		if err != nil {
+			t.Fatalf("load %q: %v", filename, err)
+		}
+		if got := tests[0].Name; got != `x.yml \ Echo` {
+			t.Errorf("filename %q: name = %q, want %q", filename, got, `x.yml \ Echo`)
+		}
+	}
+}
+
 func TestLoadUnsupportedFormat(t *testing.T) {
 	if _, err := Load(strings.NewReader(""), "spec.txt"); err == nil {
 		t.Fatal("want error for unsupported format, got nil")

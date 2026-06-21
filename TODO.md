@@ -24,12 +24,15 @@ see git history and `docs/notes/` session logs for the detail.
   walking the *spec* in order: fresh result for run tests, carry-forward by `TestName` for the
   rest. Gone-from-spec entries drop; never-committed tests stay absent (`NEW` next compare).
   The exit-64 refusal is gone.
-* [ ] **Spec-filename path-dependence (bug).** The flattened root name embeds the spec
-  filename, so `smoke ./x.yml` vs `smoke x.yml` yield different `TestName`s and thus different
-  lock keys — cross-invocation lock-key instability. Pre-existing; partial-commit makes it more
-  load-bearing (incremental lock updates: a differently-pathed partial commit silently drops
-  carried entries). **Ruling required — full option analysis + recommendation (basename) in
-  `docs/notes/2026-06-21-spec-filename-path-dependence.md`.**
+* [x] **Spec-filename path-dependence (bug). Done.** Ruling: root identity is the spec's
+  basename (`filepath.Base`) at the unnamed-root name default in `testspecs/test_spec.go` —
+  framed as "relative to the root spec file" (for a single root spec, that *is* its basename;
+  imported specs will extend the rule against the root's directory). `cwd` / `./` / abs-vs-rel
+  all collapse to one stable key. Migration cascaded to **every** lock in the repo (each
+  fixture has its own colocated lock keyed under the old typed path): 5 stable fixtures
+  re-committed, 2 intentional-drift fixtures (`badtests`, `timeouttests`) key-renamed in place
+  to preserve their baseline, self-test lock regenerated. Analysis + resolution in
+  `docs/notes/2026-06-21-spec-filename-path-dependence.md`.
 * [ ] **Commit last run** — bless the previous run without re-running. Was a whole `runcache`
   package; only build it back if the re-run cost is actually a problem in practice. vNext;
   its own design pass.

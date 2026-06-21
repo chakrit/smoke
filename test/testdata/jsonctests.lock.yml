@@ -1,4 +1,4 @@
-- name: test/testdata/jsonctests.jsonc \ Echo
+- name: jsonctests.jsonc \ Echo
   commands:
     - command: echo jsonc-driven // smoke test
       checks:
@@ -8,7 +8,7 @@
         - name: stdout
           data:
             - jsonc-driven // smoke test
-- name: test/testdata/jsonctests.jsonc \ Arithmetic
+- name: jsonctests.jsonc \ Arithmetic
   commands:
     - command: echo $((6 * 7))
       checks:

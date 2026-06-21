@@ -2,6 +2,7 @@ package testspecs
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/chakrit/smoke/checks"
@@ -32,7 +33,9 @@ func (t *TestSpec) Resolve(parent *TestSpec) {
 
 	} else {
 		if t.Name == "" {
-			t.Name = t.Filename
+			// Identity is the spec's basename, not the path as typed, so the same
+			// spec keys the lock identically across cwd / `./` / abs-vs-rel forms.
+			t.Name = filepath.Base(t.Filename)
 		}
 		if t.Config == nil {
 			t.Config = &ConfigSpec{}

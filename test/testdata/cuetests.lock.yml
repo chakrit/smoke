@@ -1,4 +1,4 @@
-- name: test/testdata/cuetests.cue \ Echo
+- name: cuetests.cue \ Echo
   commands:
     - command: echo cue-driven smoke test
       checks:
@@ -8,7 +8,7 @@
         - name: stdout
           data:
             - cue-driven smoke test
-- name: test/testdata/cuetests.cue \ Arithmetic
+- name: cuetests.cue \ Arithmetic
   commands:
     - command: echo $((6 * 7))
       checks:

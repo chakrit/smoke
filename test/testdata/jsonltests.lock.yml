@@ -1,4 +1,4 @@
-- name: test/testdata/jsonltests.jsonl \ Echo
+- name: jsonltests.jsonl \ Echo
   commands:
     - command: echo jsonl-driven smoke test
       checks:
@@ -8,7 +8,7 @@
         - name: stdout
           data:
             - jsonl-driven smoke test
-- name: test/testdata/jsonltests.jsonl \ Arithmetic
+- name: jsonltests.jsonl \ Arithmetic
   commands:
     - command: echo $((6 * 7))
       checks:
