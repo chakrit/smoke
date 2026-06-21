@@ -27,8 +27,9 @@ see git history and `docs/notes/` session logs for the detail.
 * [ ] **Spec-filename path-dependence (bug).** The flattened root name embeds the spec
   filename, so `smoke ./x.yml` vs `smoke x.yml` yield different `TestName`s and thus different
   lock keys — cross-invocation lock-key instability. Pre-existing; partial-commit makes it more
-  load-bearing (incremental lock updates). Rule on filename-independent identity before merge
-  ships, or accept and document.
+  load-bearing (incremental lock updates: a differently-pathed partial commit silently drops
+  carried entries). **Ruling required — full option analysis + recommendation (basename) in
+  `docs/notes/2026-06-21-spec-filename-path-dependence.md`.**
 * [ ] **Commit last run** — bless the previous run without re-running. Was a whole `runcache`
   package; only build it back if the re-run cost is actually a problem in practice. vNext;
   its own design pass.
