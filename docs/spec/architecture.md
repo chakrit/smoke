@@ -123,8 +123,10 @@ overriding before flattening:
 - **Commands / Checks** — *appended* parent-first, so a subtest inherits and
   extends rather than replaces.
 
-At the root (`parent == nil`), an empty name defaults to the filename and a nil
-config is seeded from `engine.DefaultConfig`. `TestSpec.Tests()` then flattens:
+At the root (`parent == nil`), an empty name defaults to the spec's **basename**
+(`filepath.Base`), so the same spec keys the lock identically regardless of how its
+path was typed (`x.yml`, `./x.yml`, `dir/x.yml`); a nil config is seeded from
+`engine.DefaultConfig`. `TestSpec.Tests()` then flattens:
 any node with commands becomes one `engine.Test`; children recurse. The YAML root
 *is itself* a test — a top-level `commands:` runs.
 

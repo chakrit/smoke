@@ -62,7 +62,7 @@ itself a test** — a top-level `commands:` runs. `tests:` nests arbitrarily, an
 **inherit** their parent's config, checks, and commands.
 
 ```yaml
-name: "Defaults to the filename if omitted"
+name: "Defaults to the spec's basename if omitted"
 config:
   interpreter: /bin/bash    # interpreter for commands (default /bin/bash)
   timeout: 5s               # per-command timeout (default 3s)
