@@ -33,6 +33,13 @@ see git history and `docs/notes/` session logs for the detail.
   re-committed, 2 intentional-drift fixtures (`badtests`, `timeouttests`) key-renamed in place
   to preserve their baseline, self-test lock regenerated. Analysis + resolution in
   `docs/notes/2026-06-21-spec-filename-path-dependence.md`.
+* [ ] **Include / import other spec files.** Let a spec pull in another (split large
+  suites; share config/checks/commands). **Design done, not implemented — needs a ruling
+  on D1–D8 (naming model D3 first):** `docs/notes/2026-06-21-include-import-spec-files.md`.
+  Resolve-and-splice step in `testspecs.Load` before `Resolve`; recommended `include`
+  keyword on any node, paths relative to the including file, single root lock, cycle
+  detection via path stack. Shares the "relative to the root spec file" identity rule with
+  the path-dependence fix.
 * [ ] **Commit last run** — bless the previous run without re-running. Was a whole `runcache`
   package; only build it back if the re-run cost is actually a problem in practice. vNext;
   its own design pass.
