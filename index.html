@@ -1,0 +1,378 @@
+<!DOCTYPE html><html lang=en><meta charset=utf-8><meta name=viewport content="width=device-width, initial-scale=1"><meta name=description content="SMOKE — snapshot smoke-testing for shell commands. Lock a command's output, detect drift on every run."><title>SMOKE — the human guide</title><link rel=stylesheet href=www.fb5ca70c.css><body>
+  <input type=checkbox id=nav-toggle hidden>
+  <header class=topbar>
+    <label for=nav-toggle class=nav-button aria-label="Toggle navigation">☰</label>
+    <span class=brand>SMOKE</span>
+  </header>
+
+  <div class=layout>
+    <nav class=sidebar aria-label=Sections>
+      <a class=sidebar-brand href=#>SMOKE</a>
+      <ul class=nav><li><a href=#install>Install</a></li>
+      <li><a href=#quick-start>Quick start</a></li>
+      <li><a href=#writing-a-spec>Writing a spec</a></li>
+      <li><a href=#the-lifecycle-new-unchanged-changed>The lifecycle: NEW, UNCHANGED, CHANGED</a></li>
+      <li><a href=#committing-goldens>Committing goldens</a></li>
+      <li><a href=#filtering-which-tests-run>Filtering which tests run</a></li>
+      <li><a href=#exit-codes>Exit codes</a></li>
+      <li><a href=#using-smoke-in-ci>Using SMOKE in CI</a></li>
+      <li class=nav-section>
+        <span class=nav-section-label>Advanced</span>
+        <ul class=nav-sub>
+          <li><a href=#cue-cue>CUE</a></li>
+          <li><a href=#json-json>JSON</a></li>
+          <li><a href=#jsonl-jsonl>JSONL</a></li>
+          <li><a href=#jsonc-jsonc>JSONC</a></li>
+        </ul>
+      </li>
+      <li><a href=#flag-reference>Flag reference</a></ul>
+    </nav>
+    <main class=content><h1 id=smoke-the-human-guide>SMOKE — the human guide</h1>
+<p>SMOKE is a CLI for <strong>snapshot smoke-testing of shell commands</strong>. You capture a command's
+observable output once, lock it into a <code>*.lock.yml</code>, and every later run reports
+<strong>UNCHANGED</strong> when the output still matches and <strong>CHANGED</strong> when it drifts.</p>
+<p>It rests on one assumption: <em>code that produces the same observably-correct output exhibits
+the same correct behaviour.</em> That is not true 100% of the time — but it gets you a long way
+for very little effort. SMOKE is a <strong>drift detector, not an assertion engine</strong>: a clean run
+means "the output didn't move," never "the behaviour is correct." It is not a replacement
+for a proper test suite; it is a fast tripwire.</p>
+<figure class=diagram>
+<svg aria-label="Lifecycle: NEW becomes UNCHANGED after review and commit; UNCHANGED drifts to CHANGED; CHANGED returns to UNCHANGED after review and commit." role=img style=font-family:ui-sans-serif,system-ui,-apple-system,sans-serif viewBox="0 0 680 190"><defs><marker id=arrow markerHeight=7 markerWidth=7 orient=auto-start-reverse refX=8 refY=5 viewBox="0 0 10 10"><path fill=none stroke=context-stroke stroke-linecap=round stroke-linejoin=round stroke-width=1.5 d="m2 1 6 4-6 4"/></marker></defs><rect width=148 height=56 x=46 y=44 fill=#faeeda stroke=#854f0b rx=8 /><rect width=148 height=56 x=266 y=44 fill=#eaf3de stroke=#3b6d11 rx=8 /><rect width=148 height=56 x=486 y=44 fill=#fcebeb stroke=#a32d2d rx=8 /><g text-anchor=middle><text x=120 y=66 fill=#633806 font-size=14 font-weight=500>NEW</text><text x=120 y=84 fill=#633806 font-size=12>exit 3</text><text x=340 y=66 fill=#27500a font-size=14 font-weight=500>UNCHANGED</text><text x=340 y=84 fill=#27500a font-size=12>exit 0</text><text x=560 y=66 fill=#791f1f font-size=14 font-weight=500>CHANGED</text><text x=560 y=84 fill=#791f1f font-size=12>exit 1</text></g><line x1=200 x2=260 y1=72 y2=72 stroke=#5f5e5a marker-end=url(#arrow) /><line x1=420 x2=480 y1=72 y2=72 stroke=#5f5e5a marker-end=url(#arrow) /><path fill=none stroke=#5f5e5a marker-end=url(#arrow) d="M524 100c0 52-168 52-168 2"/><g fill=#5f5e5a font-size=12 text-anchor=middle><text x=230 y=34>review · commit</text><text x=450 y=34>output drifts</text><text x=440 y=148>review · commit</text></g></svg>
+</figure>
+<h2 id=install>Install</h2>
+<pre><code class=hljs>go install github.com/chakrit/smoke@latest
+</code></pre>
+<p>That drops a <code>smoke</code> binary on your <code>GOBIN</code>. No runtime dependencies — the YAML and CUE
+parsers are compiled in.</p>
+<h2 id=quick-start>Quick start</h2>
+<p>The first-run workflow is five steps:</p>
+<pre><code class=hljs><span class=hljs-comment># 1. Write a spec describing what to run and what to observe.</span>
+<span class=hljs-built_in>cat</span> &gt; tests.yml &lt;&lt;<span class=hljs-string>'EOF'</span>
+config:
+  interpreter: /bin/bash
+checks:
+  - exitcode
+  - stdout
+tests:
+  - name: Greeting
+    commands:
+      - <span class=hljs-built_in>echo</span> <span class=hljs-string>"hello world"</span>
+EOF
+
+<span class=hljs-comment># 2. Run it. No lock exists yet, so SMOKE reports NEW (exit 3).</span>
+smoke tests.yml
+
+<span class=hljs-comment># 3. Eyeball the output. Does it look right?</span>
+
+<span class=hljs-comment># 4. If yes, commit it as the golden.</span>
+smoke -c tests.yml          <span class=hljs-comment># writes tests.lock.yml</span>
+
+<span class=hljs-comment># 5. Check tests.lock.yml into source control.</span>
+git add tests.yml tests.lock.yml
+</code></pre>
+<p>From then on, <code>smoke tests.yml</code> compares fresh output against the locked golden. Your
+teammates run the same command and get the same verdict.</p>
+<h2 id=writing-a-spec>Writing a spec</h2>
+<p>A spec is YAML (CUE, JSON, JSONL, and JSONC are also accepted — see
+<a href=#advanced-spec-formats>Advanced</a>). The <strong>root of the document is
+itself a test</strong> — a top-level <code>commands:</code> runs. <code>tests:</code> nests arbitrarily, and subtests
+<strong>inherit</strong> their parent's config, checks, and commands.</p>
+<pre><code class=hljs><span class=hljs-attr>name:</span> <span class=hljs-string>"Defaults to the spec's basename if omitted"</span>
+<span class=hljs-attr>config:</span>
+  <span class=hljs-attr>interpreter:</span> <span class=hljs-string>/bin/bash</span>    <span class=hljs-comment># interpreter for commands (default /bin/bash)</span>
+  <span class=hljs-attr>timeout:</span> <span class=hljs-string>5s</span>               <span class=hljs-comment># per-command timeout (default 3s)</span>
+  <span class=hljs-attr>workdir:</span> <span class=hljs-string>.</span>                <span class=hljs-comment># working directory commands start in</span>
+  <span class=hljs-attr>env:</span>                      <span class=hljs-comment># extra environment for commands</span>
+    <span class=hljs-bullet>-</span> <span class=hljs-string>"PATH=./bin:/bin"</span>
+<span class=hljs-attr>checks:</span>                     <span class=hljs-comment># what to observe and record per command</span>
+  <span class=hljs-bullet>-</span> <span class=hljs-string>exitcode</span>                <span class=hljs-comment># the command's exit status</span>
+  <span class=hljs-bullet>-</span> <span class=hljs-string>stdout</span>                  <span class=hljs-comment># the whole standard-output stream</span>
+  <span class=hljs-bullet>-</span> <span class=hljs-string>stderr</span>                  <span class=hljs-comment># the whole standard-error stream</span>
+  <span class=hljs-bullet>-</span> <span class=hljs-string>go.mod</span>                  <span class=hljs-comment># a file's contents</span>
+  <span class=hljs-bullet>-</span> <span class=hljs-string>generated/*.go</span>          <span class=hljs-comment># a file glob's contents</span>
+<span class=hljs-attr>commands:</span>
+  <span class=hljs-bullet>-</span> <span class=hljs-string>go</span> <span class=hljs-string>install</span> <span class=hljs-string>-v</span> <span class=hljs-string>.</span>
+<span class=hljs-attr>tests:</span>
+  <span class=hljs-bullet>-</span> <span class=hljs-attr>name:</span> <span class=hljs-string>Subtest</span>
+    <span class=hljs-attr>config:</span>
+      <span class=hljs-attr>workdir:</span> <span class=hljs-string>..</span>           <span class=hljs-comment># overrides the parent's workdir</span>
+    <span class=hljs-attr>commands:</span>               <span class=hljs-comment># appended after the inherited commands</span>
+      <span class=hljs-bullet>-</span> <span class=hljs-string>smoke</span>
+</code></pre>
+<p>Inheritance rules, briefly:</p>
+<ul>
+<li><strong>Name</strong> — child names are path-joined: <code>parent \ child</code>.</li>
+<li><strong>Config</strong> — a missing child config inherits the parent's wholesale; otherwise it merges
+field-by-field (workdir path-joined, env appended, interpreter/timeout first-set-wins).</li>
+<li><strong>Commands and checks</strong> — <em>appended</em> parent-first, so a subtest extends rather than
+replaces.</li>
+</ul>
+<p>Commands are piped to <code>interpreter -s</code> over <strong>stdin</strong> rather than parsed as argv, so quoting
+and shell features behave exactly as they would in a real shell.</p>
+<h2 id=the-lifecycle-new-unchanged-changed>The lifecycle: NEW, UNCHANGED, CHANGED</h2>
+<p>Every run lands in one of three states, each with its own exit code:</p>
+<table>
+<thead>
+<tr>
+<th>Run says</th>
+<th>Exit</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NEW</code></td>
+<td><code>3</code></td>
+<td>No lock yet — the first run is unreviewed.</td>
+</tr>
+<tr>
+<td><code>UNCHANGED</code></td>
+<td><code>0</code></td>
+<td>Output matched the lock. <em>Not</em> "tests passed."</td>
+</tr>
+<tr>
+<td><code>CHANGED</code></td>
+<td><code>1</code></td>
+<td>Output drifted from the lock.</td>
+</tr>
+</tbody>
+</table>
+<p>The discipline that makes SMOKE trustworthy: <strong>eyeball before you commit.</strong> <code>UNCHANGED</code>
+means drift-free, never verified-correct. Re-committing a <code>CHANGED</code> result you didn't look
+at just locks in the drift as the new "truth."</p>
+<h2 id=committing-goldens>Committing goldens</h2>
+<p><code>smoke -c tests.yml</code> (or <code>--commit</code>) runs the spec and writes the result to
+<code>tests.lock.yml</code>, replacing whatever was there. A commit always overwrites the <strong>whole</strong>
+lock, so a test you delete from the spec disappears from the lock too.</p>
+<p>Commit mode writes to a temp file and atomically renames it into place — a crash mid-write
+never corrupts an existing lock.</p>
+<h2 id=filtering-which-tests-run>Filtering which tests run</h2>
+<p>Two flags narrow a run to a subset of tests by name (substring match):</p>
+<pre><code class=hljs>smoke --include Greeting tests.yml     <span class=hljs-comment># only tests whose name contains "Greeting"</span>
+smoke --exclude Slow tests.yml         <span class=hljs-comment># everything except names containing "Slow"</span>
+</code></pre>
+<p>Committing a filtered run is a <strong>partial commit</strong>: SMOKE merges the run's results into the
+existing lock instead of overwriting it, so the tests you didn't run keep their locked
+output. The merged tests land in spec order, so the lock stays consistent with the spec.
+This lets you eyeball one drifting test and re-commit just it — <code>smoke -i Greeting -c tests.yml</code> — without disturbing the rest of the lock.</p>
+<h2 id=exit-codes>Exit codes</h2>
+<p>SMOKE exits with exactly one of these. Each names a distinct outcome class; the shipped
+codes are a frozen contract.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>State</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td><code>UNCHANGED</code></td>
+<td>Output matched the lock. <em>Not</em> "tests passed."</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>CHANGED</code></td>
+<td>Drift detected — output moved (includes <code>MISSING</code>, timeout).</td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td>—</td>
+<td>Operational error: SMOKE itself broke (runner crash, I/O).</td>
+</tr>
+<tr>
+<td><code>3</code></td>
+<td><code>NEW</code></td>
+<td>No lock file; first run is unreviewed.</td>
+</tr>
+<tr>
+<td><code>64</code></td>
+<td>—</td>
+<td>Usage error: invalid invocation (bad flags).</td>
+</tr>
+<tr>
+<td><code>65</code></td>
+<td>—</td>
+<td>Data error: a spec or lock file is malformed.</td>
+</tr>
+</tbody>
+</table>
+<p>A timed-out command is recorded as drift (<code>1</code>), not an operational error — a hang is
+observable behaviour change, not a tool failure. A non-zero command exit is likewise normal
+(the <code>exitcode</code> check captures it); only SMOKE itself failing is <code>2</code>.</p>
+<h2 id=using-smoke-in-ci>Using SMOKE in CI</h2>
+<p>The rule is simple: <strong><code>0</code> is the only clean pass; fail the build on any non-zero.</strong> That is
+the default behaviour of most CI runners, so often you just run it:</p>
+<pre><code class=hljs>smoke tests.yml    <span class=hljs-comment># nonzero exit fails the step</span>
+</code></pre>
+<p>Make sure <code>tests.lock.yml</code> is <strong>committed</strong>. Without it, CI gets <code>NEW</code> (exit <code>3</code>) and fails
+— which is correct: an unreviewed first run should never pass silently.</p>
+<p>To check several specs, pass them all in one invocation:</p>
+<pre><code class=hljs>smoke --no-color tests/*.yml
+</code></pre>
+<p>Each spec is reported separately and the run exits once: <code>0</code> only if every spec is clean,
+non-zero if <strong>any</strong> spec drifted (a clean spec never hides an earlier drift). A malformed
+spec or a runner failure (<code>65</code>/<code>2</code>) stops the run there — specs run in order and may set up
+state the next depends on, so a broken one means the rest can't be trusted. Drift never
+stops the run, so you see every spec's verdict. (Prefer a <code>for</code> loop only if you need each
+spec in its own process.)</p>
+<p><code>--no-color</code> keeps CI logs clean. For machine-readable output, <code>--json</code> emits one compact
+JSON object per spec (a JSONL stream for multiple specs; one object for a single spec),
+compare mode only.</p>
+<p>Driving SMOKE from an agent or a TDD loop has its own playbook — see
+<a href=https://github.com/chakrit/smoke/blob/main/docs/spec/using-smoke-in-tdd.md><code>using-smoke-in-tdd</code></a>.</p>
+<h2 id=advanced-spec-formats>Advanced: spec formats</h2>
+<p>YAML is the default, but the same spec model loads from four other formats, chosen by file
+extension. Dispatch is <strong>default-deny</strong> — an unrecognized extension is rejected outright,
+never guessed — and every format resolves to the identical test tree, so inheritance,
+checks, and the lifecycle behave exactly as they do in YAML.</p>
+<p>One difference matters up front: <strong>YAML silently drops an unknown key</strong>, so a typo'd
+<code>chekcs:</code> just vanishes. CUE, JSON, and JSONC all <strong>fail closed</strong> — an unknown field is a
+load error (exit <code>65</code>), not a silent no-op. Reach for them when a silent drop would bite.</p>
+<h3 id=cue-cue>CUE (<code>.cue</code>)</h3>
+<p>A <code>.cue</code> spec is unified against an embedded, <strong>closed</strong> <code>#Test</code>/<code>#Config</code> schema before it
+decodes, so typo'd fields and wrong types surface as constraint errors — recursively,
+including nested <code>tests</code> and <code>config</code>. Beyond checking, CUE brings constraints, defaults,
+imports, and comprehensions, so you can <em>generate</em> a spec instead of hand-copying it:</p>
+<pre><code class=hljs>config: {
+	interpreter: "/bin/bash"
+	timeout:     "5s"   // a string — CUE has no duration type
+}
+checks: ["exitcode", "stdout"]
+
+// One subtest per fixture, no copy-paste.
+tests: [
+	for name in ["alpha", "beta", "gamma"] {
+		"name":   name
+		commands: ["./run.sh \(name)"]
+	},
+]
+</code></pre>
+<p>Reach for CUE when specs grow large or repetitive and you'd rather compute them than
+maintain them by hand — or when you already author config in CUE.</p>
+<h3 id=json-json>JSON (<code>.json</code>)</h3>
+<p>One JSON object is the root test, with the same keys as YAML (<code>config</code>, <code>checks</code>,
+<code>commands</code>, <code>tests</code>). Decoding <strong>rejects unknown fields</strong>, matching CUE's closed schema:</p>
+<pre><code class=hljs><span class=hljs-punctuation>{</span>
+  <span class=hljs-attr>"config"</span><span class=hljs-punctuation>:</span> <span class=hljs-punctuation>{</span> <span class=hljs-attr>"interpreter"</span><span class=hljs-punctuation>:</span> <span class=hljs-string>"/bin/bash"</span> <span class=hljs-punctuation>}</span><span class=hljs-punctuation>,</span>
+  <span class=hljs-attr>"checks"</span><span class=hljs-punctuation>:</span> <span class=hljs-punctuation>[</span><span class=hljs-string>"exitcode"</span><span class=hljs-punctuation>,</span> <span class=hljs-string>"stdout"</span><span class=hljs-punctuation>]</span><span class=hljs-punctuation>,</span>
+  <span class=hljs-attr>"tests"</span><span class=hljs-punctuation>:</span> <span class=hljs-punctuation>[</span>
+    <span class=hljs-punctuation>{</span> <span class=hljs-attr>"name"</span><span class=hljs-punctuation>:</span> <span class=hljs-string>"Greeting"</span><span class=hljs-punctuation>,</span> <span class=hljs-attr>"commands"</span><span class=hljs-punctuation>:</span> <span class=hljs-punctuation>[</span><span class=hljs-string>"echo hello"</span><span class=hljs-punctuation>]</span> <span class=hljs-punctuation>}</span>
+  <span class=hljs-punctuation>]</span>
+<span class=hljs-punctuation>}</span>
+</code></pre>
+<p>Reach for JSON when a tool emits the spec — it's the lowest-friction format to generate from
+another program.</p>
+<h3 id=jsonl-jsonl>JSONL (<code>.jsonl</code>)</h3>
+<p>One <code>TestSpec</code> per non-blank line (blank lines are skipped). The stream is the <strong>children of
+an implicit empty root</strong> — equivalent to a YAML <code>tests: [...]</code> with no top-level command.
+Each line decodes independently and fails closed on unknown fields:</p>
+<pre><code class=hljs><span class=hljs-punctuation>{</span> <span class=hljs-attr>"name"</span><span class=hljs-punctuation>:</span> <span class=hljs-string>"Greeting"</span><span class=hljs-punctuation>,</span> <span class=hljs-attr>"commands"</span><span class=hljs-punctuation>:</span> <span class=hljs-punctuation>[</span><span class=hljs-string>"echo hello"</span><span class=hljs-punctuation>]</span> <span class=hljs-punctuation>}</span>
+<span class=hljs-punctuation>{</span> <span class=hljs-attr>"name"</span><span class=hljs-punctuation>:</span> <span class=hljs-string>"Farewell"</span><span class=hljs-punctuation>,</span> <span class=hljs-attr>"commands"</span><span class=hljs-punctuation>:</span> <span class=hljs-punctuation>[</span><span class=hljs-string>"echo bye"</span><span class=hljs-punctuation>]</span> <span class=hljs-punctuation>}</span>
+</code></pre>
+<p>The catch: the implicit root carries no config or checks, so <strong>lines share no parent
+settings</strong> — each stands alone on the defaults. That makes JSONL a fit for a stream of
+independent, self-contained tests (say, appended by a generator) and a poor fit when tests
+need shared config or checks; use YAML, JSON, or CUE for those.</p>
+<h3 id=jsonc-jsonc>JSONC (<code>.jsonc</code>)</h3>
+<p>Plain JSON with comments — the same object as <code>.json</code>, but <code>//</code> line and <code>/* */</code> block
+comments are stripped before decoding. Comment markers inside string literals are data, not
+comments, so a command like <code>"echo // here"</code> is left intact:</p>
+<pre><code class=hljs><span class=hljs-punctuation>{</span>
+  <span class=hljs-comment>// shared settings for the whole spec</span>
+  <span class=hljs-attr>"config"</span><span class=hljs-punctuation>:</span> <span class=hljs-punctuation>{</span> <span class=hljs-attr>"interpreter"</span><span class=hljs-punctuation>:</span> <span class=hljs-string>"/bin/bash"</span> <span class=hljs-punctuation>}</span><span class=hljs-punctuation>,</span>
+  <span class=hljs-attr>"checks"</span><span class=hljs-punctuation>:</span> <span class=hljs-punctuation>[</span><span class=hljs-string>"exitcode"</span><span class=hljs-punctuation>,</span> <span class=hljs-string>"stdout"</span><span class=hljs-punctuation>]</span><span class=hljs-punctuation>,</span>
+  <span class=hljs-attr>"tests"</span><span class=hljs-punctuation>:</span> <span class=hljs-punctuation>[</span>
+    <span class=hljs-punctuation>{</span> <span class=hljs-attr>"name"</span><span class=hljs-punctuation>:</span> <span class=hljs-string>"Greeting"</span><span class=hljs-punctuation>,</span> <span class=hljs-attr>"commands"</span><span class=hljs-punctuation>:</span> <span class=hljs-punctuation>[</span><span class=hljs-string>"echo hello"</span><span class=hljs-punctuation>]</span> <span class=hljs-punctuation>}</span> <span class=hljs-comment>/* one per behaviour */</span>
+  <span class=hljs-punctuation>]</span>
+<span class=hljs-punctuation>}</span>
+</code></pre>
+<p>Comments are stripped to spaces (line numbers preserved), so decode errors still point at
+the right line, and unknown fields fail closed exactly as in <code>.json</code>. <strong>Trailing commas are
+not allowed</strong> — JSONC here means comments only. Reach for it when you want a JSON spec you
+can annotate inline.</p>
+<h2 id=flag-reference>Flag reference</h2>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Short</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--commit</code></td>
+<td><code>-c</code></td>
+<td>Run, then write the lock; merges if filtered (partial).</td>
+</tr>
+<tr>
+<td><code>--print</code></td>
+<td><code>-p</code></td>
+<td>Print result YAML to stdout (for scripting).</td>
+</tr>
+<tr>
+<td><code>--list</code></td>
+<td><code>-l</code></td>
+<td>List discovered test names (<code>-vv</code> adds commands).</td>
+</tr>
+<tr>
+<td><code>--show-expected</code></td>
+<td><code>-s</code></td>
+<td>Replay the lock without running anything.</td>
+</tr>
+<tr>
+<td><code>--json</code></td>
+<td></td>
+<td>Emit the compare verdict as JSON (compare mode only).</td>
+</tr>
+<tr>
+<td><code>--init[=path]</code></td>
+<td></td>
+<td>Scaffold a starter spec (won't clobber an existing file).</td>
+</tr>
+<tr>
+<td><code>--include</code></td>
+<td><code>-i</code></td>
+<td>Only run tests whose name contains the pattern.</td>
+</tr>
+<tr>
+<td><code>--exclude</code></td>
+<td><code>-x</code></td>
+<td>Skip tests whose name contains the pattern.</td>
+</tr>
+<tr>
+<td><code>--no-color</code></td>
+<td></td>
+<td>Disable console colouring.</td>
+</tr>
+<tr>
+<td><code>--time</code></td>
+<td></td>
+<td>Log timestamps.</td>
+</tr>
+<tr>
+<td><code>--verbose</code></td>
+<td><code>-v</code></td>
+<td>More output (repeatable: <code>-vv</code>).</td>
+</tr>
+<tr>
+<td><code>--quiet</code></td>
+<td><code>-q</code></td>
+<td>Less output (repeatable).</td>
+</tr>
+<tr>
+<td><code>--help</code></td>
+<td><code>-h</code></td>
+<td>Show usage.</td>
+</tr>
+</tbody>
+</table>
+</main>
+  </div>
+
+  <script type=module src=www.827d5761.js></script>
+
+
