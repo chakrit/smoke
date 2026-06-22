@@ -38,8 +38,8 @@ func Load(filename string) ([]*engine.Test, error) {
 	return tests, nil
 }
 
-// loadSpec reads and decodes one spec file into an unresolved tree. stack carries
-// the recursion's ancestor paths so includes (added later) can guard cycles and
+// loadSpec reads, decodes, and splices one spec file into an unresolved tree.
+// stack carries the recursion's ancestor paths so includes can guard cycles and
 // classify a missing file by graph position; at the root it is nil.
 func loadSpec(path string, stack []string) (*TestSpec, error) {
 	abs := cleanAbs(path)
