@@ -1,1 +1,17 @@
 school = "prod9/school"
+
+# Skills active for this repo — SMOKE, a Go CLI for snapshot/golden-file testing.
+# Trims the school's default set to the coding, docs, and domain skills this repo
+# uses, plus the ACE workflow skills a session runs on. (Personal always-add
+# patterns from global config — e.g. fact-check, find-skills, visualise — still
+# layer on top of this and aren't repeated here.)
+skills = [
+  "general-coding",   # mandatory for all code work
+  "go-coding",        # Go is the implementation language
+  "cue-coding",       # .cue is a first-class spec input format (+ potential config)
+  "markdown-writing", # docs/, guides/, notes/decisions/spec
+  "smoke",            # the project's own domain skill
+  "ace",              # session workflow
+  "ace-*",            # ace-afk/audit/save/docs/init/school/connect/realign
+  "lowfat-pantry",    # repo runs on lowfat command-output compaction
+]
