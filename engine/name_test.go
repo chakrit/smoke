@@ -30,12 +30,12 @@ func TestTestNameMatches(t *testing.T) {
 		pattern Pattern
 		want    bool
 	}{
-		{"build", true},     // interior segment
-		{"linux", true},     // leaf segment
-		{"spec.yml", true},  // root segment
-		{` \ `, true},       // the separator is part of the path
-		{"windows", false},  // absent
-		{"", true},          // empty pattern matches everything
+		{"build", true},    // interior segment
+		{"linux", true},    // leaf segment
+		{"spec.yml", true}, // root segment
+		{` \ `, true},      // the separator is part of the path
+		{"windows", false}, // absent
+		{"", true},         // empty pattern matches everything
 	}
 
 	for _, c := range cases {

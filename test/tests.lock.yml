@@ -19,7 +19,7 @@
             - "2"
         - name: stdout
           data:
-            - engine/name_test.go
+            - ""
     - command: goimports -l testspecs/*.go resultspecs/*.go
       checks:
         - name: exitcode
@@ -27,8 +27,7 @@
             - "0"
         - name: stdout
           data:
-            - resultspecs/line_edit.go
-            - resultspecs/resultspecs.go
+            - ""
 - name: tests.yml \ Sanity \ Workdirs \ Current dir
   commands:
     - command: ls *.mod

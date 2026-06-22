@@ -1,8 +1,9 @@
 package resultspecs
 
 import (
-	"github.com/chakrit/gendiff"
 	"strconv"
+
+	"github.com/chakrit/gendiff"
 )
 
 type LineEdit struct {

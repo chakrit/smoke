@@ -2,9 +2,10 @@ package resultspecs
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/chakrit/smoke/engine"
 	"gopkg.in/yaml.v3"
-	"io"
 )
 
 const (
