@@ -193,6 +193,24 @@ func TestLoadIncludeCrossFormat(t *testing.T) {
 	}
 }
 
+// Each include resolves against the *including file's own directory*, per hop —
+// not the root spec's dir or the cwd (D2, the movability guarantee). Here b.yml
+// lives in sub/ and includes a bare `c.yml`, which must be found at sub/c.yml.
+func TestLoadIncludePerHopDirResolution(t *testing.T) {
+	tests, err := loadFiles(t, "a.yml", map[string]string{
+		"a.yml":     "tests:\n  - name: host\n    include: sub/b.yml\n",
+		"sub/b.yml": "tests:\n  - name: mid\n    include: c.yml\n",
+		"sub/c.yml": "tests:\n  - name: leaf\n    commands: [\"echo hi\"]\n",
+	})
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	want := []string{`a.yml \ host \ sub/b.yml \ mid \ c.yml \ leaf`}
+	if got := names(tests); !slices.Equal(got, want) {
+		t.Errorf("names = %v\nwant      %v", got, want)
+	}
+}
+
 // A referenced file that doesn't exist is malformed content (the host named a
 // missing file) → SpecError → exit 65, distinct from a missing *root* spec (2).
 func TestLoadIncludeMissingFileRejected(t *testing.T) {
