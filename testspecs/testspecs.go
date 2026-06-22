@@ -64,7 +64,25 @@ func loadSpec(path string, stack []string) (*TestSpec, error) {
 	}
 
 	root.Filename = path
+	if err := checkIncludeExclusive(root); err != nil {
+		return nil, specErr(err)
+	}
 	return root, nil
+}
+
+// checkIncludeExclusive rejects a node that sets both `include` and `tests`: the
+// splice can't both pull in a file and host inline children at one node. Runs
+// before the splice, so the splice may assume the invariant holds.
+func checkIncludeExclusive(node *TestSpec) error {
+	if node.Include != "" && len(node.Children) > 0 {
+		return fmt.Errorf("test %q: `include` and `tests` are mutually exclusive", node.Name)
+	}
+	for _, child := range node.Children {
+		if err := checkIncludeExclusive(child); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // checkUniqueNames enforces that every flattened TestName is distinct. A

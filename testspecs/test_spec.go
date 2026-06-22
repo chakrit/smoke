@@ -16,6 +16,11 @@ type TestSpec struct {
 	Config   *ConfigSpec `yaml:"config" json:"config"`
 	Commands []string    `yaml:"commands" json:"commands"`
 	Checks   []string    `yaml:"checks" json:"checks"`
+
+	// Include splices another spec file in as a child of this node, resolved at
+	// load time before Resolve and cleared once spliced. Mutually exclusive with
+	// Children. See docs/decisions/2026-06-23-include-import-design.md.
+	Include  string      `yaml:"include" json:"include"`
 	Children []*TestSpec `yaml:"tests" json:"tests"`
 }
 

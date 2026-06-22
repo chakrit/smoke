@@ -4,8 +4,9 @@
 // recursive, so nested `tests` and `config` typos are caught too.
 
 #Test: {
-	name?:   string
-	config?: #Config
+	name?:    string
+	include?: string
+	config?:  #Config
 	commands?: [...string]
 	checks?: [...string]
 	tests?: [...#Test]

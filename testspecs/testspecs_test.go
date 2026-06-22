@@ -233,6 +233,24 @@ func TestLoadRejectsDuplicateNames(t *testing.T) {
 	}
 }
 
+// include and tests are mutually exclusive on one node — both set is a malformed
+// spec (exit 65): the splice would have to pull in a file *and* host inline
+// children at the same node.
+func TestLoadRejectsIncludeWithTests(t *testing.T) {
+	src := "include: other.yml\n" +
+		"tests:\n" +
+		"  - name: inline\n" +
+		"    commands: [\"echo hi\"]\n"
+
+	_, err := loadString(t, "spec.yml", src)
+	if err == nil {
+		t.Fatal("want error for include+tests, got nil")
+	}
+	if !strings.Contains(err.Error(), "mutually exclusive") {
+		t.Errorf("error should explain the conflict, got: %v", err)
+	}
+}
+
 // The root test name must be the spec's basename, not the path as typed on the
 // command line — so the same spec yields the same TestName (and thus the same
 // lock keys) regardless of directory depth or uncleaned `.`/`..` segments. For a
