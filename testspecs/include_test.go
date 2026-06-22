@@ -1,7 +1,9 @@
 package testspecs
 
 import (
+	"errors"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/chakrit/smoke/engine"
@@ -115,6 +117,94 @@ func TestLoadNameUndefinedVarExpandsEmpty(t *testing.T) {
 	}
 	if got, want := names(tests), []string{`spec.yml \ x-`}; !slices.Equal(got, want) {
 		t.Errorf("names = %v, want %v", got, want)
+	}
+}
+
+// A file that ends up among its own include ancestors is a cycle → exit 65.
+func TestLoadIncludeCycleRejected(t *testing.T) {
+	_, err := loadFiles(t, "a.yml", map[string]string{
+		"a.yml": "tests:\n  - name: toa\n    include: b.yml\n",
+		"b.yml": "tests:\n  - name: tob\n    include: a.yml\n",
+	})
+	if err == nil {
+		t.Fatal("want cycle error, got nil")
+	}
+	if !strings.Contains(err.Error(), "cycle") {
+		t.Errorf("error should name the cycle, got: %v", err)
+	}
+	var se *SpecError
+	if !errors.As(err, &se) {
+		t.Errorf("cycle should be a SpecError (exit 65), got: %v", err)
+	}
+}
+
+// A direct self-include is the degenerate cycle.
+func TestLoadIncludeSelfCycleRejected(t *testing.T) {
+	_, err := loadFiles(t, "a.yml", map[string]string{
+		"a.yml": "include: a.yml\n",
+	})
+	if err == nil || !strings.Contains(err.Error(), "cycle") {
+		t.Fatalf("want self-cycle error, got: %v", err)
+	}
+}
+
+// A diamond (A includes B and C, both include D) is NOT a cycle: D is on neither
+// ancestor stack, so it loads independently down each branch, distinct by parent.
+func TestLoadIncludeDiamondAllowed(t *testing.T) {
+	tests, err := loadFiles(t, "a.yml", map[string]string{
+		"a.yml": "tests:\n  - name: b\n    include: b.yml\n  - name: c\n    include: c.yml\n",
+		"b.yml": "tests:\n  - name: tod\n    include: d.yml\n",
+		"c.yml": "tests:\n  - name: tod\n    include: d.yml\n",
+		"d.yml": "tests:\n  - name: leaf\n    commands: [\"echo d\"]\n",
+	})
+	if err != nil {
+		t.Fatalf("diamond should load, got: %v", err)
+	}
+	want := []string{
+		`a.yml \ b \ b.yml \ tod \ d.yml \ leaf`,
+		`a.yml \ c \ c.yml \ tod \ d.yml \ leaf`,
+	}
+	if got := names(tests); !slices.Equal(got, want) {
+		t.Errorf("names = %v\nwant      %v", got, want)
+	}
+}
+
+// loadSpec dispatches each file by its own extension, so a .yml may include a
+// .cue and a .jsonl — each decodes via its own loader and the trees merge.
+func TestLoadIncludeCrossFormat(t *testing.T) {
+	tests, err := loadFiles(t, "a.yml", map[string]string{
+		"a.yml": "tests:\n" +
+			"  - name: fromcue\n    include: b.cue\n" +
+			"  - name: fromjsonl\n    include: c.jsonl\n",
+		"b.cue": "commands: [\"echo cue\"]\nchecks: [\"stdout\"]\n",
+		"c.jsonl": `{"name":"L1","commands":["echo l1"]}` + "\n" +
+			`{"name":"L2","commands":["echo l2"]}` + "\n",
+	})
+	if err != nil {
+		t.Fatalf("cross-format include should load, got: %v", err)
+	}
+	want := []string{
+		`a.yml \ fromcue \ b.cue`,
+		`a.yml \ fromjsonl \ c.jsonl \ L1`,
+		`a.yml \ fromjsonl \ c.jsonl \ L2`,
+	}
+	if got := names(tests); !slices.Equal(got, want) {
+		t.Errorf("names = %v\nwant      %v", got, want)
+	}
+}
+
+// A referenced file that doesn't exist is malformed content (the host named a
+// missing file) → SpecError → exit 65, distinct from a missing *root* spec (2).
+func TestLoadIncludeMissingFileRejected(t *testing.T) {
+	_, err := loadFiles(t, "a.yml", map[string]string{
+		"a.yml": "tests:\n  - name: host\n    include: nope.yml\n",
+	})
+	if err == nil {
+		t.Fatal("want error for missing include, got nil")
+	}
+	var se *SpecError
+	if !errors.As(err, &se) {
+		t.Errorf("missing include should be a SpecError (exit 65), got: %v", err)
 	}
 }
 

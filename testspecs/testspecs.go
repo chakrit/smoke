@@ -42,6 +42,14 @@ func Load(filename string) ([]*engine.Test, error) {
 // the recursion's ancestor paths so includes (added later) can guard cycles and
 // classify a missing file by graph position; at the root it is nil.
 func loadSpec(path string, stack []string) (*TestSpec, error) {
+	abs := cleanAbs(path)
+	// stack is the ancestor chain, not a global visited-set: a file already among
+	// its own ancestors is a true cycle (65); the same file reached down two
+	// distinct branches (a diamond) is not, so it loads independently each time.
+	if slices.Contains(stack, abs) {
+		return nil, specErr(fmt.Errorf("include cycle: %q includes itself", path))
+	}
+
 	loader, err := loaderFor(path)
 	if err != nil {
 		return nil, specErr(err)
@@ -70,8 +78,9 @@ func loadSpec(path string, stack []string) (*TestSpec, error) {
 	}
 
 	// Resolve includes relative to this file's directory (D2), pushing this file
-	// onto the ancestor stack for the recursion (the cycle guard reads it in S4).
-	stack = append(slices.Clone(stack), cleanAbs(path))
+	// onto the ancestor stack for the recursion. Clone so sibling include branches
+	// (a diamond) never see each other's pushes.
+	stack = append(slices.Clone(stack), abs)
 	if err := spliceIncludes(root, filepath.Dir(path), stack); err != nil {
 		return nil, err
 	}
