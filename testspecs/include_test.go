@@ -82,6 +82,42 @@ func TestLoadIncludeInheritsFromImportingNode(t *testing.T) {
 	}
 }
 
+// Parameterized include: env flows down through Resolve, and the imported tests'
+// names interpolate it via os.Expand — so one shared file, included under
+// siblings that set different env, yields distinctly-named copies without editing
+// the shared file.
+func TestLoadIncludeParameterizedNames(t *testing.T) {
+	tests, err := loadFiles(t, "root.yml", map[string]string{
+		"root.yml": "tests:\n" +
+			"  - name: postgres\n    config:\n      env: [\"DB=postgres\"]\n    include: db.yml\n" +
+			"  - name: mysql\n    config:\n      env: [\"DB=mysql\"]\n    include: db.yml\n",
+		"db.yml": "tests:\n  - name: \"connect-${DB}\"\n    commands: [\"echo hi\"]\n",
+	})
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	want := []string{
+		`root.yml \ postgres \ db.yml \ connect-postgres`,
+		`root.yml \ mysql \ db.yml \ connect-mysql`,
+	}
+	if got := names(tests); !slices.Equal(got, want) {
+		t.Errorf("names = %v\nwant      %v", got, want)
+	}
+}
+
+// An undefined variable expands to empty (the os.Expand/envsubst default), not an
+// error — the source is the spec's declared env only, never os.Environ.
+func TestLoadNameUndefinedVarExpandsEmpty(t *testing.T) {
+	tests, err := loadString(t, "spec.yml",
+		"tests:\n  - name: \"x-${NOPE}\"\n    commands: [\"echo hi\"]\n")
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if got, want := names(tests), []string{`spec.yml \ x-`}; !slices.Equal(got, want) {
+		t.Errorf("names = %v, want %v", got, want)
+	}
+}
+
 func cmds(test *engine.Test) []string {
 	out := make([]string, len(test.Commands))
 	for i, c := range test.Commands {

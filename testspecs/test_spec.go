@@ -2,6 +2,7 @@ package testspecs
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -60,8 +61,26 @@ func (t *TestSpec) Tests() ([]*engine.Test, error) {
 	return t.tests("")
 }
 
+// expandName interpolates $VAR/${VAR} in the node's name segment against its
+// resolved env (KEY=value, last wins). Undefined vars expand to empty — the
+// os.Expand/envsubst default — and the source is the spec's declared env only,
+// never os.Environ. This is what powers parameterized includes: a shared file's
+// names resolve against whatever env each importing node passed down.
+func (t *TestSpec) expandName() string {
+	if t.Config == nil {
+		return t.Name
+	}
+	env := make(map[string]string, len(t.Config.Env))
+	for _, kv := range t.Config.Env {
+		if k, v, ok := strings.Cut(kv, "="); ok {
+			env[k] = v
+		}
+	}
+	return os.Expand(t.Name, func(key string) string { return env[key] })
+}
+
 func (t *TestSpec) tests(parent engine.TestName) (tests []*engine.Test, err error) {
-	name := parent.Child(t.Name)
+	name := parent.Child(t.expandName())
 
 	if len(t.Children) == 0 && len(t.Commands) == 0 {
 		return nil, fmt.Errorf("test `%s` is a leaf with no commands", name)
