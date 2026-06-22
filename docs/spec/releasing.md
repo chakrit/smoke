@@ -4,7 +4,7 @@
 
 SMOKE releases are **lightweight git tags** — no build artifacts, no changelog
 ceremony, no release branch. Versioning is semver `vMAJOR.MINOR.PATCH`
-(latest: `v0.3.1`). The tag *is* the release; `go install` resolves it.
+(latest: `v0.4.0`). The tag *is* the release; `go install` resolves it.
 
 ## Process
 
