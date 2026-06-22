@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/chakrit/smoke/engine"
 )
@@ -67,7 +68,49 @@ func loadSpec(path string, stack []string) (*TestSpec, error) {
 	if err := checkIncludeExclusive(root); err != nil {
 		return nil, specErr(err)
 	}
+
+	// Resolve includes relative to this file's directory (D2), pushing this file
+	// onto the ancestor stack for the recursion (the cycle guard reads it in S4).
+	stack = append(slices.Clone(stack), cleanAbs(path))
+	if err := spliceIncludes(root, filepath.Dir(path), stack); err != nil {
+		return nil, err
+	}
 	return root, nil
+}
+
+// spliceIncludes walks node and its descendants and, for each `include`, loads
+// the referenced file (relative to dir, D2) and splices its root in as a child
+// (D3, two-node). The imported root's segment defaults to the include path as
+// written when the file names no root of its own. Errors from the recursive load
+// are already classified (SpecError), so they propagate as-is.
+func spliceIncludes(node *TestSpec, dir string, stack []string) error {
+	if node.Include != "" {
+		childRoot, err := loadSpec(filepath.Join(dir, node.Include), stack)
+		if err != nil {
+			return err
+		}
+		if childRoot.Name == "" {
+			childRoot.Name = node.Include
+		}
+		node.Children = append(node.Children, childRoot)
+		node.Include = ""
+		return nil
+	}
+	for _, child := range node.Children {
+		if err := spliceIncludes(child, dir, stack); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// cleanAbs is the absolute, cleaned form of path — the stable key for the cycle
+// guard, so the same file reached via ./x, x, or ../d/x collapses to one entry.
+func cleanAbs(path string) string {
+	if abs, err := filepath.Abs(path); err == nil {
+		return abs
+	}
+	return filepath.Clean(path)
 }
 
 // checkIncludeExclusive rejects a node that sets both `include` and `tests`: the

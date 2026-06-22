@@ -21,6 +21,42 @@ func loadString(t *testing.T, filename, src string) ([]*engine.Test, error) {
 	return Load(path)
 }
 
+// loadFiles writes each name→content into one temp dir (subdir names supported)
+// and loads root through the path-based Load, so includes resolve against real
+// sibling files.
+func loadFiles(t *testing.T, root string, files map[string]string) ([]*engine.Test, error) {
+	t.Helper()
+	dir := t.TempDir()
+	for name, content := range files {
+		path := filepath.Join(dir, name)
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatalf("mkdir for %q: %v", name, err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatalf("write %q: %v", name, err)
+		}
+	}
+	return Load(filepath.Join(dir, root))
+}
+
+// names projects flattened tests to their string names for assertions.
+func names(tests []*engine.Test) []string {
+	out := make([]string, len(tests))
+	for i, tc := range tests {
+		out[i] = string(tc.Name)
+	}
+	return out
+}
+
+func findTest(tests []*engine.Test, name string) *engine.Test {
+	for _, tc := range tests {
+		if string(tc.Name) == name {
+			return tc
+		}
+	}
+	return nil
+}
+
 func TestLoadJSON(t *testing.T) {
 	src := `{"config":{"interpreter":"/bin/sh"},` +
 		`"tests":[{"name":"Echo","commands":["echo hi"],"checks":["stdout"]}]}`
