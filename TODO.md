@@ -55,10 +55,12 @@ see git history and `docs/notes/` session logs for the detail.
 
 ## Docs site (`www/`)
 
-* [ ] **Rebuild/redeploy after the 2026-06-21 guide change.** `docs/guides/index.md` and
-  `docs/spec/architecture.md` now describe partial-commit merge (was: refusal). Run
-  `scripts/build-docs.sh` + `scripts/deploy-docs.sh`. Check whether the partial-commit SVG
-  diagram, if any, still depicts the old exit-64 refusal.
+* [x] **Rebuild/redeploy after the guide changes. Done (2026-06-22).** Deployed via
+  `scripts/deploy-docs.sh` (force-pushed `gh-pages` `d6e524f`) after the partial-commit
+  merge + basename-identity guide edits. No SVG diagram exists to update. **Note:** the old
+  `gh.chakrit.net` custom domain (account-level) no longer points to GitHub; user is
+  disabling repo Pages (`gh api -X DELETE repos/chakrit/smoke/pages`). Revisit hosting if
+  the docs site is wanted again.
 * [x] **Deploy to GitHub Pages via gh-pages branch. Done & live (2026-06-19).**
   `scripts/deploy-docs.sh` builds, then force-pushes `www/dist` to `gh-pages` via a
   throwaway `git worktree` (dist is gitignored), `.nojekyll` included, `--dry-run` for local
