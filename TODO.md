@@ -33,13 +33,17 @@ see git history and `docs/notes/` session logs for the detail.
   re-committed, 2 intentional-drift fixtures (`badtests`, `timeouttests`) key-renamed in place
   to preserve their baseline, self-test lock regenerated. Analysis + resolution in
   `docs/notes/2026-06-21-spec-filename-path-dependence.md`.
-* [ ] **Include / import other spec files. DESIGN RULED 2026-06-23 — ready to build (AFK).**
-  Singular scalar `include: <path>` on any node, two-node file-relative splice, env-down +
-  `os.Expand` parameterized names, single root lock, ancestor-stack cycle guard. Full design
-  + per-slice AFK roadmap (S0–S5): `docs/notes/2026-06-21-include-import-spec-files.md`.
-  Consolidated ruling: `docs/decisions/2026-06-23-include-import-design.md`. **This is the
-  next workslice** — start at S0 (I/O ownership refactor: `Load(reader, filename)` →
-  `Load(filename)`).
+* [x] **Include / import other spec files. DONE (AFK 2026-06-23, S0–S5).** Singular scalar
+  `include: <path>` on any node, two-node file-relative splice, env-down + `os.Expand`
+  parameterized names, single root lock, ancestor-stack cycle guard. Shipped exactly per the
+  design (`docs/notes/2026-06-21-include-import-spec-files.md`) and ruling
+  (`docs/decisions/2026-06-23-include-import-design.md`). Two design refinements made during
+  build (both recorded in `docs/notes/2026-06-23-include-import-landed-afk.md`): (1) S0's
+  "no behavior change" *required* a `testspecs.SpecError` marker — the frozen exit-code
+  contract pins a missing **root** spec at 2, so only a missing **included** file is 65;
+  (2) the imported-root segment defaults to the include path only when the imported file
+  names no root of its own (D3 "default", not the roadmap's unconditional set). `testspecs`
+  now owns spec file I/O. Self-test fixture: `test/testdata/include/`.
 * [ ] **Commit last run** — bless the previous run without re-running. Was a whole `runcache`
   package; only build it back if the re-run cost is actually a problem in practice. vNext;
   its own design pass.

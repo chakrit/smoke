@@ -1,13 +1,17 @@
 # Include / import of other spec files — design (spec only, pending ruling)
 
-- **Date:** 2026-06-21 (unattended). **Status:** design proposal, **not implemented.**
-  Decisions below need a ruling; this note is the legwork so a one-word reply per item
-  unblocks implementation. Tracked in `TODO.md`.
+- **Date:** 2026-06-21 (unattended). **Status:** **IMPLEMENTED (AFK 2026-06-23, S0–S5).**
+  Originally a design proposal; this note is the full per-decision rationale and the AFK
+  roadmap that was built against. Tracked in `TODO.md`; build write-up in
+  `docs/notes/2026-06-23-include-import-landed-afk.md`.
 - **Update 2026-06-22/23 (interactive 1-by-1 walk): ALL RULED.** D1–D8 plus a workdir-default
   fork all settled (see each below). The walk grew a *parameterized-include* feature
   (env-down + `os.Expand` in names). Consolidated ruling: `docs/decisions/2026-06-23-include-import-design.md`.
-  Implementation is **ready for an AFK session** — roadmap at the end of this note. Next `/ace`
-  should pick up there.
+- **Update 2026-06-23 (AFK build): SHIPPED.** Built S0–S5 as designed, one commit per slice on
+  `main`. Two refinements vs the roadmap, both forced by the existing contract/code (detail in
+  the landed-AFK note): S0 needed a `SpecError` marker to keep a missing *root* spec at exit 2
+  (only a missing *included* file is 65); the imported-root segment default is conditional on
+  the imported file naming no root (D3 "default"), not the unconditional set the roadmap wrote.
 
 ## Intent
 
