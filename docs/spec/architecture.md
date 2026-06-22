@@ -24,8 +24,8 @@ spec file                lock file (*.lock.yml)
    │                              │
    ▼                              ▼
 testspecs.Load ──► []*engine.Test ──► engine.Runner ──► []engine.TestResult
-   (parse +            (flattened       (run cmds,          (raw check output)
-    resolve)            test tree)       collect checks)         │
+   (read + splice      (flattened       (run cmds,          (raw check output)
+    + resolve)          test tree)       collect checks)         │
                                                                  ▼
                                               resultspecs.FromTestResult
                                                                  │
@@ -38,6 +38,11 @@ testspecs.Load ──► []*engine.Test ──► engine.Runner ──► []engi
 
 `--show-expected` short-circuits before running anything: it loads the lock and
 replays it through the same edit-printing path with every action set to `NoOp`.
+
+`testspecs.Load` takes a **path**, not a reader: spec file I/O lives in the
+package, because resolving `include`s means opening more files relative to each
+hop's own directory (see *Include resolution*). `process.go` no longer reads spec
+files — it hands `Load` the filename and maps the result.
 
 ## Two-stage spec model
 
@@ -60,7 +65,7 @@ are a captured artifact we never need to round-trip back through CUE.
 | -------------- | ------------------------------------------------------------------ |
 | `main.go`      | pflag surface, mode dispatch, `--init` scaffolder, usage/exit codes|
 | `process.go`   | Per-file orchestration: load → filter → run → print/commit/compare |
-| `testspecs/`   | Input parsing (YAML + CUE), inheritance resolution, tree flattening|
+| `testspecs/`   | Spec file I/O, parsing (YAML + CUE), include splice, resolution, flatten|
 | `engine/`      | `Runner`, `Test`/`*Result` types, `Config`, `RunHooks`             |
 | `checks/`      | Pluggable observations + the string→check parser                   |
 | `resultspecs/` | Lock serialization and the structural (name-keyed) diff engine     |
@@ -71,8 +76,11 @@ is confined entirely to `testspecs.Load`.
 
 ## Input parsing and the CUE seam
 
-`testspecs.Load` dispatches on file extension via `loaderFor` into a per-format
-`loader` (`Load(io.Reader) (*TestSpec, error)`), default-deny:
+`testspecs.Load(filename)` opens the file through the recursive `loadSpec(path,
+stack)` seam, then dispatches on file extension via `loaderFor` into a per-format
+`loader` (`Load(io.Reader) (*TestSpec, error)`), default-deny. The loader stays a
+dumb reader→tree decoder: opening files and resolving includes live *above* it in
+`loadSpec`, once, format-agnostic.
 
 - `.yml` / `.yaml` / *(none)* → `yamlLoader` (`yaml.NewDecoder`)
 - `.cue` → `cueLoader` (compile → unify against `#Test` → validate → decode)
@@ -111,6 +119,41 @@ comment-like sequences inside string literals untouched — then decodes through
 the same `decodeJSON`, inheriting its fail-closed behavior. Trailing commas are
 not tolerated; that would be structural editing, not comment stripping.
 
+## Include resolution
+
+A node may carry `include: <path>` to splice another spec file in as a child of
+that node, so a suite can span files and shared config/commands be defined once.
+`loadSpec` resolves includes as a **pre-pass before `Resolve`**: decode the file,
+then for each `include` node, recurse into the referenced file and graft its root
+in as a child. `Resolve` and `Tests()` then run over the merged tree unchanged —
+an imported test is indistinguishable from an inline one once spliced.
+
+The model, ruled in `docs/decisions/2026-06-23-include-import-design.md`:
+
+- **Two nodes, file-relative.** The imported file's root is kept as a real child
+  node (not flattened away), so a single-test imported file never loses its
+  commands. The imported root's segment defaults to the include path as written
+  (an explicit `name:` in the imported file wins, mirroring the root-basename
+  default). Path is resolved against the **including file's** directory, per hop —
+  files stay movable.
+- **Mutually exclusive with `tests:`** on one node (both → exit 65).
+- **Single root lock.** Imported tests flatten into the root spec's one lock,
+  keyed by full name; there are no per-imported-file locks. Editing an imported
+  file surfaces as drift in the root lock.
+- **Inheritance is the existing `Resolve`.** The imported root is just a child, so
+  config merges and commands/checks prepend exactly as for an inline child. That
+  uniformity powers **parameterized include**: env flows down, and an imported
+  test's name interpolates it via `os.Expand` (`$VAR`/`${VAR}`, undefined → empty,
+  declared env only — never `os.Environ`). One shared file under siblings that set
+  different env yields distinctly-named copies.
+- **Cycle guard, diamonds allowed.** `loadSpec` carries an **ancestor stack** of
+  abs+clean paths (cloned per descent, not a global visited-set). A file already
+  among its own ancestors is a cycle (exit 65); the same file reached down two
+  distinct branches (a diamond) loads independently each time, distinct by parent
+  chain. Cross-format includes (`.yml` pulling a `.cue`/`.jsonl`) fall out of
+  per-file `loaderFor` dispatch for free. A missing *included* file is malformed
+  content (exit 65), distinct from a missing *root* spec (operational, exit 2).
+
 ## Inheritance resolution
 
 After parsing, `TestSpec.Resolve(parent)` walks the tree applying parent→child
@@ -135,7 +178,9 @@ any node with commands becomes one `engine.Test`; children recurse. The YAML roo
 field (an unknown check name, a bad timeout duration) is checked as it's visited.
 Identity is composed here, not in `Resolve`: each node's `engine.TestName` is its
 parent's name extended by its own segment (`TestName.Child`), so the flattened
-name is minted exactly at this gate. After the walk, `testspecs.Load` asserts the
+name is minted exactly at this gate. The segment is `os.Expand`ed against the
+node's resolved env first (see *Include resolution*), so a non-imported name with
+no `$` is untouched. After the walk, `testspecs.Load` asserts the
 flattened names are **unique** — two tests that flatten to the same name make the
 name-keyed lock ambiguous, so a duplicate is a malformed spec. The first error
 stops the walk (or the uniqueness pass) and flows out through `testspecs.Load`,

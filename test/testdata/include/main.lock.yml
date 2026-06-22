@@ -1,0 +1,14 @@
+- name: main.yml \ postgres \ db.yml \ connect-postgres
+  commands:
+    - command: echo "connecting to $DB"
+      checks:
+        - name: stdout
+          data:
+            - connecting to postgres
+- name: main.yml \ mysql \ db.yml \ connect-mysql
+  commands:
+    - command: echo "connecting to $DB"
+      checks:
+        - name: stdout
+          data:
+            - connecting to mysql

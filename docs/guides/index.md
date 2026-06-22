@@ -277,6 +277,69 @@ the right line, and unknown fields fail closed exactly as in `.json`. **Trailing
 not allowed** — JSONC here means comments only. Reach for it when you want a JSON spec you
 can annotate inline.
 
+## Advanced: including other specs
+
+Any node can pull in another spec file with `include: <path>`, so a suite can span
+files and shared config/commands live in one place. The referenced file's tree
+splices in **as a child of the including node** — its tests run with that node's
+inherited config, commands, and checks, exactly as if they'd been written inline:
+
+```yaml
+# auth.yml                          # smoke.yml
+checks: [exitcode]                  tests:
+commands:                            - name: auth
+  - ./login.sh                         include: auth.yml
+                                     - name: billing
+                                         include: billing.yml
+```
+
+The path resolves against **the including file's own directory**, per hop — files stay
+movable, and a sub-spec is a valid root on its own (run it standalone and it gets its own
+lock). `include` is mutually exclusive with `tests:` on the same node (both → exit `65`).
+
+### Parameterized includes
+
+Because the imported tree inherits through the same resolution as any child, **env
+flows down** — and an imported test's *name* interpolates that env via `$VAR` /
+`${VAR}`. So one shared file, included under siblings that set different env, yields
+distinctly-named copies without editing the shared file:
+
+```yaml
+# main.yml                          # db.yml
+config: { interpreter: /bin/sh }    tests:
+tests:                                - name: "connect-${DB}"
+  - name: postgres                       checks: [stdout]
+    config: { env: ["DB=postgres"] }     commands: ["echo connecting to $DB"]
+    include: db.yml
+  - name: mysql
+    config: { env: ["DB=mysql"] }
+    include: db.yml
+```
+
+```text
+$ smoke --list main.yml
+main.yml \ postgres \ db.yml \ connect-postgres
+main.yml \ mysql \ db.yml \ connect-mysql
+```
+
+Two notes on expansion: an **undefined** variable expands to empty (no error), and
+the source is the spec's **declared env only** — `${HOME}` in a name does *not*
+read your shell environment. The `$DB` in the *command*, by contrast, is expanded
+by the interpreter at run time as usual — SMOKE only ever interpolates names.
+
+### What to keep in mind
+
+- **One lock, at the root.** Imported tests flatten into the root spec's single
+  `.lock.yml`, keyed by full name. Editing an included file shows up as drift in
+  the **root** lock (CHANGED → eyeball → re-commit). There are no per-file locks.
+- **Cycles are caught.** A file that ends up including itself (directly or through
+  a chain) is an error (exit `65`). A *diamond* — two branches both including the
+  same file — is fine; each copy stays distinct by its parent path.
+- **Cross-format works.** A `.yml` can `include` a `.cue`, `.json`, `.jsonl`, or
+  `.jsonc`, and vice-versa — each file decodes by its own extension.
+- **No sandbox.** `include` reads any path you name, `../` and absolute alike — a
+  spec already runs arbitrary shell, so reading a file it names grants nothing extra.
+
 ## Flag reference
 
 | Flag               | Short | Effect                                                     |

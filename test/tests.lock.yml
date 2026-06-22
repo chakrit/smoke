@@ -774,6 +774,31 @@
         - name: stderr
           data:
             - ""
+- name: tests.yml \ Behavior \ Include
+  commands:
+    - command: ./bin/smoke --no-color --list test/testdata/include/main.yml
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - main.yml \ postgres \ db.yml \ connect-postgres
+            - main.yml \ mysql \ db.yml \ connect-mysql
+        - name: stderr
+          data:
+            - ""
+    - command: ./bin/smoke --no-color test/testdata/include/main.yml
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - UNCHANGED — output matches test/testdata/include/main.lock.yml (drift-free, not verified correct)
+        - name: stderr
+          data:
+            - ""
 - name: tests.yml \ Behavior \ JSON Output \ Unchanged
   commands:
     - command: ./bin/smoke --no-color --json test/testdata/stabletests.yml

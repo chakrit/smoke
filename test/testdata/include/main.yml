@@ -1,0 +1,16 @@
+config:
+  interpreter: /bin/sh
+tests:
+  # Same shared file (db.yml), included under two siblings that set different env.
+  # Env flows down via Resolve; the imported test's `${DB}` name interpolates per
+  # parent, yielding distinctly-named copies without editing db.yml.
+  - name: postgres
+    config:
+      env:
+        - "DB=postgres"
+    include: db.yml
+  - name: mysql
+    config:
+      env:
+        - "DB=mysql"
+    include: db.yml

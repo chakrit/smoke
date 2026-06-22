@@ -1,0 +1,8 @@
+tests:
+  # ${DB} in the name interpolates against the importing node's env (os.Expand).
+  # $DB in the command is expanded by the interpreter at runtime, not by SMOKE.
+  - name: "connect-${DB}"
+    checks:
+      - stdout
+    commands:
+      - echo "connecting to $DB"

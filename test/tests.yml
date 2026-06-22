@@ -138,6 +138,10 @@ tests:
         commands:
           - ./bin/smoke --no-color --list test/testdata/jsonctests.jsonc # .jsonc spec loads (comments stripped)
           - ./bin/smoke --no-color test/testdata/jsonctests.jsonc # and compares UNCHANGED
+      - name: Include
+        commands:
+          - ./bin/smoke --no-color --list test/testdata/include/main.yml # includes splice in; names show two-node path + parameterized ${DB}
+          - ./bin/smoke --no-color test/testdata/include/main.yml # single root lock round-trips UNCHANGED
       - name: JSON Output
         tests:
           - name: Unchanged
