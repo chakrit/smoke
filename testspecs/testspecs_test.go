@@ -2,15 +2,30 @@ package testspecs
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/chakrit/smoke/engine"
 )
+
+// loadString writes src to a temp file named filename (so the basename, and thus
+// the root TestName, is filename) and loads it through the path-based Load.
+func loadString(t *testing.T, filename, src string) ([]*engine.Test, error) {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), filename)
+	if err := os.WriteFile(path, []byte(src), 0o644); err != nil {
+		t.Fatalf("write spec %q: %v", filename, err)
+	}
+	return Load(path)
+}
 
 func TestLoadJSON(t *testing.T) {
 	src := `{"config":{"interpreter":"/bin/sh"},` +
 		`"tests":[{"name":"Echo","commands":["echo hi"],"checks":["stdout"]}]}`
 
-	tests, err := Load(strings.NewReader(src), "spec.json")
+	tests, err := loadString(t, "spec.json", src)
 	if err != nil {
 		t.Fatalf("load json: %v", err)
 	}
@@ -28,7 +43,7 @@ func TestLoadJSON(t *testing.T) {
 func TestLoadJSONRejectsUnknownField(t *testing.T) {
 	src := `{"chekcs":["stdout"],"commands":["echo hi"]}`
 
-	_, err := Load(strings.NewReader(src), "spec.json")
+	_, err := loadString(t, "spec.json", src)
 	if err == nil {
 		t.Fatal("want error for unknown field, got nil")
 	}
@@ -42,7 +57,7 @@ func TestLoadJSONRejectsUnknownField(t *testing.T) {
 func TestLoadJSONRejectsNestedUnknownField(t *testing.T) {
 	src := `{"tests":[{"name":"Echo","commands":["echo hi"],"chekcs":["stdout"]}]}`
 
-	_, err := Load(strings.NewReader(src), "spec.json")
+	_, err := loadString(t, "spec.json", src)
 	if err == nil {
 		t.Fatal("want error for nested unknown field, got nil")
 	}
@@ -55,7 +70,7 @@ func TestLoadJSONL(t *testing.T) {
 	src := `{"name":"A","commands":["echo a"]}` + "\n" +
 		`{"name":"B","commands":["echo b"]}` + "\n"
 
-	tests, err := Load(strings.NewReader(src), "spec.jsonl")
+	tests, err := loadString(t, "spec.jsonl", src)
 	if err != nil {
 		t.Fatalf("load jsonl: %v", err)
 	}
@@ -73,7 +88,7 @@ func TestLoadJSONL(t *testing.T) {
 func TestLoadJSONLRejectsUnknownField(t *testing.T) {
 	src := `{"name":"A","chekcs":["stdout"]}` + "\n"
 
-	_, err := Load(strings.NewReader(src), "spec.jsonl")
+	_, err := loadString(t, "spec.jsonl", src)
 	if err == nil {
 		t.Fatal("want error for unknown field, got nil")
 	}
@@ -95,7 +110,7 @@ func TestLoadJSONC(t *testing.T) {
 		]
 	}`
 
-	tests, err := Load(strings.NewReader(src), "spec.jsonc")
+	tests, err := loadString(t, "spec.jsonc", src)
 	if err != nil {
 		t.Fatalf("load jsonc: %v", err)
 	}
@@ -123,7 +138,7 @@ func TestLoadJSONCPreservesCommentsInStrings(t *testing.T) {
 		"checks": ["stdout"]
 	}`
 
-	tests, err := Load(strings.NewReader(src), "spec.jsonc")
+	tests, err := loadString(t, "spec.jsonc", src)
 	if err != nil {
 		t.Fatalf("load jsonc: %v", err)
 	}
@@ -148,7 +163,7 @@ func TestLoadJSONCRejectsUnknownField(t *testing.T) {
 		"chekcs": ["stdout"], "commands": ["echo hi"]
 	}`
 
-	_, err := Load(strings.NewReader(src), "spec.jsonc")
+	_, err := loadString(t, "spec.jsonc", src)
 	if err == nil {
 		t.Fatal("want error for unknown field, got nil")
 	}
@@ -194,7 +209,7 @@ func TestStripJSONCommentsProperties(t *testing.T) {
 func TestLoadLeafWithoutCommands(t *testing.T) {
 	src := "tests:\n  - name: Empty\n"
 
-	if _, err := Load(strings.NewReader(src), "spec.yml"); err == nil {
+	if _, err := loadString(t, "spec.yml", src); err == nil {
 		t.Fatal("want error for command-less leaf, got nil")
 	}
 }
@@ -209,7 +224,7 @@ func TestLoadRejectsDuplicateNames(t *testing.T) {
 		"  - name: dup\n" +
 		"    commands: [\"echo b\"]\n"
 
-	_, err := Load(strings.NewReader(src), "spec.yml")
+	_, err := loadString(t, "spec.yml", src)
 	if err == nil {
 		t.Fatal("want error for duplicate test name, got nil")
 	}
@@ -220,25 +235,34 @@ func TestLoadRejectsDuplicateNames(t *testing.T) {
 
 // The root test name must be the spec's basename, not the path as typed on the
 // command line — so the same spec yields the same TestName (and thus the same
-// lock keys) regardless of cwd, a leading `./`, or absolute-vs-relative paths.
-// For a single root spec, the basename is its path "relative to the root spec
-// file"; imported specs extend that rule against the root's directory.
+// lock keys) regardless of directory depth or uncleaned `.`/`..` segments. For a
+// single root spec the basename is its path "relative to the root spec file";
+// imported specs extend that rule against the root's directory.
 func TestLoadRootNameIsBasename(t *testing.T) {
 	src := "tests:\n  - name: Echo\n    commands: [\"echo hi\"]\n"
+	sub := filepath.Join(t.TempDir(), "sub")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(sub, "x.yml")
+	if err := os.WriteFile(path, []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
 
-	for _, filename := range []string{"x.yml", "./x.yml", "dir/x.yml", "../x.yml", "/abs/dir/x.yml"} {
-		tests, err := Load(strings.NewReader(src), filename)
+	// Every form points at the same file; only the basename may leak into the name.
+	for _, form := range []string{path, sub + "/./x.yml", sub + "/../sub/x.yml"} {
+		tests, err := Load(form)
 		if err != nil {
-			t.Fatalf("load %q: %v", filename, err)
+			t.Fatalf("load %q: %v", form, err)
 		}
 		if got := tests[0].Name; got != `x.yml \ Echo` {
-			t.Errorf("filename %q: name = %q, want %q", filename, got, `x.yml \ Echo`)
+			t.Errorf("form %q: name = %q, want %q", form, got, `x.yml \ Echo`)
 		}
 	}
 }
 
 func TestLoadUnsupportedFormat(t *testing.T) {
-	if _, err := Load(strings.NewReader(""), "spec.txt"); err == nil {
+	if _, err := loadString(t, "spec.txt", ""); err == nil {
 		t.Fatal("want error for unsupported format, got nil")
 	}
 }
@@ -246,7 +270,7 @@ func TestLoadUnsupportedFormat(t *testing.T) {
 func TestLoadUnknownCheck(t *testing.T) {
 	src := "commands: [\"echo hi\"]\nchecks: [\"nope://x\"]\n"
 
-	_, err := Load(strings.NewReader(src), "spec.yml")
+	_, err := loadString(t, "spec.yml", src)
 	if err == nil {
 		t.Fatal("want error for unknown check, got nil")
 	}
@@ -259,7 +283,7 @@ func TestLoadUnknownCheck(t *testing.T) {
 func TestLoadBadTimeout(t *testing.T) {
 	src := "commands: [\"echo hi\"]\nconfig:\n  timeout: \"nope\"\n"
 
-	_, err := Load(strings.NewReader(src), "spec.yml")
+	_, err := loadString(t, "spec.yml", src)
 	if err == nil {
 		t.Fatal("want error for bad timeout, got nil")
 	}
@@ -273,7 +297,7 @@ func TestLoadBadTimeout(t *testing.T) {
 func TestLoadCUERejectsUnknownField(t *testing.T) {
 	src := "commands: [\"echo hi\"]\nchekcs: [\"stdout\"]\n"
 
-	_, err := Load(strings.NewReader(src), "spec.cue")
+	_, err := loadString(t, "spec.cue", src)
 	if err == nil {
 		t.Fatal("want error for unknown field, got nil")
 	}
@@ -285,7 +309,7 @@ func TestLoadCUERejectsUnknownField(t *testing.T) {
 func TestLoadCUEValid(t *testing.T) {
 	src := "commands: [\"echo hi\"]\nchecks: [\"stdout\"]\n"
 
-	tests, err := Load(strings.NewReader(src), "spec.cue")
+	tests, err := loadString(t, "spec.cue", src)
 	if err != nil {
 		t.Fatalf("load cue: %v", err)
 	}

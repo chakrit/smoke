@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -23,14 +23,16 @@ func processFile(filename string) (status, error) {
 		return statusUnchanged, showResults(filename)
 	}
 
-	content, err := os.ReadFile(filename)
+	tests, err := testspecs.Load(filename)
 	if err != nil {
+		// testspecs owns spec I/O now; it marks malformed-spec failures (parse,
+		// validation, bad include) as SpecError → data error (65), and returns a
+		// bare I/O error for a root spec that won't open → operational (2).
+		var se *testspecs.SpecError
+		if errors.As(err, &se) {
+			return statusUnchanged, dataErr(fmt.Errorf(filename+": %w", err))
+		}
 		return statusUnchanged, fmt.Errorf(filename+": %w", err)
-	}
-
-	tests, err := testspecs.Load(bytes.NewReader(content), filename)
-	if err != nil {
-		return statusUnchanged, dataErr(fmt.Errorf(filename+": %w", err))
 	}
 
 	// capture the full spec order before filtering — a partial commit merges the

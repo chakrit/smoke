@@ -2,34 +2,69 @@ package testspecs
 
 import (
 	"fmt"
-	"io"
+	"os"
 	"path/filepath"
 
 	"github.com/chakrit/smoke/engine"
 )
 
-func Load(reader io.Reader, filename string) ([]*engine.Test, error) {
-	loader, err := loaderFor(filename)
+// SpecError marks a malformed-spec failure — a parse, validation, or bad-include
+// error in a file SMOKE read but cannot use. The CLI maps it to exit 65
+// (EX_DATAERR); an operational I/O failure reading the *root* spec is returned
+// bare instead, so it maps to exit 2. See docs/spec/exit-codes.md.
+type SpecError struct{ err error }
+
+func (e *SpecError) Error() string { return e.err.Error() }
+func (e *SpecError) Unwrap() error { return e.err }
+
+func specErr(err error) error { return &SpecError{err} }
+
+func Load(filename string) ([]*engine.Test, error) {
+	root, err := loadSpec(filename, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	root, err := loader.Load(reader)
-	if err != nil {
-		return nil, err
-	}
-
-	root.Filename = filename
 	root.Resolve(nil)
 
 	tests, err := root.Tests()
 	if err != nil {
-		return nil, err
+		return nil, specErr(err)
 	}
 	if err := checkUniqueNames(tests); err != nil {
-		return nil, err
+		return nil, specErr(err)
 	}
 	return tests, nil
+}
+
+// loadSpec reads and decodes one spec file into an unresolved tree. stack carries
+// the recursion's ancestor paths so includes (added later) can guard cycles and
+// classify a missing file by graph position; at the root it is nil.
+func loadSpec(path string, stack []string) (*TestSpec, error) {
+	loader, err := loaderFor(path)
+	if err != nil {
+		return nil, specErr(err)
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		// The root spec failing to open is operational I/O trouble (exit 2); an
+		// included spec failing to open is malformed content — the host named a
+		// file that isn't there (exit 65). Stack depth tells the two apart.
+		if len(stack) == 0 {
+			return nil, err
+		}
+		return nil, specErr(fmt.Errorf("include %q: %w", path, err))
+	}
+	defer file.Close()
+
+	root, err := loader.Load(file)
+	if err != nil {
+		return nil, specErr(err)
+	}
+
+	root.Filename = path
+	return root, nil
 }
 
 // checkUniqueNames enforces that every flattened TestName is distinct. A
