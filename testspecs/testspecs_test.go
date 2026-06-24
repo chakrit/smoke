@@ -346,6 +346,48 @@ func TestLoadBadTimeout(t *testing.T) {
 	}
 }
 
+// Every independent tree-walk error surfaces from a single Load, not just the
+// first — so a spec with several authoring mistakes is fixable in one pass. The
+// uniqueness pass is a separate phase (still first-dup); this covers the flatten
+// walk: a bad check, a bad timeout, and a command-less leaf across three nodes.
+func TestLoadCollectsAllErrors(t *testing.T) {
+	src := "tests:\n" +
+		"  - name: BadCheck\n" +
+		"    commands: [\"echo hi\"]\n" +
+		"    checks: [\"boguscheck://x\"]\n" +
+		"  - name: BadTimeout\n" +
+		"    commands: [\"echo hi\"]\n" +
+		"    config:\n" +
+		"      timeout: \"notaduration\"\n" +
+		"  - name: EmptyLeaf\n"
+
+	_, err := loadString(t, "spec.yml", src)
+	if err == nil {
+		t.Fatal("want error for the malformed spec, got nil")
+	}
+	for _, want := range []string{"boguscheck://x", "notaduration", "EmptyLeaf"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error should mention %q; got: %v", want, err)
+		}
+	}
+}
+
+// Every unknown check in one node surfaces, not just the first — the check loop
+// accumulates rather than bailing on the first miss.
+func TestLoadCollectsAllUnknownChecks(t *testing.T) {
+	src := "commands: [\"echo hi\"]\nchecks: [\"bad1://x\", \"bad2://y\"]\n"
+
+	_, err := loadString(t, "spec.yml", src)
+	if err == nil {
+		t.Fatal("want error for the unknown checks, got nil")
+	}
+	for _, want := range []string{"bad1://x", "bad2://y"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error should mention %q; got: %v", want, err)
+		}
+	}
+}
+
 // A typo'd field on an otherwise-valid CUE node (here `chekcs` for `checks`)
 // must fail closed against the schema, not silently drop the field at Decode.
 func TestLoadCUERejectsUnknownField(t *testing.T) {

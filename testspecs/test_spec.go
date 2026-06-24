@@ -1,6 +1,7 @@
 package testspecs
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -58,7 +59,8 @@ func (t *TestSpec) Resolve(parent *TestSpec) {
 // here — each node's TestName is its parent's name extended by its own segment —
 // so name composition lives at the flatten gate, not in Resolve.
 func (t *TestSpec) Tests() ([]*engine.Test, error) {
-	return t.tests("")
+	tests, errs := t.tests("")
+	return tests, errors.Join(errs...)
 }
 
 // expandName interpolates $VAR/${VAR} in the node's name segment against its
@@ -79,11 +81,18 @@ func (t *TestSpec) expandName() string {
 	return os.Expand(t.Name, func(key string) string { return env[key] })
 }
 
-func (t *TestSpec) tests(parent engine.TestName) (tests []*engine.Test, err error) {
+// tests walks the subtree rooted at t, accumulating every error rather than
+// stopping at the first, so one Load surfaces all of a spec's tree-walk faults.
+// A node's test is appended only if that node built cleanly; children always
+// recurse and merge their errors up. Caller (Tests) joins the slice.
+func (t *TestSpec) tests(parent engine.TestName) ([]*engine.Test, []error) {
 	name := parent.Child(t.expandName())
 
+	var tests []*engine.Test
+	var errs []error
+
 	if len(t.Children) == 0 && len(t.Commands) == 0 {
-		return nil, fmt.Errorf("test `%s` is a leaf with no commands", name)
+		errs = append(errs, fmt.Errorf("test `%s` is a leaf with no commands", name))
 	}
 
 	if len(t.Commands) > 0 {
@@ -94,34 +103,37 @@ func (t *TestSpec) tests(parent engine.TestName) (tests []*engine.Test, err erro
 		}
 
 		var allchecks []checks.Interface
+		var checkErrs []error
 		for _, checkname := range t.Checks {
-			if check := checks.Parse(checkname); check == nil {
-				return nil, fmt.Errorf("unknown check `%s`", checkname)
-			} else {
-				allchecks = append(allchecks, check)
+			check := checks.Parse(checkname)
+			if check == nil {
+				checkErrs = append(checkErrs, fmt.Errorf("unknown check `%s`", checkname))
+				continue
 			}
+			allchecks = append(allchecks, check)
+		}
+		errs = append(errs, checkErrs...)
+
+		runcfg, cfgErr := t.Config.RunConfig()
+		if cfgErr != nil {
+			errs = append(errs, cfgErr)
 		}
 
-		runcfg, err := t.Config.RunConfig()
-		if err != nil {
-			return nil, err
+		if len(checkErrs) == 0 && cfgErr == nil {
+			tests = append(tests, &engine.Test{
+				Name:      name,
+				RunConfig: runcfg,
+				Commands:  commands,
+				Checks:    allchecks,
+			})
 		}
-
-		tests = append(tests, &engine.Test{
-			Name:      name,
-			RunConfig: runcfg,
-			Commands:  commands,
-			Checks:    allchecks,
-		})
 	}
 
 	for _, subt := range t.Children {
-		if subtests, err := subt.tests(name); err != nil {
-			return nil, err
-		} else {
-			tests = append(tests, subtests...)
-		}
+		subtests, suberrs := subt.tests(name)
+		tests = append(tests, subtests...)
+		errs = append(errs, suberrs...)
 	}
 
-	return tests, nil
+	return tests, errs
 }

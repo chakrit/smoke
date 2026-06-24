@@ -47,8 +47,13 @@ see git history and `docs/notes/` session logs for the detail.
 * [ ] **Commit last run** — bless the previous run without re-running. Was a whole `runcache`
   package; only build it back if the re-run cost is actually a problem in practice. vNext;
   its own design pass.
-* [ ] **All-errors validation** — collect every spec error per load, not just the first.
-  Do it as a plain error-accumulating tree walk in `Tests()` (no IR), if anyone asks for it.
+* [x] **All-errors validation. Done (2026-06-24).** `TestSpec.tests()` accumulates every
+  tree-walk fault — all unknown checks per node, bad timeouts, command-less leaves — into
+  `[]error`; `Tests()` joins via `errors.Join`. One `Load` now surfaces all spec faults at
+  once. Plain walk, no IR — the cheap version of the 2026-06-18 work reverted on
+  2026-06-19. Scope: the flatten walk only; the uniqueness pass stays first-dup (running it
+  on a partial flatten would false-positive), and `loadSpec` parse errors abort their file
+  by nature.
 * [ ] **CUE module `import` support (cueLoader → `cue/load`).** Requested by the
   `lowfat-pantry` agent (2026-06-24) to DRY 64 duplicated `tests.cue` behind a shared
   `#Case` schema + a `cue.mod` module. Blocker: `loaders.go:74` uses `ctx.CompileBytes`,

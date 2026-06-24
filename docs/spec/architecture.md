@@ -182,9 +182,12 @@ name is minted exactly at this gate. The segment is `os.Expand`ed against the
 node's resolved env first (see *Include resolution*), so a non-imported name with
 no `$` is untouched. After the walk, `testspecs.Load` asserts the
 flattened names are **unique** — two tests that flatten to the same name make the
-name-keyed lock ambiguous, so a duplicate is a malformed spec. The first error
-stops the walk (or the uniqueness pass) and flows out through `testspecs.Load`,
-routing to exit `65` like any other malformed-spec failure.
+name-keyed lock ambiguous, so a duplicate is a malformed spec. The walk collects
+**every** per-node fault — unknown checks, bad timeouts, command-less leaves — and
+joins them (`errors.Join`), so one `Load` surfaces all of a spec's tree-walk errors
+at once; the uniqueness pass still stops at the first duplicate. Either way the
+result flows out through `testspecs.Load`, routing to exit `65` like any other
+malformed-spec failure.
 
 ## Checks
 
