@@ -49,6 +49,18 @@ see git history and `docs/notes/` session logs for the detail.
   its own design pass.
 * [ ] **All-errors validation** — collect every spec error per load, not just the first.
   Do it as a plain error-accumulating tree walk in `Tests()` (no IR), if anyone asks for it.
+* [ ] **CUE module `import` support (cueLoader → `cue/load`).** Requested by the
+  `lowfat-pantry` agent (2026-06-24) to DRY 64 duplicated `tests.cue` behind a shared
+  `#Case` schema + a `cue.mod` module. Blocker: `loaders.go:74` uses `ctx.CompileBytes`,
+  which resolves only CUE stdlib builtins — never a `cue.mod` module path. Repro:
+  `cue eval ./sub` resolves a local-pkg import; `smoke-v0.4.0 sub/tests.cue` → `package
+  … imported but not defined`. Fix: switch cueLoader to `cue/load.Instances(…,
+  &load.Config{Dir: <spec dir>})` → `ctx.BuildInstance` → unify `#Test` as today. NOT a
+  drop-in: the `loader.Load(io.Reader)` contract must become path-aware (cue/load needs
+  the real on-disk dir to find `cue.mod`), which ripples to the JSON/JSONL/JSONC loaders;
+  add a no-`cue.mod` backward-compat test. Own design pass. Peer's findings (with repro)
+  in `/tmp/lowfat-cue-import-findings-chakrit.lowfat-pantry.claude.md` — ephemeral, copy
+  out if pursuing.
 * [x] JSONC support. **Done (2026-06-18):** `.jsonc` → `jsoncLoader`, which runs a
   hand-rolled string-aware `stripJSONComments` (no new dependency) then decodes through the
   same `decodeJSON` path, inheriting `DisallowUnknownFields` fail-closed behavior. Comments
