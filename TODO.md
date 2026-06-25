@@ -44,9 +44,6 @@ see git history and `docs/notes/` session logs for the detail.
   (2) the imported-root segment defaults to the include path only when the imported file
   names no root of its own (D3 "default", not the roadmap's unconditional set). `testspecs`
   now owns spec file I/O. Self-test fixture: `test/testdata/include/`.
-* [ ] **Commit last run** — bless the previous run without re-running. Was a whole `runcache`
-  package; only build it back if the re-run cost is actually a problem in practice. vNext;
-  its own design pass.
 * [x] **All-errors validation. Done (2026-06-24).** `TestSpec.tests()` accumulates every
   tree-walk fault — all unknown checks per node, bad timeouts, command-less leaves — into
   `[]error`; `Tests()` joins via `errors.Join`. One `Load` now surfaces all spec faults at
