@@ -221,6 +221,36 @@ tests: [
 Reach for CUE when specs grow large or repetitive and you'd rather compute them than
 maintain them by hand — or when you already author config in CUE.
 
+**Sharing a schema across specs (`cue.mod`).** When many specs repeat the same scaffold,
+factor it into a package and `import` it. Put a `cue.mod/module.cue` at the module root:
+
+```cue
+module: "example.com/smoke"
+language: version: "v0.16.0"
+```
+
+a shared package beside it (`cases/cases.cue`):
+
+```cue
+package cases
+
+#Case: {name: string, commands: [...string]}
+
+Echo: #Case & {name: "Echo", commands: ["echo hi"]}
+```
+
+then import it from any spec in the module:
+
+```cue
+import "example.com/smoke/cases"
+
+checks: ["exitcode", "stdout"]
+tests: [cases.Echo]
+```
+
+SMOKE resolves the import from the local `cue.mod` — no network, no `cue` binary on PATH. A
+plain `.cue` with no `cue.mod` keeps working unchanged; the module is opt-in.
+
 ### JSON (`.json`)
 
 One JSON object is the root test, with the same keys as YAML (`config`, `checks`,

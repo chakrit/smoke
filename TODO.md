@@ -51,18 +51,17 @@ see git history and `docs/notes/` session logs for the detail.
   2026-06-19. Scope: the flatten walk only; the uniqueness pass stays first-dup (running it
   on a partial flatten would false-positive), and `loadSpec` parse errors abort their file
   by nature.
-* [ ] **CUE module `import` support (cueLoader → `cue/load`).** Requested by the
-  `lowfat-pantry` agent (2026-06-24) to DRY 64 duplicated `tests.cue` behind a shared
-  `#Case` schema + a `cue.mod` module. Blocker: `loaders.go:74` uses `ctx.CompileBytes`,
-  which resolves only CUE stdlib builtins — never a `cue.mod` module path. Repro:
-  `cue eval ./sub` resolves a local-pkg import; `smoke-v0.4.0 sub/tests.cue` → `package
-  … imported but not defined`. Fix: switch cueLoader to `cue/load.Instances(…,
-  &load.Config{Dir: <spec dir>})` → `ctx.BuildInstance` → unify `#Test` as today. NOT a
-  drop-in: the `loader.Load(io.Reader)` contract must become path-aware (cue/load needs
-  the real on-disk dir to find `cue.mod`), which ripples to the JSON/JSONL/JSONC loaders;
-  add a no-`cue.mod` backward-compat test. Own design pass. Peer's findings (with repro)
-  in `/tmp/lowfat-cue-import-findings-chakrit.lowfat-pantry.claude.md` — ephemeral, copy
-  out if pursuing.
+* [x] **CUE module `import` support (cueLoader → `cue/load`). Done (2026-06-25).**
+  `cueLoader` loads via `cue/load.Instances` + `ctx.BuildInstance` (was `ctx.CompileBytes`,
+  stdlib-only), so a `.cue` inside a `cue.mod` module can `import` shared packages — the
+  `lowfat-pantry` DRY ask. The `loader` interface gained a `path` param
+  (`Load(reader, path)`); byte loaders ignore it, `cueLoader` needs the on-disk dir.
+  `loadSpec` still opens the file first (exit-2-vs-65 classification preserved). Path is
+  absolutized before `load.Instances` — cue/load resolves args relative to `Config.Dir`, so
+  a relative path + Dir doubled up (caught by the self-test, not unit tests). Package-less
+  `.cue` unchanged (single anonymous instance). Design ruling:
+  `docs/decisions/2026-06-25-cue-module-import-loader.md`. Self-test fixture
+  `test/testdata/cuemod/`. New deps: cue/load pulls module machinery (OCI, oauth2).
 * [x] JSONC support. **Done (2026-06-18):** `.jsonc` → `jsoncLoader`, which runs a
   hand-rolled string-aware `stripJSONComments` (no new dependency) then decodes through the
   same `decodeJSON` path, inheriting `DisallowUnknownFields` fail-closed behavior. Comments

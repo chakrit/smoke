@@ -78,12 +78,16 @@ is confined entirely to `testspecs.Load`.
 
 `testspecs.Load(filename)` opens the file through the recursive `loadSpec(path,
 stack)` seam, then dispatches on file extension via `loaderFor` into a per-format
-`loader` (`Load(io.Reader) (*TestSpec, error)`), default-deny. The loader stays a
-dumb reader→tree decoder: opening files and resolving includes live *above* it in
-`loadSpec`, once, format-agnostic.
+`loader` (`Load(reader io.Reader, path string) (*TestSpec, error)`),
+default-deny. Opening files and resolving includes live *above* the loader in
+`loadSpec`, once, format-agnostic — so the byte-stream loaders stay dumb
+reader→tree decoders and ignore `path`. The one exception is `cueLoader`, which
+loads *by path* (not the reader) so a `.cue` inside a `cue.mod` module can resolve
+imports; the reader is still opened in `loadSpec` first, which is what classifies
+a missing root (exit `2`) vs a missing include (exit `65`) before any loader runs.
 
 - `.yml` / `.yaml` / *(none)* → `yamlLoader` (`yaml.NewDecoder`)
-- `.cue` → `cueLoader` (compile → unify against `#Test` → validate → decode)
+- `.cue` → `cueLoader` (`cue/load` instance → unify against `#Test` → validate → decode)
 - `.json` → `jsonLoader`; `.jsonl` → `jsonlLoader` (one `TestSpec` per line)
 - `.jsonc` → `jsoncLoader` (strip `//` `/* */` comments → `jsonLoader` path)
 - anything else → rejected (`unsupported spec format`)
@@ -92,6 +96,15 @@ All formats target the **same `TestSpec` struct**, which carries dual struct
 tags: `yaml:"..."` for the YAML path and `json:"..."` for the CUE/JSON decoders.
 The embedded `cuelang.org/go` evaluator is pinned in `go.mod`, keeping `.cue`
 eval as hermetic as YAML parsing — no runtime `cue` binary on PATH.
+
+`cueLoader` loads via `cue/load.Instances([]string{abs}, &load.Config{Dir:
+filepath.Dir(abs)})` rather than compiling raw bytes, so a spec inside a `cue.mod`
+module can `import` shared packages (a `#Case` schema reused across many specs —
+the lowfat-pantry DRY case). The path is **absolutized first**: `cue/load`
+resolves file args relative to `Config.Dir`, so a relative path plus a `Dir` would
+double up (`a/b/a/b/spec.cue`). A lone `.cue` with no `cue.mod` loads exactly as
+before, as a single anonymous instance — local-only resolution keeps eval
+hermetic.
 
 One consequence drives a type choice: CUE has no native duration kind, so
 `ConfigSpec.Timeout` is a `string` ("5s") parsed in `RunConfig` via
