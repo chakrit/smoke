@@ -413,3 +413,46 @@ func TestLoadCUEValid(t *testing.T) {
 		t.Fatalf("want 1 test, got %d", len(tests))
 	}
 }
+
+// A .cue spec inside a cue.mod module can `import` a shared package and reuse its
+// definitions — the lever the lowfat-pantry asked for (DRY a shared #Case across
+// many specs). Resolving the import requires module-aware loading (cue/load), not
+// the stdlib-only CompileBytes.
+func TestLoadCUEModuleImport(t *testing.T) {
+	tests, err := loadFiles(t, "spec.cue", map[string]string{
+		"cue.mod/module.cue": "module: \"mod.example/test\"\nlanguage: version: \"v0.16.0\"\n",
+		"pantry/case.cue":    "package pantry\n\nEcho: {\n\tname: \"Echo\"\n\tcommands: [\"echo hi\"]\n}\n",
+		"spec.cue":           "import \"mod.example/test/pantry\"\n\nchecks: [\"stdout\"]\ntests: [pantry.Echo]\n",
+	})
+	if err != nil {
+		t.Fatalf("load cue module import: %v", err)
+	}
+	if len(tests) != 1 {
+		t.Fatalf("want 1 test from imported pantry.Echo, got %d", len(tests))
+	}
+	if got := string(tests[0].Name); !strings.Contains(got, "Echo") {
+		t.Errorf("imported test name should contain %q, got %q", "Echo", got)
+	}
+}
+
+// Regression: cue/load resolves file args relative to Config.Dir, so the loader
+// must absolutize a relative spec path first — otherwise dir doubles up
+// (test/testdata/test/testdata/...) and the file isn't found. The real binary is
+// invoked with relative paths, so loading one must work. (The other CUE tests use
+// absolute temp paths and structurally can't catch this.)
+func TestLoadCUERelativePath(t *testing.T) {
+	dir := t.TempDir()
+	src := "commands: [\"echo hi\"]\nchecks: [\"stdout\"]\n"
+	if err := os.WriteFile(filepath.Join(dir, "spec.cue"), []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(dir)
+
+	tests, err := Load("spec.cue")
+	if err != nil {
+		t.Fatalf("load cue via relative path: %v", err)
+	}
+	if len(tests) != 1 {
+		t.Fatalf("want 1 test, got %d", len(tests))
+	}
+}

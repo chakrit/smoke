@@ -67,7 +67,7 @@ func loadSpec(path string, stack []string) (*TestSpec, error) {
 	}
 	defer file.Close()
 
-	root, err := loader.Load(file)
+	root, err := loader.Load(file, path)
 	if err != nil {
 		return nil, specErr(err)
 	}

@@ -11,14 +11,16 @@ import (
 
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/cuecontext"
+	"cuelang.org/go/cue/load"
 	"gopkg.in/yaml.v3"
 )
 
 // A loader parses one spec format into an unresolved root TestSpec. Format
 // dispatch is default-deny: an unrecognized extension is rejected, never
-// guessed.
+// guessed. path is the on-disk spec path: byte-stream loaders read from reader
+// and ignore it; the CUE loader needs it to resolve cue.mod module imports.
 type loader interface {
-	Load(io.Reader) (*TestSpec, error)
+	Load(reader io.Reader, path string) (*TestSpec, error)
 }
 
 func loaderFor(filename string) (loader, error) {
@@ -40,7 +42,7 @@ func loaderFor(filename string) (loader, error) {
 
 type yamlLoader struct{}
 
-func (yamlLoader) Load(reader io.Reader) (*TestSpec, error) {
+func (yamlLoader) Load(reader io.Reader, _ string) (*TestSpec, error) {
 	root := &TestSpec{}
 	if err := yaml.NewDecoder(reader).Decode(root); err != nil {
 		return nil, err
@@ -51,16 +53,33 @@ func (yamlLoader) Load(reader io.Reader) (*TestSpec, error) {
 //go:embed schema.cue
 var cueSchema string
 
-// cueLoader evaluates a single CUE file into the test tree, unifying it against
-// the embedded `#Test` schema first so typo'd fields and wrong types fail closed
-// as CUE constraint errors instead of being silently dropped at Decode. The
-// struct's json tags drive the mapping; CUE has no native duration, so timeout
-// stays a string parsed later in ConfigSpec.RunConfig (same path as YAML).
+// cueLoader evaluates a CUE file into the test tree, unifying it against the
+// embedded `#Test` schema first so typo'd fields and wrong types fail closed as
+// CUE constraint errors instead of being silently dropped at Decode. The struct's
+// json tags drive the mapping; CUE has no native duration, so timeout stays a
+// string parsed later in ConfigSpec.RunConfig (same path as YAML).
+//
+// It loads by path (not the reader) via cue/load so a spec inside a cue.mod
+// module can `import` shared packages; a lone .cue with no cue.mod loads just the
+// same, as a single anonymous instance. The reader is unused — loadSpec already
+// opened the file to classify a missing root (exit 2) vs include (exit 65) before
+// we get here.
 type cueLoader struct{}
 
-func (cueLoader) Load(reader io.Reader) (*TestSpec, error) {
-	src, err := io.ReadAll(reader)
+func (cueLoader) Load(_ io.Reader, path string) (*TestSpec, error) {
+	// cue/load resolves file args relative to Config.Dir, so a relative path plus
+	// a Dir would double up (test/testdata/test/testdata/...). Absolutize first:
+	// the arg is then anchored on its own, and Dir is the spec's directory where
+	// cue.mod resolution begins.
+	abs, err := filepath.Abs(path)
 	if err != nil {
+		return nil, err
+	}
+	insts := load.Instances([]string{abs}, &load.Config{Dir: filepath.Dir(abs)})
+	if len(insts) != 1 {
+		return nil, fmt.Errorf("cue: expected one instance for %q, got %d", path, len(insts))
+	}
+	if err := insts[0].Err; err != nil {
 		return nil, err
 	}
 
@@ -71,7 +90,7 @@ func (cueLoader) Load(reader io.Reader) (*TestSpec, error) {
 	}
 	testDef := schema.LookupPath(cue.ParsePath("#Test"))
 
-	value := ctx.CompileBytes(src)
+	value := ctx.BuildInstance(insts[0])
 	if err := value.Err(); err != nil {
 		return nil, err
 	}
@@ -99,7 +118,7 @@ func decodeJSON(reader io.Reader, v any) error {
 
 type jsonLoader struct{}
 
-func (jsonLoader) Load(reader io.Reader) (*TestSpec, error) {
+func (jsonLoader) Load(reader io.Reader, _ string) (*TestSpec, error) {
 	root := &TestSpec{}
 	if err := decodeJSON(reader, root); err != nil {
 		return nil, err
@@ -113,7 +132,7 @@ func (jsonLoader) Load(reader io.Reader) (*TestSpec, error) {
 // tolerated, same as .json.
 type jsoncLoader struct{}
 
-func (jsoncLoader) Load(reader io.Reader) (*TestSpec, error) {
+func (jsoncLoader) Load(reader io.Reader, _ string) (*TestSpec, error) {
 	src, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
@@ -209,7 +228,7 @@ func peekByte(src []byte, i int) byte {
 // top-level command.
 type jsonlLoader struct{}
 
-func (jsonlLoader) Load(reader io.Reader) (*TestSpec, error) {
+func (jsonlLoader) Load(reader io.Reader, _ string) (*TestSpec, error) {
 	root := &TestSpec{}
 
 	scanner := bufio.NewScanner(reader)
