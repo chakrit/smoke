@@ -699,6 +699,30 @@
         - name: stderr
           data:
             - ""
+- name: tests.yml \ Behavior \ CUE Module
+  commands:
+    - command: ./bin/smoke --no-color --list test/testdata/cuemod/tests.cue
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - tests.cue \ Echo
+        - name: stderr
+          data:
+            - ""
+    - command: ./bin/smoke --no-color test/testdata/cuemod/tests.cue
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - UNCHANGED — output matches test/testdata/cuemod/tests.lock.yml (drift-free, not verified correct)
+        - name: stderr
+          data:
+            - ""
 - name: tests.yml \ Behavior \ JSON
   commands:
     - command: ./bin/smoke --no-color --list test/testdata/jsontests.json

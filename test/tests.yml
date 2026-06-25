@@ -126,6 +126,10 @@ tests:
         commands:
           - ./bin/smoke --no-color --list test/testdata/cuetests.cue # .cue spec loads
           - ./bin/smoke --no-color test/testdata/cuetests.cue # and compares UNCHANGED
+      - name: CUE Module
+        commands:
+          - ./bin/smoke --no-color --list test/testdata/cuemod/tests.cue # cue.mod import resolves shared package
+          - ./bin/smoke --no-color test/testdata/cuemod/tests.cue # and compares UNCHANGED
       - name: JSON
         commands:
           - ./bin/smoke --no-color --list test/testdata/jsontests.json # .json spec loads

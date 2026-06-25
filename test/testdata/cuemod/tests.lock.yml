@@ -1,0 +1,10 @@
+- name: tests.cue \ Echo
+  commands:
+    - command: echo cue-module import works
+      checks:
+        - name: exitcode
+          data:
+            - "0"
+        - name: stdout
+          data:
+            - cue-module import works
